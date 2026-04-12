@@ -6,3 +6,6 @@ express
 jsonwebtoken 
 mongoose 
 socket.io
+react-hot-toast
+socket.io-client
+

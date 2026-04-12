@@ -5,7 +5,7 @@ import cloudinary from "../config/cloudinary.js";
 
 // sign up
 export const signup = async(req, res)=>{
-    const { fullname ,email , password, bio} = re1.body;
+    const { fullname ,email , password, bio} = req.body;
     try{
      if (!fullname || !email || !password || !bio){
         return res.json({
@@ -54,7 +54,7 @@ export const login = async(req, res)=>{
         return res.json({success:false , message:"Invalid credentials"})
     }
 
-    const token = generateToken(newData._id)
+    const token = generateToken(userData._id)
      res.json({success:true , userData, token ,
      message : "Login Successfully"} )
     }
