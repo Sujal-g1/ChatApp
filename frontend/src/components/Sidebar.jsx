@@ -1,10 +1,23 @@
-import React from 'react'
+import React, { useContext, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import assets, { userDummyData } from '../assets/assets'
+import assets from '../assets/assets'
+import { AuthContext } from '../../context/AuthContext'
+import { ChatContext } from '../../context/ChatContext'
+import { useState } from 'react'
 
-const Sidebar = ({selectedUser , setSelectedUser}) => {
+const Sidebar = () => {
 
+    const {getUsers, users, selectedUser ,setSelectedUser, unseenMessages,setUnseenMessages} = useContext(ChatContext)
+
+    const {logout, onlineUsers} = useContext(AuthContext)
+    const [input, setInput] = useState(false)
     const navigate = useNavigate()
+
+    const filteredUsers = input ? users.filter((user)=> user.fullName.toLowerCase().includes(input.toLowerCase())) : users; 
+
+    useEffect(()=>{
+        getUsers();
+    },[onlineUsers])
 
 
   return (
@@ -27,28 +40,29 @@ const Sidebar = ({selectedUser , setSelectedUser}) => {
             <p onClick={() => navigate('/profile')} 
             className='cursor-pointer text-sm'>Edit Profile</p>
             <hr className='my-2 border-t border-gray-500'/>
-            <p className='cursor-pointer text-sm'>Logout</p>
+            <p 
+            onClick={()=> logout()}
+            className='cursor-pointer text-sm'>Logout</p>
+        </div>
+        </div>
         </div>
 
-        </div>
-
-
-
-        </div>
 
         {/* Search User */}
         <div className='flex items-center gap-2 rounded-full bg-[#282142] py-3 px-4 mt-5'>
             <img src={assets.search_icon} alt="Search" className='w-3' />
-            <input type="text"
+            <input 
+            onChange={(e)=> setInput(e.target.value)}
+            type="text"
             className='bg-transparent border-none outline-none text-white text-xs placeholder-[#c8c8c8] flex-1' 
-            placeholder='Search User  '/>
+            placeholder='Search User'/>
         </div>
 
         {/* User Profile */}
         <div className='flex flex-col '>
-            {userDummyData.map((user , idx )=>(
+            {filteredUsers?.map((user , idx )=>(
             <div
-            onClick={()=>{setSelectedUser(user)}}
+            onClick={()=>{setSelectedUser(user), setUnseenMessages(prev=>({...prev, [user._id]:[0]}))}}
              key={idx} className={`relative flex items-center gap-2 p-2 pl-4 rounded cursor-pointer max-sm:text-sm ${selectedUser ?._id === user._id && 'bg-[#282142]/50'}`}>
 
             <img src={ user ?.profilePic || assets.avatar_icon } alt=""
@@ -56,14 +70,14 @@ const Sidebar = ({selectedUser , setSelectedUser}) => {
 
                 {/* name */}
             <div className='flex flex-col leading-5'>
-                <p>{user.fullName}</p>
-                {
-                    idx < 3
-                    ? <span className='text-green-400 text-xs'>Online</span>
-                    : <span className='text-neutral-400 text-xs'>Offline</span>
-                }
+            <p>{user.fullName}</p>
+            {
+            onlineUsers.includes(user._id)
+            ? <span className='text-green-400 text-xs'>Online</span>
+            : <span className='text-neutral-400 text-xs'>Offline</span>
+            }
             </div> 
-            {idx > 2 && <p className='absolute top-4 right-4 text-xs h-5 w-5 flex justify-center items-center rounded-full bg-violet-500/50'>{idx}</p>}
+            {unseenMessages[user._id] > 0 && <p className='absolute top-4 right-4 text-xs h-5 w-5 flex justify-center items-center rounded-full bg-violet-500/50'>{unseenMessages[user._id]}</p>}
                 </div>
             )  )}
         </div>
