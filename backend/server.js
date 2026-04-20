@@ -5,6 +5,7 @@ import cors from "cors";
 import http from "http"
 import { connectDB } from "./config/db.js";
 import userRouter from "./routes/userRoutes.js";
+import friendRouter from "./routes/friendRoutes.js";
 import messageRouter from "./routes/messageRoutes.js";
 import { Server } from "socket.io";
 
@@ -53,6 +54,7 @@ app.get("/", (req, res) => {
 app.use("/api/status" ,(req , res)=>res.send("Server is running"));
 //routes setup
 app.use("/api/auth" , userRouter);
+app.use("/api/friends", friendRouter);
 app.use("/api/messages" , messageRouter);
 
 

@@ -1,35 +1,84 @@
-
 import mongoose from "mongoose"
 
 const userSchema = new mongoose.Schema({
-email:{
+  email:{
     type:String,
     required:true,
-    unique:true
-},
-fullName:{
+    unique:true,
+    lowercase:true,
+    trim:true
+  },
+
+  username: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true
+  },
+
+  zingleeId: {
+    type: String,
+    unique: true
+  },
+
+  fullName:{
     type:String,
     required:true,
-},
-password:{
+    trim:true
+  },
+
+  password:{
     type:String,
-    required:false,
     minlength:6
-},
-profilePic:{
+  },
+
+  profilePic:{
     type:String,
     default:""
-},
-bio:{
-    type:String
-},
+  },
 
-googleId: {
-     type: String 
-    },
+  bio:{
+    type:String,
+    maxlength:150
+  },
+
+  googleId: {
+    type: String 
+  },
+
+  isVerified: { 
+    type: Boolean, 
+    default: false 
+  },
+
+  lastSeen: { 
+    type: Date 
+  },
+
+  status: {
+    type: String,
+    enum: ["online", "offline"],
+    default: "offline"
+  },
+
+  allowFriendRequests: {
+    type: Boolean,
+    default: true
+  },
+  friends: [
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User"
+  }
+],
 
 }, {timestamps:true})
 
-const User = mongoose.model("User" , userSchema);
+// Indexes (IMPORTANT)
+userSchema.index({ username: 1 })
+userSchema.index({ zingleeId: 1 })
 
-export default User;
+const User = mongoose.model("User" , userSchema)
+
+export default User

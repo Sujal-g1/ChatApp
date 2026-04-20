@@ -3,42 +3,70 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs"
 import cloudinary from "../config/cloudinary.js";
 import admin from "../config/firebaseAdmin.js";
+import { generateZingleeId } from "../utils/generateZingleeId.js";
 
 // sign up
-export const signup = async(req, res)=>{
-    const { fullName ,email , password, bio} = req.body;
-    try{
-     if (!fullName || !email || !password || !bio){
-        return res.json({
-            success:false,
-            message:"Missing Details"
-        })
-     }
+export const signup = async (req, res) => {
+  const { fullName, email, password, bio, username } = req.body;
 
-     const user = await User.findOne({email});
-     if(user){
-        return res.json({
-            success:false,
-            message:"Account Already exist"
-        })
-     }
-
-     const salt = await bcrypt.genSalt(10); 
-     const hashedPassword = await bcrypt.hash(password , salt);
-
-     const newUser = await User.create({
-        fullName ,email , password:hashedPassword , bio
-     });
-
-     const token = generateToken(newUser._id)
-     res.json({success:true , userData: newUser , token ,
-     message : "Account created successfully"} )
+  try {
+    if (!fullName || !email || !password || !bio || !username) {
+      return res.json({
+        success: false,
+        message: "Missing Details",
+      });
     }
-    catch(error){
-        console.log(error.message) 
-         res.json({success:false , message : error.message} )
+
+    // normalize
+    const cleanUsername = username.toLowerCase().trim();
+    const cleanEmail = email.toLowerCase().trim();
+
+    // check email
+    const existingEmail = await User.findOne({ email: cleanEmail });
+    if (existingEmail) {
+      return res.json({
+        success: false,
+        message: "Email already exists",
+      });
     }
-}
+
+    // check username
+    const existingUsername = await User.findOne({ username: cleanUsername });
+    if (existingUsername) {
+      return res.json({
+        success: false,
+        message: "Username already taken",
+      });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const zingleeId = await generateZingleeId(cleanUsername);
+
+    const newUser = await User.create({
+      fullName,
+      email: cleanEmail,
+      password: hashedPassword,
+      bio,
+      username: cleanUsername,
+      zingleeId,
+    });
+
+    const token = generateToken(newUser._id);
+
+    res.json({
+      success: true,
+      userData: newUser,
+      token,
+      message: "Account created successfully",
+    });
+
+  } catch (error) {
+    console.log(error.message);
+    res.json({ success: false, message: error.message });
+  }
+};
 
 
 // login
@@ -48,7 +76,14 @@ export const login = async(req, res)=>{
         const { email , password} = req.body; 
      
 
-    const userData = await User.findOne({email});
+    const userData = await User.findOne({ email });
+
+if (!userData) {
+  return res.json({
+    success: false,
+    message: "User not found",
+  });
+}
     const isPasswordCorrect = await bcrypt.compare(password,userData.password)
 
     if(!isPasswordCorrect){
@@ -79,15 +114,30 @@ export const firebaseLogin = async (req, res) => {
     let user = await User.findOne({ email });
 
     // create user if not exists
-    if (!user) {
-      user = await User.create({
-        email,
-        fullName: name || "User",
-        profilePic: picture || "",
-        googleId: uid,
-        bio: "",
-      });
-    }
+   if (!user) {
+  const baseUsername = email.split("@")[0].toLowerCase();
+
+  let username = baseUsername;
+  let counter = 1;
+
+  // ensure unique username
+  while (await User.findOne({ username })) {
+    username = `${baseUsername}${counter}`;
+    counter++;
+  }
+
+  const zingleeId = await generateZingleeId(username);
+
+  user = await User.create({
+    email,
+    fullName: name || "User",
+    profilePic: picture || "",
+    googleId: uid,
+    bio: "",
+    username,
+    zingleeId
+  });
+}
 
     const jwtToken = generateToken(user._id);
 
@@ -101,6 +151,52 @@ export const firebaseLogin = async (req, res) => {
   } catch (error) {
     console.log(error.message);
     res.json({ success: false, message: "Firebase login failed" });
+  }
+};
+
+
+// searchj
+export const searchUsers = async (req, res) => {
+  try {
+    const query = req.query.q?.toLowerCase().trim();
+    const currentUserId = req.user._id;
+
+    if (!query) {
+      return res.json({
+        success: false,
+        message: "Search query is required",
+      });
+    }
+
+    let users;
+
+    // 🔹 Case 1: Search by Zingleee ID
+    if (query.includes("#")) {
+      users = await User.find({
+        zingleeId: query,
+        _id: { $ne: currentUserId }
+      }).select("-password -email -__v")
+    } else {
+      // 🔹 Case 2: Username partial search
+      users = await User.find({
+        username: { $regex: query, $options: "i" },
+        _id: { $ne: currentUserId }
+      })
+      .select("-password")
+      .limit(10); // prevent overload
+    }
+
+    res.json({
+      success: true,
+      users
+    });
+
+  } catch (error) {
+    console.log(error.message);
+    res.json({
+      success: false,
+      message: error.message
+    });
   }
 };
 
