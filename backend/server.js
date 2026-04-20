@@ -46,6 +46,9 @@ app.use(express.json({limit:"4mb" }));
 app.use(cors());
 
 
+app.get("/", (req, res) => {
+  res.send("Zinglee Backend is running 🚀");
+});
 
 app.use("/api/status" ,(req , res)=>res.send("Server is running"));
 //routes setup
