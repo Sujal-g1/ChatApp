@@ -32,24 +32,32 @@ export const AuthProvider = ({children}) => {
 
     // login fn to handle user auth and socket connection
      
-    const login = async(state , credentials)=>{
-        try {
-            const {data} = await axios.post(`/api/auth/${state}` , credentials);
-            if(data.success){
-                setAuthUser(data.userData);
-                connectSocket(data.userData);
-                axios.defaults.headers.common["token"] = data.token;
-                setToken(data.token);
-                localStorage.setItem("token" , data.token)
-                toast.success(data.message)
-            }
-            else{
-                 toast.error(data.message)
-            }
-        } catch (error) {
-            toast.error(error.message)
-        }
+   const login = async (state, credentials) => {
+  try {
+    let data;
+
+    if (state === "google") {
+      // ✅ already have backend response
+      data = credentials;
+    } else {
+      const res = await axios.post(`/api/auth/${state}`, credentials);
+      data = res.data;
     }
+
+    if (data.success) {
+      setAuthUser(data.userData);
+      connectSocket(data.userData);
+      axios.defaults.headers.common["token"] = data.token;
+      setToken(data.token);
+      localStorage.setItem("token", data.token);
+      toast.success(data.message);
+    } else {
+      toast.error(data.message);
+    }
+  } catch (error) {
+    toast.error(error.message);
+  }
+};
     
 
     //  logout fn to handle user logout and socket disconnection
