@@ -4,6 +4,9 @@ import { Mail, Lock, User, FileText, ArrowRight, ArrowLeft } from 'lucide-react'
 import { AuthContext } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
 import { ZingleeeLogo } from './LandingPage'
+import { signInWithPopup } from "firebase/auth";
+import { auth, provider } from "../firebase";
+import axios from "axios";
 
 const LoginPage = () => {
   const [currentState, setCurrentState] = useState("Sign up")
@@ -202,22 +205,56 @@ const LoginPage = () => {
 
           {/* divider */}
           <div className="divider" style={{ margin: '22px 0' }}>or</div>
+                  
+            <motion.button
+  onClick={async () => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const token = await result.user.getIdToken();
 
-          <p style={{ textAlign: 'center', fontSize: 13, color: 'rgba(255,255,255,0.4)', margin: 0 }}>
-            {currentState === "Sign up" ? (
-              <>Already have an account?{' '}
-                <span onClick={() => switchState("Login")}
-                  style={{ color: 'var(--accent)', cursor: 'pointer', fontWeight: 600 }}>
-                  Sign In
-                </span></>
-            ) : (
-              <>New to Zingleee?{' '}
-                <span onClick={() => switchState("Sign up")}
-                  style={{ color: 'var(--accent)', cursor: 'pointer', fontWeight: 600 }}>
-                  Create Account
-                </span></>
-            )}
-          </p>
+      const res = await axios.post("http://localhost:5002/api/auth/firebase-login", {
+        token,
+      });
+
+      if (res.data.success) {
+        localStorage.setItem("token", res.data.token);
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  }}
+  whileHover={{ scale: 1.02 }}
+  whileTap={{ scale: 0.97 }}
+  style={{
+    width: "100%",
+    padding: "13px 0",
+    borderRadius: 50,
+    border: "1px solid rgba(255,255,255,0.1)",
+    background: "rgba(255,255,255,0.05)",
+    backdropFilter: "blur(20px)",
+    WebkitBackdropFilter: "blur(20px)",
+    color: "white",
+    fontFamily: "Outfit, sans-serif",
+    fontSize: 14,
+    fontWeight: 600,
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    transition: "all 0.25s ease",
+  }}
+>
+  {/* Google Icon */}
+  <img
+    src="https://www.svgrepo.com/show/475656/google-color.svg"
+    alt="google"
+    style={{ width: 18, height: 18 }}
+  />
+
+  Continue with Google
+</motion.button>
+
         </div>
 
         {/* Theme picker */}

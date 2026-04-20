@@ -2,6 +2,7 @@ import { generateToken } from "../config/utils.js";
 import User from "../models/User.js";
 import bcrypt from "bcryptjs"
 import cloudinary from "../config/cloudinary.js";
+import admin from "../config/firebaseAdmin.js";
 
 // sign up
 export const signup = async(req, res)=>{
@@ -64,6 +65,46 @@ export const login = async(req, res)=>{
         res.json({success:false , message : error.message} )
     }
 }
+
+// firebase login
+export const firebaseLogin = async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    // verify Firebase token
+    const decoded = await admin.auth().verifyIdToken(token);
+
+    const { email, name, picture, uid } = decoded;
+
+    let user = await User.findOne({ email });
+
+    // create user if not exists
+    if (!user) {
+      user = await User.create({
+        email,
+        fullName: name || "User",
+        profilePic: picture || "",
+        googleId: uid,
+        bio: "",
+      });
+    }
+
+    const jwtToken = generateToken(user._id);
+
+    res.json({
+      success: true,
+      userData: user,
+      token: jwtToken,
+      message: "Google login success",
+    });
+
+  } catch (error) {
+    console.log(error.message);
+    res.json({ success: false, message: "Firebase login failed" });
+  }
+};
+
+
 
 // check auth
 export const checkAuth = ( req , res)=>{

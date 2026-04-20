@@ -13,7 +13,7 @@ fullName:{
 },
 password:{
     type:String,
-    required:true,
+    required:false,
     minlength:6
 },
 profilePic:{
@@ -23,6 +23,11 @@ profilePic:{
 bio:{
     type:String
 },
+
+googleId: {
+     type: String 
+    },
+
 }, {timestamps:true})
 
 const User = mongoose.model("User" , userSchema);
