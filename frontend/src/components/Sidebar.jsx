@@ -1,90 +1,249 @@
-import React, { useContext, useEffect } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import assets from '../assets/assets'
-import { AuthContext } from '../../context/AuthContext'
+import { motion, AnimatePresence } from 'framer-motion'
 import { ChatContext } from '../../context/ChatContext'
-import { useState } from 'react'
+import { AuthContext } from '../../context/AuthContext'
+import { useTheme } from '../../context/ThemeContext'
+import { ZingleeeLogo } from '../pages/LandingPage'
+import assets from '../assets/assets'
 
 const Sidebar = () => {
+  const { getUsers, users, selectedUser, setSelectedUser, unseenMessages, setUnseenMessages } = useContext(ChatContext)
+  const { logout, onlineUsers, authUser } = useContext(AuthContext)
+  const { theme, setTheme, THEMES } = useTheme()
+  const [searchInput, setSearchInput] = useState('')
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [showThemes, setShowThemes] = useState(false)
+  const navigate = useNavigate()
 
-    const {getUsers, users, selectedUser ,setSelectedUser, unseenMessages,setUnseenMessages} = useContext(ChatContext)
+  const filteredUsers = searchInput
+    ? users.filter(u => u.fullName.toLowerCase().includes(searchInput.toLowerCase()))
+    : users
 
-    const {logout, onlineUsers} = useContext(AuthContext)
-    const [input, setInput] = useState(false)
-    const navigate = useNavigate()
-
-    const filteredUsers = input ? users.filter((user)=> user.fullName.toLowerCase().includes(input.toLowerCase())) : users; 
-
-    useEffect(()=>{
-        getUsers();
-    },[onlineUsers])
-
+  useEffect(() => { getUsers() }, [onlineUsers])
 
   return (
-    <div className={`bg-[#8185B2]/10 h-full p-5 rounded-r-xl overflow-y-scroll text-white ${selectedUser ? "max-md:hidden" : ''}`}>
-        <div className='pb-5'>
+    <motion.div
+      initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
+      transition={{ duration: 0.4 }}
+      style={{
+        display: 'flex', flexDirection: 'column',
+        height: '100%', overflow: 'hidden',
+        borderRight: '1px solid rgba(255,255,255,0.06)',
+        background: 'rgba(0,0,0,0.15)',
+      }}
+    >
+      {/* Header */}
+      <div style={{ padding: '20px 16px 12px', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          {/* Logo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ filter: 'drop-shadow(0 0 10px var(--glow))' }}>
+              <ZingleeeLogo size={34} />
+            </div>
+            <span style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: 20, letterSpacing: '-0.02em' }}>
+              Zingle<span style={{ color: 'var(--accent)' }}>ee</span>
+            </span>
+          </div>
 
-        {/* logo , menu items */}
-        <div className='flex justify-between items-center'>
+          {/* Menu */}
+          <div style={{ position: 'relative' }}>
+            <button className="icon-btn" onClick={() => setMenuOpen(!menuOpen)} style={{ fontSize: 16 }}>
+              ⋮
+            </button>
 
-        <img src={assets.logo} alt="logo"
-        className='max-w-40' />
-
-        <div className='relative py-2 group'>
-        <img src={assets.menu_icon} alt="menu"
-        className='max-h-5 cursor-pointer' />
-
-
-        <div className='absolute top-full right-0 z-20 w-32 p-5 rounded-md
-        bg-[#282142] border border-gray-600 text-gray-100 hidden group-hover:block'>
-            <p onClick={() => navigate('/profile')} 
-            className='cursor-pointer text-sm'>Edit Profile</p>
-            <hr className='my-2 border-t border-gray-500'/>
-            <p 
-            onClick={()=> logout()}
-            className='cursor-pointer text-sm'>Logout</p>
+            <AnimatePresence>
+              {menuOpen && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9, y: -8 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: -8 }}
+                  transition={{ duration: 0.15 }}
+                  style={{
+                    position: 'absolute', top: '110%', right: 0, zIndex: 50,
+                    background: 'rgba(15,12,40,0.95)', backdropFilter: 'blur(20px)',
+                    border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14,
+                    padding: 8, minWidth: 160,
+                    boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+                  }}
+                >
+                  {[
+                    { icon: '👤', label: 'Edit Profile', action: () => { navigate('/profile'); setMenuOpen(false) } },
+                    { icon: '🎨', label: 'Themes', action: () => { setShowThemes(!showThemes); setMenuOpen(false) } },
+                    { icon: '🔔', label: 'Notifications', action: () => setMenuOpen(false) },
+                    { icon: '⚙️', label: 'Settings', action: () => setMenuOpen(false) },
+                    { icon: '🚪', label: 'Logout', action: () => { logout(); setMenuOpen(false) }, danger: true },
+                  ].map((item, i) => (
+                    <button key={i}
+                      onClick={item.action}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 10,
+                        width: '100%', padding: '9px 12px', borderRadius: 10,
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        color: item.danger ? '#f87171' : 'rgba(255,255,255,0.8)',
+                        fontSize: 13, fontFamily: 'Outfit, sans-serif',
+                        transition: 'background 0.15s ease', textAlign: 'left',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                    >
+                      <span>{item.icon}</span> {item.label}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
-        </div>
-        </div>
 
+        {/* Theme picker (inline) */}
+        <AnimatePresence>
+          {showThemes && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              style={{ overflow: 'hidden', marginBottom: 12 }}
+            >
+              <div style={{
+                background: 'rgba(255,255,255,0.04)', borderRadius: 12,
+                padding: '12px', display: 'flex', flexWrap: 'wrap', gap: 8,
+                border: '1px solid rgba(255,255,255,0.06)',
+              }}>
+                <p style={{ width: '100%', fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Theme</p>
+                {THEMES.map(t => (
+                  <button key={t.id}
+                    onClick={() => setTheme(t.id)}
+                    className={`theme-dot ${theme === t.id ? 'active' : ''}`}
+                    style={{ background: t.color }}
+                    title={t.label}
+                  />
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* Search User */}
-        <div className='flex items-center gap-2 rounded-full bg-[#282142] py-3 px-4 mt-5'>
-            <img src={assets.search_icon} alt="Search" className='w-3' />
-            <input 
-            onChange={(e)=> setInput(e.target.value)}
+        {/* Search */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          background: 'rgba(255,255,255,0.05)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: 50, padding: '9px 14px',
+          transition: 'all 0.3s ease',
+        }}
+          onFocus={e => e.currentTarget.style.borderColor = 'var(--accent)'}
+          onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'}
+        >
+          <span style={{ fontSize: 14, opacity: 0.5 }}>🔍</span>
+          <input
             type="text"
-            className='bg-transparent border-none outline-none text-white text-xs placeholder-[#c8c8c8] flex-1' 
-            placeholder='Search User'/>
+            placeholder="Search users..."
+            value={searchInput}
+            onChange={e => setSearchInput(e.target.value)}
+            style={{
+              flex: 1, background: 'none', border: 'none', outline: 'none',
+              color: 'white', fontFamily: 'Outfit, sans-serif', fontSize: 13,
+            }}
+          />
+          {searchInput && (
+            <button onClick={() => setSearchInput('')}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>
+              ✕
+            </button>
+          )}
         </div>
 
-        {/* User Profile */}
-        <div className='flex flex-col '>
-            {filteredUsers?.map((user , idx )=>(
-            <div
-            onClick={()=>{setSelectedUser(user), setUnseenMessages(prev=>({...prev, [user._id]:[0]}))}}
-             key={idx} className={`relative flex items-center gap-2 p-2 pl-4 rounded cursor-pointer max-sm:text-sm ${selectedUser ?._id === user._id && 'bg-[#282142]/50'}`}>
+        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 12, marginBottom: 2, textTransform: 'uppercase', letterSpacing: '0.08em', paddingLeft: 4 }}>
+          Messages
+        </p>
+      </div>
 
-            <img src={ user ?.profilePic || assets.avatar_icon } alt=""
-            className='w-[35px] aspect-[1/1] rounded-full '/>
-
-                {/* name */}
-            <div className='flex flex-col leading-5'>
-            <p>{user.fullName}</p>
-            {
-            onlineUsers.includes(user._id)
-            ? <span className='text-green-400 text-xs'>Online</span>
-            : <span className='text-neutral-400 text-xs'>Offline</span>
-            }
-            </div> 
-            {unseenMessages[user._id] > 0 && <p className='absolute top-4 right-4 text-xs h-5 w-5 flex justify-center items-center rounded-full bg-violet-500/50'>{unseenMessages[user._id]}</p>}
+      {/* User List */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '0 8px 12px' }}>
+        <AnimatePresence>
+          {filteredUsers.length === 0 ? (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              style={{ textAlign: 'center', padding: '40px 20px', color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>
+              {searchInput ? 'No users found' : 'No conversations yet'}
+            </motion.div>
+          ) : (
+            filteredUsers.map((user, idx) => (
+              <motion.div
+                key={user._id}
+                initial={{ opacity: 0, x: -16 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: idx * 0.04 }}
+                className={`user-item ${selectedUser?._id === user._id ? 'active' : ''}`}
+                onClick={() => {
+                  setSelectedUser(user)
+                  setUnseenMessages(prev => ({ ...prev, [user._id]: 0 }))
+                }}
+              >
+                {/* Avatar with online indicator */}
+                <div style={{ position: 'relative', flexShrink: 0 }}>
+                  <img
+                    src={user?.profilePic || assets.avatar_icon}
+                    alt=""
+                    style={{ width: 42, height: 42, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border-color)' }}
+                  />
+                  {onlineUsers.includes(user._id) && (
+                    <span style={{
+                      position: 'absolute', bottom: 1, right: 1,
+                      width: 10, height: 10, borderRadius: '50%',
+                      background: '#4ade80', border: '2px solid rgba(0,0,0,0.5)',
+                      boxShadow: '0 0 6px #4ade80',
+                    }} />
+                  )}
                 </div>
-            )  )}
-        </div>
 
+                {/* Name & status */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontWeight: 500, fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {user.fullName}
+                  </p>
+                  <p style={{ fontSize: 12, color: onlineUsers.includes(user._id) ? '#4ade80' : 'rgba(255,255,255,0.35)' }}>
+                    {onlineUsers.includes(user._id) ? 'Online' : 'Offline'}
+                  </p>
+                </div>
+
+                {/* Unseen badge */}
+                {unseenMessages[user._id] > 0 && (
+                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
+                    className="unseen-badge">
+                    {unseenMessages[user._id]}
+                  </motion.div>
+                )}
+              </motion.div>
+            ))
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Bottom — auth user */}
+      <div style={{
+        padding: '12px 16px',
+        borderTop: '1px solid rgba(255,255,255,0.06)',
+        display: 'flex', alignItems: 'center', gap: 10,
+        flexShrink: 0, background: 'rgba(0,0,0,0.1)',
+      }}>
+        <img
+          src={authUser?.profilePic || assets.avatar_icon}
+          alt=""
+          onClick={() => navigate('/profile')}
+          style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border-color)', cursor: 'pointer' }}
+        />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {authUser?.fullName}
+          </p>
+          <p style={{ fontSize: 11, color: '#4ade80' }}>● Active</p>
         </div>
-    </div>
+        <button className="icon-btn" onClick={() => navigate('/profile')} title="Edit profile" style={{ fontSize: 15 }}>
+          ✏️
+        </button>
+      </div>
+    </motion.div>
   )
 }
 
-export default Sidebar 
+export default Sidebar
