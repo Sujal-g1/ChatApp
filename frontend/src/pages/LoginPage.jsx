@@ -212,12 +212,12 @@ const LoginPage = () => {
       const result = await signInWithPopup(auth, provider);
       const token = await result.user.getIdToken();
 
-      const res = await axios.post("http://localhost:5002/api/auth/firebase-login", {
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/auth/firebase-login`, {
         token,
       });
 
       if (res.data.success) {
-        localStorage.setItem("token", res.data.token);
+        login("google", res.data);
       }
     } catch (err) {
       console.log(err);
