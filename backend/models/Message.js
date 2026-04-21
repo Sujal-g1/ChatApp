@@ -22,6 +22,9 @@ image:{
 seen:{
     type:Boolean,
     default:false
+},
+audio: {
+  type: String
 }
 }, {timestamps:true})
 

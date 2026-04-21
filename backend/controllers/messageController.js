@@ -64,7 +64,7 @@ export const  markMessageAsSeen = async(req, res)=>{
 // send msg to selected user
 export const sendMessage = async (req, res) => {
   try {
-    const { text, image } = req.body;
+    const { text, image, audio } = req.body;
     const receiverId = req.params.id;
     const senderId = req.user._id;
 
@@ -89,12 +89,30 @@ export const sendMessage = async (req, res) => {
       imageUrl = uploadResponse.secure_url;
     }
 
+    // audio upload
+    let audioUrl;
+    if (audio) {
+   const uploadResponse = await cloudinary.uploader.upload(audio, {
+    resource_type: "video" 
+    });
+    
+  audioUrl = uploadResponse.secure_url;
+}
+
+if (!text && !imageUrl && !audioUrl) {
+  return res.status(400).json({
+    success: false,
+    message: "Empty message"
+  });
+}
+
     // 💬 create message
     const newMessage = await Message.create({
       senderId,
       receiverId,
       text,
       image: imageUrl,
+      audio: audioUrl
     });
 
     // ⚡ emit real-time message

@@ -5,6 +5,7 @@ import { AuthContext } from '../../context/AuthContext'
 import { formatMsgTime } from '../lib/utils'
 import assets from '../assets/assets'
 import toast from 'react-hot-toast'
+import { ArrowDownFromLine, ArrowUpFromLine, CookingPot, Images, Mic, Pause, Phone, Search, Video } from 'lucide-react'; 
 
 const CallToast = ({ type }) => (
   <div style={{
@@ -23,7 +24,30 @@ const ChatContainer = () => {
   const scrollEnd = useRef()
   const [input, setInput] = useState('')
   const [isTyping, setIsTyping] = useState(false)
+  const [isRecording, setIsRecording] = useState(false)
+  const [audioBlob, setAudioBlob] = useState(null)
+  const [recordTime, setRecordTime] = useState(0)
+  const [playingId, setPlayingId] = useState(null)
+  const [isPreviewPlaying, setIsPreviewPlaying] = useState(false)
+  const currentAudioRef = useRef(null)
+
+const mediaRecorderRef = useRef(null)
+const chunksRef = useRef([])
+const streamRef = useRef(null)
   const typingTimer = useRef()
+
+  const iconBtn = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: 36,
+  height: 36,
+  borderRadius: '50%',
+  background: 'rgba(255,255,255,0.08)',
+  border: '1px solid rgba(255,255,255,0.08)',
+  color: 'white',
+  cursor: 'pointer',
+}
 
   const handleSendMessage = async (e) => {
     e.preventDefault()
@@ -45,6 +69,81 @@ const ChatContainer = () => {
     }
     reader.readAsDataURL(file)
   }
+
+  // recording
+const startRecording = async () => {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+  streamRef.current = stream
+
+  const mediaRecorder = new MediaRecorder(stream)
+  mediaRecorderRef.current = mediaRecorder
+
+  mediaRecorder.ondataavailable = (e) => {
+    chunksRef.current.push(e.data)
+  }
+
+  mediaRecorder.onstop = () => {
+    const blob = new Blob(chunksRef.current, { type: "audio/webm" })
+    setRecordTime(0)
+    setAudioBlob(blob)
+    chunksRef.current = []
+  }
+  mediaRecorder.start()
+  setIsRecording(true)
+}
+
+const stopRecording = () => {
+  if (!mediaRecorderRef.current) return
+
+  mediaRecorderRef.current.stop()   // 🔥 VERY IMPORTANT
+  setIsRecording(false)
+
+  streamRef.current.getTracks().forEach(track => track.stop())
+}
+useEffect(() => {
+  let interval
+
+  if (isRecording) {
+    interval = setInterval(() => {
+      setRecordTime(prev => prev + 1)
+    }, 1000)
+  }
+
+  return () => clearInterval(interval)
+}, [isRecording])
+
+const sendAudio = () => {
+  if (!audioBlob) {
+    return;
+  }
+  const reader = new FileReader();
+
+  reader.readAsDataURL(audioBlob);
+
+  reader.onloadend = async () => {
+    if (!reader.result) {
+      return;
+    }
+    await sendMessage({ audio: reader.result });
+
+    setAudioBlob(null);
+    setRecordTime(0);
+  };
+};
+
+const cancelRecording = () => {
+  if (isRecording && mediaRecorderRef.current) {
+    mediaRecorderRef.current.onstop = null
+    mediaRecorderRef.current.stop()
+  }
+
+  streamRef.current?.getTracks().forEach(track => track.stop())
+
+  chunksRef.current = []
+  setIsRecording(false)
+  setAudioBlob(null)
+  setRecordTime(0)
+}
 
   const handleInputChange = (e) => {
     setInput(e.target.value)
@@ -163,12 +262,14 @@ const ChatContainer = () => {
         {/* Action buttons */}
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="call-btn call-btn-audio" onClick={() => handleCall('audio')} title="Audio Call">
-            📞
+            <Phone />
           </button>
           <button className="call-btn call-btn-video" onClick={() => handleCall('video')} title="Video Call">
-            🎥
+            <Video />
           </button>
-          <button className="icon-btn" title="Search in chat" style={{ fontSize: 14 }}>🔍</button>
+          <button className="icon-btn" title="Search in chat" style={{ fontSize: 14 }}>
+            <Search />
+          </button>
           <button className="icon-btn" title="More options" style={{ fontSize: 16 }}>⋮</button>
         </div>
       </div>
@@ -180,7 +281,7 @@ const ChatContainer = () => {
       }}>
         <AnimatePresence initial={false}>
           {messages.map((msg, idx) => {
-            const isMine = msg.senderId === authUser?._id
+            const isMine = msg.senderId?.toString() === authUser?._id
             return (
               <motion.div
                 key={msg._id || idx}
@@ -213,7 +314,70 @@ const ChatContainer = () => {
                         boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
                       }}
                     />
-                  ) : (
+                  ) : msg.audio ? (
+  <div
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10,
+      padding: '10px 14px',
+      borderRadius: 16,
+      background: isMine
+        ? 'linear-gradient(135deg, var(--accent), var(--accent2))'
+        : 'rgba(255,255,255,0.05)',
+      backdropFilter: 'blur(10px)',
+      border: '1px solid rgba(255,255,255,0.08)',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+      minWidth: 180,
+    }}
+  >
+    {/* Play Button */}
+<audio
+  id={`audio-${msg._id}`}
+  src={msg.audio}
+  onEnded={() => setPlayingId(null)}
+/>
+
+<button
+  onClick={() => {
+    const audio = document.getElementById(`audio-${msg._id}`)
+    if (!audio) return
+
+    if (playingId === msg._id) {
+      audio.pause()
+      setPlayingId(null)
+    } else {
+      audio.play()
+      setPlayingId(msg._id)
+    }
+  }}
+  style={iconBtn}
+>
+  {playingId === msg._id ? <Pause size={14} /> : <Mic size={14} />}
+</button>
+
+    {/* Fake Waveform */}
+    <div style={{ display: 'flex', gap: 2 }}>
+      {[...Array(20)].map((_, i) => (
+        <div
+          key={i}
+          style={{
+            width: 2,
+            height: `${8 + Math.random() * 12}px`,
+            background: isMine ? 'white' : 'rgba(255,255,255,0.6)',
+            borderRadius: 2,
+          }}
+        />
+      ))}
+    </div>
+
+    {/* Time */}
+    <span style={{ fontSize: 11, opacity: 0.7 }}>
+      {formatMsgTime(msg.createdAt)}
+    </span>
+  </div>
+)
+                  : (
                     <div className={isMine ? 'bubble-sent' : 'bubble-received'}>
                       {msg.text}
                     </div>
@@ -276,14 +440,111 @@ const ChatContainer = () => {
           <input onChange={handleSendImage} type="file" id="chat-image" accept="image/png,image/jpeg" hidden />
           <label htmlFor="chat-image" style={{ cursor: 'pointer', opacity: 0.6, fontSize: 18, display: 'flex', alignItems: 'center' }}
             title="Send image">
-            🖼️
+            <Images />
           </label>
         </div>
 
-        {/* Voice note (future) */}
-        <button className="icon-btn" title="Voice message (coming soon)" style={{ fontSize: 16 }}>🎙️</button>
+       {/* VOICE MESSAGE */}
+{!isRecording && !audioBlob && (
+  <button
+    onClick={startRecording}
+    style={iconBtn}
+    title="Record"
+  >
+    <Mic size={18} />
+  </button>
+)}
+
+{/* RECORDING UI */}
+{isRecording && (
+  <div className="flex items-center gap-2 text-red-500">
+    ⏺ {recordTime}s
+
+    <div className="flex gap-1">
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className="w-1 h-4 bg-red-400 animate-pulse"></div>
+      ))}
+    </div>
+
+    <button onClick={stopRecording}> <Pause /> </button>
+  </div>
+)}
+
+{/* PREVIEW */}
+    {audioBlob && (
+  <div
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10,
+      padding: '10px 14px',
+      borderRadius: 16,
+      background: 'linear-gradient(135deg, var(--accent), var(--accent2))',
+      backdropFilter: 'blur(10px)',
+      border: '1px solid rgba(255,255,255,0.08)',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+      minWidth: 180,
+    }}
+  >
+    {/* hidden audio */}
+    <audio
+      ref={(el) => (currentAudioRef.current = el)}
+      src={URL.createObjectURL(audioBlob)}
+      onEnded={() => setIsPreviewPlaying(false)}
+    />
+
+    {/* PLAY / PAUSE */}
+    <button
+      onClick={() => {
+        const audio = currentAudioRef.current
+        if (!audio) return
+
+        if (audio.paused) {
+          audio.play()
+          setIsPreviewPlaying(true)
+        } else {
+          audio.pause()
+          setIsPreviewPlaying(false)
+        }
+      }}
+      style={{
+        ...iconBtn,
+        background: 'white',
+        color: 'black',
+      }}
+    >
+      {isPreviewPlaying ? <Pause size={16} /> : <Mic size={16} />}
+    </button>
+
+    {/* WAVEFORM */}
+    <div style={{ display: 'flex', gap: 2 }}>
+      {[10,14,8,16,12,18,9,15,11,17].map((h, i) => (
+        <div
+          key={i}
+          style={{
+            width: 2,
+            height: h,
+            background: 'white',
+            borderRadius: 2,
+          }}
+        />
+      ))}
+    </div>
+
+    {/* SEND */}
+    <button onClick={sendAudio} style={iconBtn}>
+      <ArrowUpFromLine size={16} />
+    </button>
+
+    {/* CANCEL */}
+    <button onClick={cancelRecording} style={iconBtn}>
+      <ArrowDownFromLine size={16} />
+    </button>
+  </div>
+)}
 
         {/* Send */}
+        {!audioBlob && (
         <motion.button
           className="send-btn"
           onClick={handleSendMessage}
@@ -294,6 +555,8 @@ const ChatContainer = () => {
             <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </motion.button>
+        )}
+
       </div>
     </motion.div>
   )

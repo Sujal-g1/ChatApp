@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ChatContext } from '../../context/ChatContext'
 import { AuthContext } from '../../context/AuthContext'
 import assets from '../assets/assets'
+import { Mic, Phone, Video, BellOff, Ban,Images,UserRound } from 'lucide-react'; 
+
 
 const RightSidebar = () => {
   const { selectedUser, messages } = useContext(ChatContext)
@@ -10,7 +12,6 @@ const RightSidebar = () => {
   const [msgImages, setMsgImages] = useState([])
   const [activeTab, setActiveTab] = useState('info')
 
-  console.log("SELECTED USER:", selectedUser)
 
   useEffect(() => {
     setMsgImages(messages.filter(m => m.image).map(m => m.image))
@@ -100,10 +101,10 @@ const RightSidebar = () => {
         {/* Quick actions */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 16 }}>
           {[
-            { icon: '📞', label: 'Call', color: 'rgba(74,222,128,0.15)', border: 'rgba(74,222,128,0.3)', text: '#4ade80' },
-            { icon: '🎥', label: 'Video', color: 'rgba(56,189,248,0.15)', border: 'rgba(56,189,248,0.3)', text: '#38bdf8' },
-            { icon: '🔇', label: 'Mute', color: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.1)', text: 'rgba(255,255,255,0.6)' },
-            { icon: '🚫', label: 'Block', color: 'rgba(248,113,113,0.1)', border: 'rgba(248,113,113,0.2)', text: '#f87171' },
+            { icon: <Phone />, label: 'Call', color: 'rgba(74,222,128,0.15)', border: 'rgba(74,222,128,0.3)', text: '#4ade80' },
+            { icon: <Video />, label: 'Video', color: 'rgba(56,189,248,0.15)', border: 'rgba(56,189,248,0.3)', text: '#38bdf8' },
+            { icon: <BellOff />, label: 'Mute', color: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.1)', text: 'rgba(255,255,255,0.6)' },
+            { icon: <Ban />, label: 'Block', color: 'rgba(248,113,113,0.1)', border: 'rgba(248,113,113,0.2)', text: '#f87171' },
           ].map((btn, i) => (
             <button key={i}
               style={{
@@ -138,7 +139,7 @@ const RightSidebar = () => {
               transition: 'all 0.2s ease',
             }}
           >
-            {tab === 'info' ? '👤 Info' : tab === 'media' ? '🖼️ Media' : '📁 Files'}
+            {tab === 'info' ? 'Info' : tab === 'media' ? 'Media' : 'Files'}
           </button>
         ))}
       </div>
@@ -152,9 +153,9 @@ const RightSidebar = () => {
               style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
             >
               {[
-                { label: 'Full Name', value: selectedUser.fullName, icon: '👤' },
+                { label: 'Full Name', value: selectedUser.fullName, icon: <UserRound />},
                 { label: 'Status', value: onlineUsers.includes(selectedUser._id) ? 'Online' : 'Offline', icon: '🟢' },
-                { label: 'Shared Media', value: `${msgImages.length} files`, icon: '🖼️' },
+                { label: 'Shared Media', value: `${msgImages.length} files`, icon: <Images /> },
               ].map((item, i) => (
                 <div key={i} style={{
                   background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)',
@@ -177,7 +178,7 @@ const RightSidebar = () => {
             >
               {msgImages.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '40px 0', color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>
-                  <div style={{ fontSize: 32, marginBottom: 8 }}>🖼️</div>
+                  <div style={{ fontSize: 32, marginBottom: 8 }}><Images /></div>
                   No shared media yet
                 </div>
               ) : (

@@ -36,8 +36,6 @@ export const ChatProvider = ({children})=>{
   try {
     const { data } = await axios.get("/api/messages/users");
 
-    console.log("SIDEBAR USERS:", data.users); // 👈 ADD THIS
-
     if (data.success) {
   setUsers(data.users || []);
   setUnseenMessages(data.unseenMessages || {});
@@ -70,19 +68,57 @@ export const ChatProvider = ({children})=>{
     }
 
     // fn to send msgs to selected usr
-    const sendMessage = async (messageData)=>{
-         try {
-          const { data } = await axios.post(`/api/messages/send/${selectedUser._id}` , messageData)
-          if(data.success){
-            setMessages((prevMessages)=> [...prevMessages, data.newMessage])
-        }  
-        else{
-              toast.error(data.message)
-        }
-         } catch (error) {
-            toast.error(error.message)
-         }
+    // const sendMessage = async (messageData)=>{
+    //      try {
+    //       console.log("🚀 SENDING:", messageData);
+
+    //       const { data } = await axios.post(`/api/messages/send/${selectedUser._id}` , messageData)
+    //       if(data.success){
+    //         setMessages((prevMessages)=> [...prevMessages, data.newMessage])
+    //     }  
+    //     else{
+    //           toast.error(data.message)
+    //     }
+    //      } catch (error) {
+    //         toast.error(error.message)
+    //      }
+    // }
+
+    const sendMessage = async (messageData) => {
+  try {
+
+    const { data } = await axios.post(
+      `/api/messages/send/${selectedUser._id}`,
+      messageData,
+      {
+        headers: {
+          "Content-Type": "application/json"
+        },
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity
+      }
+    );
+
+    if (data.success) {
+      setMessages((prev) => [...prev, data.newMessage]);
+    } else {
+      toast.error(data.message);
     }
+
+  } catch (error) {
+    console.log("❌ FULL ERROR:", error);
+
+    if (error.response) {
+      console.log("❌ SERVER ERROR:", error.response.data);
+    } else if (error.request) {
+      console.log("❌ NO RESPONSE (network issue)");
+    } else {
+      console.log("❌ ERROR:", error.message);
+    }
+
+    toast.error("Message failed to send");
+  }
+};
 
     // fn to subscribe to msgs for selected user
     const subscribeToMessages = async ()=>{
