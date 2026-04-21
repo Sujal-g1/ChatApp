@@ -47,7 +47,7 @@ export const AuthProvider = ({children}) => {
     if (data.success) {
       setAuthUser(data.userData);
       connectSocket(data.userData);
-      axios.defaults.headers.common["token"] = data.token;
+      axios.defaults.headers.common["Authorization"] = `Bearer ${data.token}`;
       setToken(data.token);
       localStorage.setItem("token", data.token);
       toast.success(data.message);
@@ -66,7 +66,7 @@ export const AuthProvider = ({children}) => {
         setToken(null)
         setAuthUser(null)
         setOnlineUsers([])
-         axios.defaults.headers.common["token"] = null;
+         delete axios.defaults.headers.common["Authorization"];
          toast.success("Logged out Successfully")
          socket?.disconnect();
     }
@@ -103,12 +103,27 @@ export const AuthProvider = ({children}) => {
         })
     }
 
-    useEffect(()=>{
-        if(token){
-            axios.defaults.headers.common["token"] = token;
-            checkAuth()
-        }
-    },[])
+    useEffect(() => {
+  if (token) {
+    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    checkAuth();
+  }
+}, [token]);
+
+
+useEffect(() => {
+  const interceptor = axios.interceptors.request.use((config) => {
+    const storedToken = localStorage.getItem("token");
+
+    if (storedToken) {
+      config.headers.Authorization = `Bearer ${storedToken}`;
+    }
+
+    return config;
+  });
+
+  return () => axios.interceptors.request.eject(interceptor);
+}, []);
 
     const value = {
         axios,
