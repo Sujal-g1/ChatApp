@@ -10,6 +10,8 @@ const RightSidebar = () => {
   const [msgImages, setMsgImages] = useState([])
   const [activeTab, setActiveTab] = useState('info')
 
+  console.log("SELECTED USER:", selectedUser)
+
   useEffect(() => {
     setMsgImages(messages.filter(m => m.image).map(m => m.image))
   }, [messages])
@@ -64,12 +66,28 @@ const RightSidebar = () => {
           )}
         </div>
 
-        <h3 style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>{selectedUser.fullName}</h3>
-        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', lineHeight: 1.5, maxWidth: 200, margin: '0 auto 12px' }}>
-          {selectedUser.bio || 'No bio yet'}
-        </p>
+       <h3 style={{ fontWeight: 700, fontSize: 16, marginBottom: 2 }}>
+  {selectedUser.fullName}
+</h3>
 
-        <div style={{
+
+{/* Zinglee ID */}
+<p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 8 }}>
+  {selectedUser.zingleeId}
+</p>
+
+{/* Bio */}
+{/* <p style={{
+  fontSize: 12,
+  color: 'rgba(255,255,255,0.45)',
+  lineHeight: 1.5,
+  maxWidth: 200,
+  margin: '0 auto 12px'
+}}>
+  {selectedUser.bio || 'No bio yet'}
+</p> */}
+
+        {/* <div style={{
           display: 'inline-flex', alignItems: 'center', gap: 6,
           background: onlineUsers.includes(selectedUser._id) ? 'rgba(74,222,128,0.1)' : 'rgba(255,255,255,0.05)',
           border: `1px solid ${onlineUsers.includes(selectedUser._id) ? 'rgba(74,222,128,0.3)' : 'rgba(255,255,255,0.1)'}`,
@@ -77,7 +95,7 @@ const RightSidebar = () => {
           color: onlineUsers.includes(selectedUser._id) ? '#4ade80' : 'rgba(255,255,255,0.4)',
         }}>
           {onlineUsers.includes(selectedUser._id) ? '● Online' : '○ Offline'}
-        </div>
+        </div> */}
 
         {/* Quick actions */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 16 }}>
@@ -203,7 +221,7 @@ const RightSidebar = () => {
             boxShadow: '0 4px 15px rgba(239,68,68,0.3)',
           }}
         >
-          🚪 Logout
+           Logout
         </motion.button>
       </div>
     </motion.div>

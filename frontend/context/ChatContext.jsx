@@ -39,8 +39,17 @@ export const ChatProvider = ({children})=>{
     console.log("SIDEBAR USERS:", data.users); // 👈 ADD THIS
 
     if (data.success) {
-      setUsers(data.users);
+  setUsers(data.users || []);
+  setUnseenMessages(data.unseenMessages || {});
+
+  // 🔥 FIX: refresh selectedUser reference
+  if (selectedUser) {
+    const updatedUser = data.users.find(u => u._id === selectedUser._id);
+    if (updatedUser) {
+      setSelectedUser(updatedUser);
     }
+  }
+}
 
   } catch (error) {
     toast.error(error.message);

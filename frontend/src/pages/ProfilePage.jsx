@@ -12,26 +12,29 @@ const ProfilePage = () => {
   const [selectedImg, setSelectedImg] = useState(null)
   const [name, setName] = useState(authUser?.fullName || "")
   const [bio, setBio]   = useState(authUser?.bio || "")
+  const [username, setUsername] = useState(authUser?.username || "")
+
   const navigate = useNavigate()
 
   useEffect(() => {
   if (authUser) {
     setName(authUser.fullName || "");
     setBio(authUser.bio || "");
+    setUsername(authUser.username || "");
   }
 }, [authUser]);
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!selectedImg) {
-      await updateProfile({ fullName: name, bio })
+      await updateProfile({ fullName: name, bio, username })
       navigate('/')
       return
     }
     const reader = new FileReader()
     reader.readAsDataURL(selectedImg)
     reader.onload = async () => {
-      await updateProfile({ profilePic: reader.result, fullName: name, bio })
+      await updateProfile({ profilePic: reader.result, fullName: name, bio, username })
       navigate('/')
     }
   }
@@ -114,6 +117,20 @@ const ProfilePage = () => {
             </div>
 
             <div>
+              <label style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 6, display: 'block' }}>
+               Username
+            </label>
+             <input
+                className="input-glass"
+                type="text"
+                placeholder="your_username"
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
               <label style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 6, display: 'block' }}>Bio</label>
               <textarea
                 className="input-glass"
@@ -186,12 +203,24 @@ const ProfilePage = () => {
             />
           </div>
 
+           {/* Username */}
+            <p style={{ fontSize: 12, color: 'var(--accent)' }}>
+             @{username || 'username'}
+            </p>
+
+            {/* Zinglee ID (unique, non-editable) */}
+            <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.3)' }}>
+             {authUser?.zingleeId}
+           </p>
+
+
           <div style={{ textAlign: 'center' }}>
             <p style={{ fontWeight: 600, fontSize: 16 }}>{name || 'Your Name'}</p>
             <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 4, maxWidth: 160, lineHeight: 1.5 }}>
               {bio || 'Your bio will appear here'}
             </p>
           </div>
+          
 
           <div style={{
             display: 'flex', alignItems: 'center', gap: 6,

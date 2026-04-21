@@ -8,7 +8,7 @@ import { io , userSocketMap } from "../server.js";
 export const getUserForSidebar = async (req, res) => {
   try {
     const user = await User.findById(req.user._id)
-      .populate("friends", "fullName profilePic zingleeId status");
+      .populate("friends", "fullName username bio profilePic zingleeId status");
 
     res.json({
       success: true,

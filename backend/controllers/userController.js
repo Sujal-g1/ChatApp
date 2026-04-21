@@ -209,25 +209,71 @@ export const checkAuth = ( req , res)=>{
 }
 
 // to update user profile details
-export const updateProfile = async(req , res)=>{
-    try{
-        const  { profilePic , bio , fullName} = req.body; 
-        const userId = req.user._id;
-        let updatedUser;
+// export const updateProfile = async(req , res)=>{
+//     try{
+//         const  { profilePic , bio , fullName} = req.body; 
+//         const userId = req.user._id;
+//         let updatedUser;
 
-        if(!profilePic){
-        updatedUser =  await User.findByIdAndUpdate(userId , {bio, fullName} , {new:true })
-        }
-        else{
-            const upload = await cloudinary.uploader.upload(profilePic);
+//         if(!profilePic){
+//         updatedUser =  await User.findByIdAndUpdate(userId , {bio, fullName} , {new:true })
+//         }
+//         else{
+//             const upload = await cloudinary.uploader.upload(profilePic);
 
-            updatedUser = await User.findByIdAndUpdate(userId , {profilePic : upload.secure_url , bio , fullName} , {new:true})
-        }
+//             updatedUser = await User.findByIdAndUpdate(userId , {profilePic : upload.secure_url , bio , fullName} , {new:true})
+//         }
 
-        res.json({success:true , user:updatedUser})
-    } 
-    catch(error){
-        console.log(error.message)
-        res.json({success:false , message:error.message})
+//         res.json({success:true , user:updatedUser})
+//     } 
+//     catch(error){
+//         console.log(error.message)
+//         res.json({success:false , message:error.message})
+//     }
+// }
+
+export const updateProfile = async (req, res) => {
+  try {
+    const { profilePic, bio, fullName, username } = req.body;
+    const userId = req.user._id;
+
+    const updateData = {};
+
+    if (bio !== undefined) updateData.bio = bio;
+    if (fullName !== undefined) updateData.fullName = fullName;
+
+    // 🔥 HANDLE USERNAME
+    if (username !== undefined) {
+      const cleanUsername = username.toLowerCase().trim();
+
+      const existing = await User.findOne({ username: cleanUsername });
+
+      if (existing && existing._id.toString() !== userId.toString()) {
+        return res.status(400).json({
+          success: false,
+          message: "Username already taken",
+        });
+      }
+
+      updateData.username = cleanUsername;
     }
-}
+
+    // 🔥 HANDLE IMAGE
+    if (profilePic) {
+      const upload = await cloudinary.uploader.upload(profilePic);
+      updateData.profilePic = upload.secure_url;
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      updateData,
+      { new: true }
+    );
+
+    res.json({ success: true, user: updatedUser });
+
+  } catch (error) {
+    console.log(error.message);
+    res.json({ success: false, message: error.message });
+  }
+};
