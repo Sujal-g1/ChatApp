@@ -5,33 +5,24 @@ import { io , userSocketMap } from "../server.js";
 
 
 // get all users except logged user
-export const getUserForSidebar = async(req,res)=>{
-     try{
-    const userId = req.user._id;
-    const filteredUsers = await User.find({_id:{$ne:userId}}).select("-password")
+export const getUserForSidebar = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id)
+      .populate("friends", "fullName profilePic zingleeId status");
 
-
-    //count no. of unseen msgs
-    const unseenMessages = {}
-    const promises = filteredUsers.map(async(user)=>{
-        const messages = await Message.find({senderId:user._id , receiverId:userId , seen:false})
-        if(messages.length > 0){
-            unseenMessages[user._id] = messages.length;
-        }
-    })
-    await Promise.all(promises);  
     res.json({
-    success: true,
-    users: filteredUsers,
-    unseenMessages
-}) 
-     }
-     catch(error){
-        console.log(error.message)
-        res.json({success:false , message:error.message})
+      success: true,
+      users: user.friends,
+      unseenMessages: {}
+    });
 
-     }
-}
+  } catch (error) {
+    console.log(error.message);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+
 
 // get all messages for selected users
 export const getMessages = async(req, res)=>{

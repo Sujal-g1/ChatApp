@@ -1,10 +1,10 @@
-import React, { useContext, useState } from 'react'
+import React, { useContext, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { AuthContext } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
 import { ZingleeeLogo } from './LandingPage'
-// import assets from '../assets/assets'
+import assets from '../assets/assets'
 
 const ProfilePage = () => {
   const { authUser, updateProfile } = useContext(AuthContext)
@@ -13,6 +13,13 @@ const ProfilePage = () => {
   const [name, setName] = useState(authUser?.fullName || "")
   const [bio, setBio]   = useState(authUser?.bio || "")
   const navigate = useNavigate()
+
+  useEffect(() => {
+  if (authUser) {
+    setName(authUser.fullName || "");
+    setBio(authUser.bio || "");
+  }
+}, [authUser]);
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -28,12 +35,17 @@ const ProfilePage = () => {
       navigate('/')
     }
   }
+  if (!authUser) {
+  return <div style={{ color: "white", padding: 50 }}>Loading...</div>;
+}
 
   return (
     <div style={{
       minHeight: '100vh', display: 'flex', alignItems: 'center',
       justifyContent: 'center', padding: '24px',
     }}>
+
+      
       <motion.div
         initial={{ opacity: 0, y: 30, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}

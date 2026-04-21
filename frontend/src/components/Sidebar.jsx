@@ -6,21 +6,60 @@ import { AuthContext } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
 import { ZingleeeLogo } from '../pages/LandingPage'
 import assets from '../assets/assets'
+import axios from "axios";
+import toast from "react-hot-toast";
 
 const Sidebar = () => {
-  const { getUsers, users, selectedUser, setSelectedUser, unseenMessages, setUnseenMessages } = useContext(ChatContext)
+  const { getUsers, users, selectedUser, setSelectedUser, unseenMessages, setUnseenMessages, getRequests, requests, respondRequest  } = useContext(ChatContext)
   const { logout, onlineUsers, authUser } = useContext(AuthContext)
   const { theme, setTheme, THEMES } = useTheme()
   const [searchInput, setSearchInput] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState("friends");
   const [showThemes, setShowThemes] = useState(false)
+  const [searchResults, setSearchResults] = useState([]);
+  const [sentRequests, setSentRequests] = useState([]);
+
   const navigate = useNavigate()
 
   const filteredUsers = searchInput
     ? users.filter(u => u.fullName.toLowerCase().includes(searchInput.toLowerCase()))
     : users
 
-  useEffect(() => { getUsers() }, [onlineUsers])
+  useEffect(() => {
+  getUsers();
+  getRequests();
+}, [onlineUsers]);
+
+// search users 
+const searchUsers = async (query) => {
+  if (!query) {
+    setSearchResults([]);
+    return;
+  }
+
+  try {
+    const { data } = await axios.get(`/api/auth/search?q=${query}`);
+    if (data.success) {
+      setSearchResults(data.users);
+    }
+  } catch (error) {
+    toast.error(error.message);
+  }
+};
+
+// send req
+const sendRequest = async (receiverId) => {
+  try {
+    await axios.post("/api/friends/request", { receiverId });
+
+    setSentRequests(prev => [...prev, receiverId]);
+
+    toast.success("Request sent");
+  } catch (error) {
+    toast.error(error.response?.data?.message || error.message);
+  }
+};
 
   return (
     <motion.div
@@ -139,7 +178,10 @@ const Sidebar = () => {
             type="text"
             placeholder="Search users..."
             value={searchInput}
-            onChange={e => setSearchInput(e.target.value)}
+           onChange={(e) => {
+          setSearchInput(e.target.value);
+          searchUsers(e.target.value);
+          }}
             style={{
               flex: 1, background: 'none', border: 'none', outline: 'none',
               color: 'white', fontFamily: 'Outfit, sans-serif', fontSize: 13,
@@ -153,18 +195,97 @@ const Sidebar = () => {
           )}
         </div>
 
+        {/* switch tab */}
+        {/* <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+       {["friends", "requests", "communities"].map(tab => (
+         <button
+        key={tab}
+        onClick={() => setActiveTab(tab)}
+        style={{
+        flex: 1,
+        padding: "6px",
+        borderRadius: 8,
+        background: activeTab === tab ? "var(--accent)" : "rgba(255,255,255,0.05)",
+        color: "white",
+        fontSize: 12,
+        cursor: "pointer"
+         }}
+       >
+      {tab}
+    </button>
+  ))}
+</div> */}
+
         <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 12, marginBottom: 2, textTransform: 'uppercase', letterSpacing: '0.08em', paddingLeft: 4 }}>
           Messages
         </p>
       </div>
 
-      {/* User List */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '0 8px 12px' }}>
-        <AnimatePresence>
-          {filteredUsers.length === 0 ? (
+      {/* change tab -> friends , req , comm */}
+      <div style={{ display: 'flex', gap: 8, padding: '0 12px 8px' }}>
+  {["friends", "requests", "communities"].map(tab => (
+    <button
+      key={tab}
+      onClick={() => setActiveTab(tab)}
+      style={{
+        flex: 1,
+        padding: "6px",
+        borderRadius: 8,
+        background: activeTab === tab ? "var(--accent)" : "rgba(255,255,255,0.05)",
+        color: "white",
+        fontSize: 12,
+        cursor: "pointer"
+      }}
+    >
+      {tab}
+    </button>
+  ))}
+</div>
+
+
+<div style={{ flex: 1, overflowY: 'auto', padding: '0 8px 12px' }}>
+  <AnimatePresence>
+
+    {searchInput ? (
+      searchResults.length === 0 ? (
+        <div style={{ textAlign: "center", padding: 20 }}>
+          No users found
+        </div>
+      ) : (
+        searchResults.map((user) => (
+          <div key={user._id} className="user-item" style={{ justifyContent: "space-between" }}>
+            <div>
+              <p>{user.fullName}</p>
+              <p style={{ fontSize: 12, opacity: 0.6 }}>
+                {user.zingleeId}
+              </p>
+            </div>
+
+              <button
+             disabled={sentRequests.includes(user._id)}
+            onClick={() => sendRequest(user._id)}
+           style={{
+            background: sentRequests.includes(user._id) ? "gray" : "var(--accent)",
+           border: "none",
+           padding: "4px 10px",
+            borderRadius: 6,
+             cursor: "pointer",
+           color: "white"
+             }}
+            >
+         {sentRequests.includes(user._id) ? "Requested" : "Add"}
+        </button>
+          </div>
+        ))
+      )
+    ) : (
+      <>
+        {/* 👥 FRIENDS TAB */}
+        {activeTab === "friends" && (
+          filteredUsers.length === 0 ? (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               style={{ textAlign: 'center', padding: '40px 20px', color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>
-              {searchInput ? 'No users found' : 'No conversations yet'}
+              No friends yet
             </motion.div>
           ) : (
             filteredUsers.map((user, idx) => (
@@ -179,45 +300,53 @@ const Sidebar = () => {
                   setUnseenMessages(prev => ({ ...prev, [user._id]: 0 }))
                 }}
               >
-                {/* Avatar with online indicator */}
-                <div style={{ position: 'relative', flexShrink: 0 }}>
-                  <img
-                    src={user?.profilePic || assets.avatar_icon}
-                    alt=""
-                    style={{ width: 42, height: 42, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border-color)' }}
-                  />
-                  {onlineUsers.includes(user._id) && (
-                    <span style={{
-                      position: 'absolute', bottom: 1, right: 1,
-                      width: 10, height: 10, borderRadius: '50%',
-                      background: '#4ade80', border: '2px solid rgba(0,0,0,0.5)',
-                      boxShadow: '0 0 6px #4ade80',
-                    }} />
-                  )}
-                </div>
-
-                {/* Name & status */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontWeight: 500, fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {user.fullName}
-                  </p>
-                  <p style={{ fontSize: 12, color: onlineUsers.includes(user._id) ? '#4ade80' : 'rgba(255,255,255,0.35)' }}>
-                    {onlineUsers.includes(user._id) ? 'Online' : 'Offline'}
-                  </p>
-                </div>
-
-                {/* Unseen badge */}
-                {unseenMessages[user._id] > 0 && (
-                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
-                    className="unseen-badge">
-                    {unseenMessages[user._id]}
-                  </motion.div>
-                )}
+                <img
+                  src={user?.profilePic || assets.avatar_icon}
+                  alt=""
+                  style={{ width: 42, height: 42, borderRadius: '50%' }}
+                />
+                <p>{user.fullName}</p>
               </motion.div>
             ))
-          )}
-        </AnimatePresence>
-      </div>
+          )
+        )}
+
+        {/* 📩 REQUESTS TAB */}
+        {activeTab === "requests" && (
+          requests.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: 20 }}>
+              No pending requests
+            </div>
+          ) : (
+            requests.map((req) => (
+              <div key={req._id} className="user-item" style={{ justifyContent: "space-between" }}>
+                <div>
+                  <p>{req.sender.fullName}</p>
+                  <p style={{ fontSize: 12, opacity: 0.6 }}>
+                    {req.sender.zingleeId}
+                  </p>
+                </div>
+
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button onClick={() => respondRequest(req._id, "accept")} style={{ background: "#22c55e" }}>✓</button>
+                  <button onClick={() => respondRequest(req._id, "reject")} style={{ background: "#ef4444" }}>✕</button>
+                </div>
+              </div>
+            ))
+          )
+        )}
+
+        {/* 🌐 COMMUNITIES TAB */}
+        {activeTab === "communities" && (
+          <div style={{ padding: 12 }}>
+            <p style={{ fontSize: 13 }}>Communities coming soon</p>
+          </div>
+        )}
+      </>
+    )}
+
+  </AnimatePresence>
+</div>
 
       {/* Bottom — auth user */}
       <div style={{

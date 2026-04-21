@@ -234,56 +234,38 @@ export const getPendingRequests = async (req, res) => {
 export const respondToRequest = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { requestId, action } = req.body; // action = "accept" or "reject"
+    const { requestId, action } = req.body;
 
     const request = await FriendRequest.findById(requestId);
-
     if (!request) {
-      return res.status(404).json({
-        success: false,
-        message: "Request not found",
-      });
+      return res.status(404).json({ success: false, message: "Request not found" });
     }
 
-    // ❌ Only receiver can respond
     if (request.receiver.toString() !== userId.toString()) {
-      return res.status(403).json({
-        success: false,
-        message: "Not authorized",
-      });
+      return res.status(403).json({ success: false, message: "Not authorized" });
     }
 
-    // ❌ Already handled
     if (request.status !== "pending") {
-      return res.status(400).json({
-        success: false,
-        message: "Request already handled",
-      });
+      return res.status(400).json({ success: false, message: "Request already handled" });
     }
 
-    // ✅ ACCEPT
     if (action === "accept") {
       request.status = "accepted";
 
-      await User.findByIdAndUpdate(request.sender, {
-        $addToSet: { friends: request.receiver },
+      const senderId = new mongoose.Types.ObjectId(request.sender);
+      const receiverId = new mongoose.Types.ObjectId(request.receiver);
+
+      await User.findByIdAndUpdate(senderId, {
+        $addToSet: { friends: receiverId },
       });
 
-      await User.findByIdAndUpdate(request.receiver, {
-        $addToSet: { friends: request.sender },
+      await User.findByIdAndUpdate(receiverId, {
+        $addToSet: { friends: senderId },
       });
-    }
-
-    // ❌ REJECT
-    else if (action === "reject") {
+    } else if (action === "reject") {
       request.status = "rejected";
-    }
-
-    else {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid action",
-      });
+    } else {
+      return res.status(400).json({ success: false, message: "Invalid action" });
     }
 
     await request.save();
@@ -295,9 +277,6 @@ export const respondToRequest = async (req, res) => {
 
   } catch (error) {
     console.log(error.message);
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };

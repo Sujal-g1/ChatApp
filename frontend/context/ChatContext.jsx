@@ -11,25 +11,41 @@ export const ChatProvider = ({children})=>{
     const [users , setUsers] = useState([]);
     const [selectedUser , setSelectedUser] = useState(null);
     const [unseenMessages , setUnseenMessages] = useState({});
+    const [requests, setRequests] = useState([]);
     // key value-> userid and no. of msgs
 
     const {socket, axios} = useContext(AuthContext);
 
 
     //fn to get all users for sidebar
-    const getUsers = async()=>{
-        try {
-        const { data } = await axios.get("/api/messages/users")
-        console.log("USERS API:", data);
-        if(data.success){
-            setUsers(data.users)
-            setUnseenMessages(data.unseenMessages)
+    // const getUsers = async()=>{
+    //     try {
+    //     const { data } = await axios.get("/api/messages/users")
+    //     console.log("USERS API:", data);
+    //     if(data.success){
+    //         setUsers(data.users)
+    //         setUnseenMessages(data.unseenMessages)
 
-        }
-        } catch (error) {
-            toast.error(error.message)
-        }
+    //     }
+    //     } catch (error) {
+    //         toast.error(error.message)
+    //     }
+    // }
+
+    const getUsers = async () => {
+  try {
+    const { data } = await axios.get("/api/messages/users");
+
+    console.log("SIDEBAR USERS:", data.users); // 👈 ADD THIS
+
+    if (data.success) {
+      setUsers(data.users);
     }
+
+  } catch (error) {
+    toast.error(error.message);
+  }
+};
 
      
     // fn to get msgs for selected user
@@ -81,6 +97,31 @@ const unsubscribeFromMessages = async ()=>{
         if(socket) socket.off("newMessage");
     }
 
+    // fn to get req
+    const getRequests = async () => {
+  try {
+    const { data } = await axios.get("/api/friends/pending");
+    if (data.success) {
+      setRequests(data.requests);
+    }
+  } catch (error) {
+    toast.error(error.message);
+  }
+};
+
+
+    //fn to respond
+    const respondRequest = async (requestId, action) => {
+  try {
+    await axios.post("/api/friends/respond", { requestId, action });
+    getRequests(); // refresh
+    getUsers(); // update friends list
+  } catch (error) {
+    toast.error(error.message);
+  }
+};
+
+
     useEffect(()=>{
         subscribeToMessages();
         return ()=> unsubscribeFromMessages();
@@ -95,7 +136,10 @@ const unsubscribeFromMessages = async ()=>{
         sendMessage,
         setSelectedUser,
         unseenMessages,
-        setUnseenMessages
+        setUnseenMessages,
+        requests,
+        getRequests,
+        respondRequest
     }
 
     return (<ChatContext.Provider value={value}>
