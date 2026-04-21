@@ -141,10 +141,9 @@ Zingleee changes that with:
 
 ---
 
-## 🖥️ Live App
+## 🖥️ Live 
+https://Zingleee.vercel.app  
 
-- 🌐 Frontend: https://Zingleee.vercel.app  
-- 🔧 Backend: https://Zingleee-backend.onrender.com  
 
 👉 **Use Desktop for best experience**
 
