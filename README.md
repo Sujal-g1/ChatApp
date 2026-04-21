@@ -1,4 +1,4 @@
-<h1 align="center">💬 Zinglee</h1>
+<h1 align="center">💬 Zingleee</h1>
 
 <p align="center">
   Private, Permission-Based Real-Time Chat Platform 🚀
@@ -15,15 +15,15 @@
 ---
 
 > 💡 **Try it, explore it, and share your thoughts!**  
-> Your feedback helps shape Zinglee 🚀
+> Your feedback helps shape Zingleee 🚀
 
 ---
 
-## 🧠 What is Zinglee?
+## 🧠 What is Zingleee?
 
-Zinglee is a **real-time chat application built around privacy and control**.
+Zingleee is a **real-time chat application built around privacy and control**.
 
-Unlike traditional chat apps where anyone can message or call you, Zinglee introduces a:
+Unlike traditional chat apps where anyone can message or call you, Zingleee introduces a:
 
 > 🔐 **Permission-first communication model**
 
@@ -34,14 +34,14 @@ Users decide:
 
 ---
 
-## 🚀 What Zinglee Solves
+## 🚀 What Zingleee Solves
 
 Most apps allow:
 - ❌ Unwanted messages  
 - ❌ Random calls  
 - ❌ Spam interactions  
 
-Zinglee changes that with:
+Zingleee changes that with:
 
 ### 🔐 Permission-Based Communication
 - Messaging only between allowed users  
@@ -67,7 +67,7 @@ Zinglee changes that with:
 ---
 
 ### 🤝 Friend System
-- Unique **Zinglee ID** for each user  
+- Unique **Zingleee ID** for each user  
 - Search users using ID  
 - Send / accept friend requests  
 - Only friends can chat  
@@ -112,10 +112,10 @@ Zinglee changes that with:
 
 1. 🔐 **Sign Up / Login**
    - Create an account or login  
-   - You will receive your unique **Zinglee ID**
+   - You will receive your unique **Zingleee ID**
 
 2. 🔎 **Find Friends**
-   - Search users using their Zinglee ID  
+   - Search users using their Zingleee ID  
 
 3. 🤝 **Send Friend Request**
    - Add them as a friend  
@@ -135,15 +135,15 @@ Zinglee changes that with:
 ## ⚠️ Important Usage Note
 
 > 🚨 **Desktop Recommended (Important)**  
-> Zinglee is currently **optimized for Desktop use only**.  
+> Zingleee is currently **optimized for Desktop use only**.  
 > Mobile UI is not fully responsive yet and may break or feel inconsistent.
 
 ---
 
 ## 🖥️ Live App
 
-- 🌐 Frontend: https://zinglee.vercel.app  
-- 🔧 Backend: https://zinglee-backend.onrender.com  
+- 🌐 Frontend: https://Zingleee.vercel.app  
+- 🔧 Backend: https://Zingleee-backend.onrender.com  
 
 👉 **Use Desktop for best experience**
 
@@ -160,7 +160,7 @@ Zinglee changes that with:
 
 ## 🧠 Architecture Overview
 
-Zinglee follows a **real-time client-server architecture**:
+Zingleee follows a **real-time client-server architecture**:
 
 Frontend (React + Vite)
 ↓
@@ -223,7 +223,7 @@ backend/
 
 ## 🚧 Future Improvements & Vision
 
-Zinglee is evolving into a **complete communication ecosystem**.
+Zingleee is evolving into a **complete communication ecosystem**.
 
 ---
 
@@ -271,10 +271,10 @@ Zinglee is evolving into a **complete communication ecosystem**.
 
 ---
 
-## 🔒 Why Zinglee?
+## 🔒 Why Zingleee?
 
 Most chat apps optimize for **engagement**.  
-Zinglee optimizes for **control and privacy**.
+Zingleee optimizes for **control and privacy**.
 
 ✔ No unwanted communication  
 ✔ No random calls  
@@ -312,7 +312,7 @@ Mobile Support: ❌ Pending
 
 ## 🚀 Vision
 
-Zinglee aims to become a **secure, permission-based communication platform** combining:
+Zingleee aims to become a **secure, permission-based communication platform** combining:
 
 - Messaging  
 - Communities  
