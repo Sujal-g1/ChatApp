@@ -155,7 +155,7 @@ export const firebaseLogin = async (req, res) => {
 };
 
 
-// searchj
+// search
 export const searchUsers = async (req, res) => {
   try {
     const query = req.query.q?.toLowerCase().trim();
@@ -199,6 +199,7 @@ export const searchUsers = async (req, res) => {
     });
   }
 };
+
 
 
 

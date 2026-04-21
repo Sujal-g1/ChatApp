@@ -17,4 +17,5 @@ userRouter.get("/check" , protectRoute , checkAuth);
 userRouter.get("/search", protectRoute, searchUsers);
 
 
+
 export default userRouter;

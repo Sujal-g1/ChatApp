@@ -81,6 +81,155 @@ export const sendFriendRequest = async (req, res) => {
 };
 
 
+// block user
+export const blockUser = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { targetUserId } = req.body;
+
+    if (userId.toString() === targetUserId) {
+      return res.status(400).json({
+        success: false,
+        message: "You cannot block yourself",
+      });
+    }
+
+    // remove from friends (both sides)
+    await User.findByIdAndUpdate(userId, {
+      $pull: { friends: targetUserId }
+    });
+
+    await User.findByIdAndUpdate(targetUserId, {
+      $pull: { friends: userId }
+    });
+
+    // add to blocked list
+    await User.findByIdAndUpdate(userId, {
+      $addToSet: { blockedUsers: targetUserId }
+    });
+
+    res.json({
+      success: true,
+      message: "User blocked successfully",
+    });
+
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// remove friend
+export const removeFriend = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { targetUserId } = req.body;
+
+    if (userId.toString() === targetUserId) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid action",
+      });
+    }
+
+    // remove from both users
+    await User.findByIdAndUpdate(userId, {
+      $pull: { friends: targetUserId }
+    });
+
+    await User.findByIdAndUpdate(targetUserId, {
+      $pull: { friends: userId }
+    });
+
+    res.json({
+      success: true,
+      message: "Friend removed successfully",
+    });
+
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+//cancel request
+export const cancelRequest = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { requestId } = req.body;
+
+    const request = await FriendRequest.findById(requestId);
+
+    if (!request) {
+      return res.status(404).json({
+        success: false,
+        message: "Request not found",
+      });
+    }
+
+    // only sender can cancel
+    if (request.sender.toString() !== userId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized",
+      });
+    }
+
+    if (request.status !== "pending") {
+      return res.status(400).json({
+        success: false,
+        message: "Request already handled",
+      });
+    }
+
+    request.status = "rejected";
+    await request.save();
+
+    res.json({
+      success: true,
+      message: "Request cancelled",
+    });
+
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+
+// cancel pending request
+export const getPendingRequests = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const requests = await FriendRequest.find({
+      receiver: userId,
+      status: "pending"
+    }).populate("sender", "username profilePic zingleeId");
+
+    res.json({
+      success: true,
+      requests
+    });
+
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 // req response
 export const respondToRequest = async (req, res) => {
   try {
