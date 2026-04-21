@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import {  AnimatePresence } from 'framer-motion'
 import { Mail, Lock, User, FileText, ArrowRight, ArrowLeft } from 'lucide-react'
 import { AuthContext } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
@@ -13,6 +13,7 @@ const LoginPage = () => {
   const [fullName, setFullName]         = useState("")
   const [email, setEmail]               = useState("")
   const [password, setPassword]         = useState("")
+  const [username, setUsername]         = useState("");
   const [bio, setBio]                   = useState("")
   const [isDataSubmitted, setIsDataSubmitted] = useState(false)
   const [showPwd, setShowPwd]           = useState(false)
@@ -26,7 +27,7 @@ const LoginPage = () => {
       setIsDataSubmitted(true)
       return
     }
-    login(currentState === "Sign up" ? "signup" : "login", { fullName, email, password, bio })
+    login(currentState === "Sign up" ? "signup" : "login", { fullName, email, password, bio, username })
   }
 
   const switchState = (state) => {
@@ -129,6 +130,18 @@ const LoginPage = () => {
                       value={email} onChange={e => setEmail(e.target.value)}
                       required style={{ paddingLeft: 42 }} />
                   </div>
+
+                  <div style={{ position: 'relative' }}>
+                 <User size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
+                  <input
+                  className="input-glass"
+                    type="text"
+                   placeholder="Username"
+                    value={username}
+                   onChange={e => setUsername(e.target.value)}
+                       required
+                  style={{ paddingLeft: 42 }}
+                  /></div>
 
                   <div style={{ position: 'relative' }}>
                     <Lock size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
