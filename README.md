@@ -1,81 +1,166 @@
-# 💬 Zinglee — Private, Permission-Based Chat
+<h1 align="center">💬 Zinglee</h1>
+
+<p align="center">
+  Private, Permission-Based Real-Time Chat Platform 🚀
+</p>
+
+<p align="center">
+  <b>Discord-style control + WhatsApp simplicity + modern UI</b>
+</p>
+
+<p align="center">
+  ⚡ Real-Time • 🔐 Privacy First • 🎤 Voice Enabled • 🎨 Modern UI
+</p>
+
+---
+
+> 💡 **Try it, explore it, and share your thoughts!**  
+> Your feedback helps shape Zinglee 🚀
+
+---
+
+## 🧠 What is Zinglee?
 
 Zinglee is a **real-time chat application built around privacy and control**.
 
-Unlike traditional chat apps where anyone can message or call you once they have your contact, Zinglee introduces a **permission-first communication model** — where users decide **who can interact with them and how**.
+Unlike traditional chat apps where anyone can message or call you, Zinglee introduces a:
 
-> 💡 Think: **Discord-style communication + WhatsApp simplicity + stronger privacy controls**
+> 🔐 **Permission-first communication model**
+
+Users decide:
+- Who can message them  
+- Who can interact with them  
+- (Future) Who can call them  
 
 ---
 
-## 🚀 What Zinglee Actually Does
-
-Zinglee is not just a chat app.
-
-It is designed to solve a real problem:
-
-👉 **Uncontrolled communication**
+## 🚀 What Zinglee Solves
 
 Most apps allow:
-- unsolicited messages  
-- random calls  
-- spam or unwanted interaction  
+- ❌ Unwanted messages  
+- ❌ Random calls  
+- ❌ Spam interactions  
 
-Zinglee changes that by introducing:
+Zinglee changes that with:
 
 ### 🔐 Permission-Based Communication
-- Users must be **allowed** before interacting
-- Messaging is controlled
-- Future: calls require explicit approval
+- Messaging only between allowed users  
+- Friend-based interaction system  
+- Future: request-to-call system  
 
 ---
 
-## ✨ Core Features
+## ✨ Core Features (Implemented)
 
 ### 🔐 Authentication System
-- Email & Password login
-- Google Sign-In (Firebase)
-- Secure JWT-based sessions
+- Email & Password login  
+- Google Sign-In (Firebase)  
+- Secure JWT-based sessions  
 
 ---
 
-### 💬 Real-Time Messaging Engine
-- Instant messaging using WebSockets (Socket.io)
-- Bi-directional communication (no refresh needed)
-- Live message updates
+### 💬 Real-Time Chat
+- Instant messaging using Socket.IO  
+- Live updates (no refresh needed)  
+- Seen / unseen message tracking  
+
+---
+
+### 🤝 Friend System
+- Unique **Zinglee ID** for each user  
+- Search users using ID  
+- Send / accept friend requests  
+- Only friends can chat  
+
+---
+
+### 🎤 Voice Messaging (Custom Built)
+- Record → Preview → Send / Cancel  
+- No default browser audio UI  
+- Custom audio message bubbles  
+- Play / Pause toggle  
+- Only one audio plays at a time  
+
+---
+
+### 🖼️ Media Sharing
+- Send images instantly  
+- Stored using Cloudinary  
 
 ---
 
 ### 🟢 Presence System
-- See who is **online/offline in real time**
-- Powered by socket connection mapping
-
----
-
-### 👤 User Identity & Profiles
-- Profile image upload (Cloudinary)
-- Bio & display name
-- Identity tied to secure backend
+- Real-time online / offline status  
+- Socket-based tracking  
 
 ---
 
 ### 🔔 Smart Message Tracking
-- Unseen message count per user
-- Auto-mark messages as seen
-- Real-time updates
+- Unseen message count per user  
+- Auto mark messages as seen  
 
 ---
 
 ### 🎨 Modern UI System
-- Glassmorphism design
-- Multiple dynamic themes
-- Smooth animations using Framer Motion
+- Glassmorphism + gradient design  
+- Smooth animations (Framer Motion)  
+- Clean chat bubbles (text, image, audio)  
 
 ---
 
-## 🧠 How It Works (Architecture)
+## 🧭 How to Use
 
-Zinglee follows a **client-server real-time architecture**:
+1. 🔐 **Sign Up / Login**
+   - Create an account or login  
+   - You will receive your unique **Zinglee ID**
+
+2. 🔎 **Find Friends**
+   - Search users using their Zinglee ID  
+
+3. 🤝 **Send Friend Request**
+   - Add them as a friend  
+   - Once accepted, you can chat  
+
+4. 💬 **Start Chatting**
+   - Send messages  
+   - Share images  
+   - Send voice messages 🎤  
+
+---
+
+> 💡 Your friends must sign up to connect with you.
+
+---
+
+## ⚠️ Important Usage Note
+
+> 🚨 **Desktop Recommended (Important)**  
+> Zinglee is currently **optimized for Desktop use only**.  
+> Mobile UI is not fully responsive yet and may break or feel inconsistent.
+
+---
+
+## 🖥️ Live App
+
+- 🌐 Frontend: https://zinglee.vercel.app  
+- 🔧 Backend: https://zinglee-backend.onrender.com  
+
+👉 **Use Desktop for best experience**
+
+---
+
+## ⚠️ Mobile Limitations
+
+- Chat layout and sidebars  
+- Voice recording UI  
+- Audio playback alignment  
+- Some animations & interactions  
+
+---
+
+## 🧠 Architecture Overview
+
+Zinglee follows a **real-time client-server architecture**:
 
 Frontend (React + Vite)
 ↓
@@ -85,31 +170,17 @@ Backend (Node + Express)
 ↓
 MongoDB (Database)
 ↓
-Firebase (Auth verification)
-
+Firebase (Auth)
 
 
 ---
 
-### 🔄 Flow Example (Google Login)
-
-1. User clicks **Google Sign-In**
-2. Firebase authenticates user
-3. Frontend receives **ID Token**
-4. Token is sent to backend
-5. Backend verifies token using Firebase Admin SDK
-6. User is created/fetched in MongoDB
-7. JWT is generated
-8. User is logged in
-
----
-
-### 💬 Flow Example (Messaging)
+### 🔄 Flow Example (Messaging)
 
 1. User sends message  
-2. Backend stores message in MongoDB  
-3. Socket emits message to receiver  
-4. Receiver UI updates instantly  
+2. Backend stores in MongoDB  
+3. Socket emits to receiver  
+4. Receiver gets message instantly  
 5. Message marked as seen  
 
 ---
@@ -117,102 +188,86 @@ Firebase (Auth verification)
 ## 🛠️ Tech Stack
 
 ### 🎨 Frontend
-- React (Vite)
-- Context API
-- Axios
-- Socket.io Client
-- Firebase SDK
-- Framer Motion
+- React (Vite)  
+- Context API  
+- Axios  
+- Socket.io Client  
+- Firebase SDK  
+- Framer Motion  
+- Lucide React  
+
+---
 
 ### ⚙️ Backend
-- Node.js + Express
-- MongoDB + Mongoose
-- Socket.io
-- Firebase Admin SDK
-- JWT Authentication
-- Cloudinary
+- Node.js + Express  
+- MongoDB + Mongoose  
+- Socket.IO  
+- Firebase Admin SDK  
+- JWT Authentication  
+- Cloudinary  
 
 ---
 
 ## 📂 Project Structure
-ChatApp/
-│
-├── frontend/ # React client
-├── backend/ # Express API + Socket server
-│ ├── controllers/
-│ ├── models/
-│ ├── routes/
-│ ├── middleware/
-│ └── config/
+
+frontend/
+backend/
+├── controllers/
+├── models/
+├── routes/
+├── middleware/
+└── config/
 
 
 ---
 
----
+## 🚧 Future Improvements & Vision
 
-## 🌍 Live App
-
-- 🌐 Frontend: https://zinglee.vercel.app  
-- 🔧 Backend: https://zinglee-backend.onrender.com  
+Zinglee is evolving into a **complete communication ecosystem**.
 
 ---
 
-## 🚀 Future Improvements & Vision
-
-Zinglee is evolving into a **secure, permission-based communication platform**, inspired by Discord but designed to stay simple.
+### 🧑‍🤝‍🧑 Communities (Build Hub)
+- Public & Private communities  
+- Join via unique codes  
+- Community chat system  
+- Central hub UI  
 
 ---
 
-### 📞 Audio & Video Calling (Permission-Based)
-- 1:1 audio & video calls
-- Request-to-call system (accept / decline)
-- No direct calling without consent
-- WebRTC-based implementation
+### 📞 Audio & Video Calling
+- Permission-based calling  
+- Request → Accept / Decline flow  
+- WebRTC integration  
 
 ---
 
 ### 🔐 Advanced Privacy Controls
-- Control who can message you
-- Control who can call you
-- Block / restrict users
-- Session & device management
-
----
-
-### 🧑‍🤝‍🧑 Social Layer
-- Friend request system
-- Presence states (Online, Idle, DND)
-- Private vs public profiles
-
----
-
-### 🏠 Rooms & Channels (Discord-Inspired)
-- Chat rooms / groups
-- Topic-based channels
-- Lightweight server structure
-- Role-based permissions
+- Control who can message  
+- Control who can call  
+- Block / restrict users  
 
 ---
 
 ### 💬 Messaging Enhancements
-- Reactions (👍 ❤️ 😂)
-- Replies / threads
-- Typing indicators
-- Message editing
+- Reactions (👍 ❤️ 😂)  
+- Replies / threads  
+- Typing indicators  
+- Message editing  
 
 ---
 
-### 📁 Media & File Sharing
-- File uploads
-- Media previews
-- Optimized storage
+### 📱 Mobile Support
+- Fully responsive UI  
+- Optimized touch interactions  
+- Improved voice recording UX  
 
 ---
 
-### 🔔 Notifications
-- Real-time alerts
-- Mentions (@user)
-- Mute controls
+### 🔊 Voice System Upgrade
+- Real waveform visualization  
+- Audio progress bar  
+- Playback speed control  
 
 ---
 
@@ -236,6 +291,33 @@ GitHub: https://github.com/Sujal-g1
 
 ## ⭐ Support
 
-If you like this project, give it a ⭐ on GitHub!
+If you like this project:
+- Star ⭐ the repo  
+- Share it 🚀  
+- Give feedback 💡  
 
+---
+
+## 📌 Status
+
+Core Chat System: ✅ Done
+Voice Messaging: ✅ Done
+Friend System: ✅ Done
+UI/UX: 🔄 Improving
+Communities Feature: 🔄 Planned
+Mobile Support: ❌ Pending
+
+
+---
+
+## 🚀 Vision
+
+Zinglee aims to become a **secure, permission-based communication platform** combining:
+
+- Messaging  
+- Communities  
+- Media sharing  
+- Real-time interaction  
+
+All within a **fast, modern, and clean UI**.
 
