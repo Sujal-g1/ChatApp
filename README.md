@@ -49,6 +49,25 @@ Zingleee changes that with:
 - Future: request-to-call system  
 
 ---
+## 🧭 How to Use
+
+1. 🔐 **Sign Up / Login**
+   - Create an account or login  
+   - You will receive your unique **Zingleee ID**
+
+2. 🔎 **Find Friends**
+   - Search users using their Zingleee ID  
+
+3. 🤝 **Send Friend Request**
+   - Add them as a friend  
+   - Once accepted, you can chat  
+
+4. 💬 **Start Chatting**
+   - Send messages  
+   - Share images  
+   - Send voice messages 🎤  
+
+---
 
 ## ✨ Core Features (Implemented)
 
@@ -108,25 +127,7 @@ Zingleee changes that with:
 
 ---
 
-## 🧭 How to Use
 
-1. 🔐 **Sign Up / Login**
-   - Create an account or login  
-   - You will receive your unique **Zingleee ID**
-
-2. 🔎 **Find Friends**
-   - Search users using their Zingleee ID  
-
-3. 🤝 **Send Friend Request**
-   - Add them as a friend  
-   - Once accepted, you can chat  
-
-4. 💬 **Start Chatting**
-   - Send messages  
-   - Share images  
-   - Send voice messages 🎤  
-
----
 
 > 💡 Your friends must sign up to connect with you.
 
