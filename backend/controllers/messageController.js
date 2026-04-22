@@ -82,6 +82,22 @@ export const sendMessage = async (req, res) => {
       });
     }
 
+    const receiver = await User.findById(receiverId);
+
+if (receiver.blockedUsers.includes(senderId)) {
+  return res.status(403).json({
+    success: false,
+    message: "You are blocked by this user"
+  });
+}
+
+if (sender.blockedUsers.includes(receiverId)) {
+  return res.status(403).json({
+    success: false,
+    message: "You blocked this user"
+  });
+}
+
     // 📷 handle image upload
     let imageUrl;
     if (image) {

@@ -19,6 +19,12 @@ const Sidebar = () => {
   const [showThemes, setShowThemes] = useState(false)
   const [searchResults, setSearchResults] = useState([]);
   const [sentRequests, setSentRequests] = useState([]);
+  const [requestTab, setRequestTab] = useState("incoming");
+
+  const sentMap = new Set(sentRequests.map(r => r.receiver._id));
+const friendMap = new Set(users.map(u => u._id));
+const incomingMap = new Set(requests.map(r => r.sender._id));
+  
 
   const navigate = useNavigate()
 
@@ -26,10 +32,6 @@ const Sidebar = () => {
     ? users.filter(u => u.fullName.toLowerCase().includes(searchInput.toLowerCase()))
     : users
 
-  useEffect(() => {
-  getUsers();
-  getRequests();
-}, [onlineUsers]);
 
 // search users 
 const searchUsers = async (query) => {
@@ -40,7 +42,7 @@ const searchUsers = async (query) => {
 
   try {
     const { data } = await axios.get(`/api/auth/search?q=${query}`);
-    if (data.success) {
+    if (data.success) { 
       setSearchResults(data.users);
     }
   } catch (error) {
@@ -53,13 +55,33 @@ const sendRequest = async (receiverId) => {
   try {
     await axios.post("/api/friends/request", { receiverId });
 
-    setSentRequests(prev => [...prev, receiverId]);
+    await getSentRequests(); 
+    await getRequests();     
 
     toast.success("Request sent");
   } catch (error) {
+    console.log(error.response.data);
     toast.error(error.response?.data?.message || error.message);
   }
 };
+
+// outgoing
+const getSentRequests = async () => {
+  try {
+    const { data } = await axios.get("/api/friends/sent-req");
+    if (data.success) {
+      setSentRequests(data.requests);
+    }
+  } catch (err) {
+    toast.error(err.message);
+  }
+};
+
+  useEffect(() => {
+  getUsers();
+  getRequests();
+  getSentRequests();
+}, []);
 
   return (
     <motion.div
@@ -124,9 +146,6 @@ const sendRequest = async (receiverId) => {
       >
         ⋮
       </button>
-
-      {/* ... keep your AnimatePresence and menu items here ... */}
-  
           <AnimatePresence>
               {menuOpen && (
                 <motion.div
@@ -231,27 +250,6 @@ const sendRequest = async (receiverId) => {
           )}
         </div>
 
-        {/* switch tab */}
-        {/* <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-       {["friends", "requests", "communities"].map(tab => (
-         <button
-        key={tab}
-        onClick={() => setActiveTab(tab)}
-        style={{
-        flex: 1,
-        padding: "6px",
-        borderRadius: 8,
-        background: activeTab === tab ? "var(--accent)" : "rgba(255,255,255,0.05)",
-        color: "white",
-        fontSize: 12,
-        cursor: "pointer"
-         }}
-       >
-      {tab}
-    </button>
-  ))}
-</div> */}
-
         <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 12, marginBottom: 2, textTransform: 'uppercase', letterSpacing: '0.08em', paddingLeft: 4 }}>
           Messages
         </p>
@@ -281,40 +279,62 @@ const sendRequest = async (receiverId) => {
 
 <div style={{ flex: 1, overflowY: 'auto', padding: '0 8px 12px' }}>
   <AnimatePresence>
-
     {searchInput ? (
-      searchResults.length === 0 ? (
-        <div style={{ textAlign: "center", padding: 20 }}>
-          No users found
-        </div>
-      ) : (
-        searchResults.map((user) => (
-          <div key={user._id} className="user-item" style={{ justifyContent: "space-between" }}>
-            <div>
-              <p>{user.fullName}</p>
-              <p style={{ fontSize: 12, opacity: 0.6 }}>
-                {user.zingleeId}
-              </p>
-            </div>
+  searchResults.length === 0 ? (
+    <div style={{ textAlign: "center", padding: 20 }}>
+      No users found
+    </div>
+  ) : (
+    searchResults.map((user) => {
+      const isFriend = friendMap.has(user._id);
+      const isSent = sentMap.has(user._id);
+      const isIncoming = incomingMap.has(user._id);
 
-              <button
-             disabled={sentRequests.includes(user._id)}
-            onClick={() => sendRequest(user._id)}
-           style={{
-            background: sentRequests.includes(user._id) ? "gray" : "var(--accent)",
-           border: "none",
-           padding: "4px 10px",
-            borderRadius: 6,
-             cursor: "pointer",
-           color: "white"
-             }}
-            >
-         {sentRequests.includes(user._id) ? "Requested" : "Add"}
-        </button>
+      return (
+        <div key={user._id} className="user-item" style={{ justifyContent: "space-between" }}>
+          <div>
+            <p>{user.fullName}</p>
+            <p style={{ fontSize: 12, opacity: 0.6 }}>
+              {user.zingleeId}
+            </p>
           </div>
-        ))
-      )
-    ) : (
+
+          <button
+            disabled={isFriend || isSent}
+            onClick={() => {
+              if (isIncoming) {
+                setActiveTab("requests");
+                setRequestTab("incoming");
+              } else {
+                sendRequest(user._id);
+              }
+            }}
+            style={{
+              background: isFriend
+                ? "rgba(34,197,94,0.2)"
+                : isSent
+                ? "gray"
+                : "var(--accent)",
+              border: "none",
+              padding: "4px 10px",
+              borderRadius: 6,
+              cursor: isFriend || isSent ? "not-allowed" : "pointer",
+              color: "white"
+            }}
+          >
+            {isFriend
+              ? "Friends"
+              : isSent
+              ? "Requested"
+              : isIncoming
+              ? "Respond"
+              : "Add"}
+          </button>
+        </div>
+      );
+    })
+  )
+)  : (
       <>
         {/* 👥 FRIENDS TAB */}
         {activeTab === "friends" && (
@@ -347,130 +367,162 @@ const sendRequest = async (receiverId) => {
           )
         )}
 
-        {/* 📩 REQUESTS TAB
-        {activeTab === "requests" && (
-          requests.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: 20 }}>
-              No pending requests
-            </div>
-          ) : (
-            requests.map((req) => (
-              <div key={req._id} className="user-item" style={{ justifyContent: "space-between" }}>
-                <div>
-                  <p>{req.sender.fullName}</p>
-                  <p style={{ fontSize: 12, opacity: 0.6 }}>
-                    {req.sender.zingleeId}
-                  </p>
-                </div>
-
-                <div style={{ display: "flex", gap: 6 }}>
-                  <button onClick={() => respondRequest(req._id, "accept")} style={{ background: "#22c55e" }}>✓</button>
-                  <button onClick={() => respondRequest(req._id, "reject")} style={{ background: "#ef4444" }}>✕</button>
-                </div>
-              </div>
-            ))
-          )
-        )} */}
 
         {/* 📩 REQUESTS TAB */}
-{activeTab === "requests" && (
-  requests.length === 0 ? (
-    <div style={{ textAlign: 'center', padding: 20 }}>
-      No pending requests
-    </div>
-  ) : (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      {requests.map((req) => (
-        <div
-          key={req._id}
+        {activeTab === "requests" && (
+  <div>
+
+    {/* 🔹 SUB TABS */}
+    <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+      {["incoming", "sent"].map(tab => (
+        <button
+          key={tab}
+          onClick={() => setRequestTab(tab)}
           style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 10,
-            padding: '12px 14px',
-            borderRadius: 14,
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            backdropFilter: 'blur(10px)',
+            flex: 1,
+            padding: "6px",
+            borderRadius: 8,
+            background: requestTab === tab ? "var(--accent)" : "rgba(255,255,255,0.05)",
+            color: "white",
+            fontSize: 12,
+            cursor: "pointer"
           }}
         >
-          {/* TOP: USER INFO */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img
-              src={req.sender.profilePic || assets.avatar_icon}
-              alt=""
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: '50%',
-                objectFit: 'cover',
-                border: '2px solid var(--border-color)',
-              }}
-            />
+          {tab}
+        </button>
+      ))}
+    </div>
 
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{
-                fontSize: 14,
-                fontWeight: 600,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis'
-              }}>
-                {req.sender.fullName}
-              </p>
-
-              <p style={{
-                fontSize: 12,
-                color: 'rgba(255,255,255,0.5)'
-              }}>
+    {/* 🔹 INCOMING */}
+    {requestTab === "incoming" && (
+      requests.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: 20 }}>
+          No incoming requests
+        </div>
+      ) : (
+        requests.map((req) => (
+          <div key={req._id} className="user-item" style={{ justifyContent: "space-between" }}>
+            <div>
+              <p>{req.sender.fullName}</p>
+              <p style={{ fontSize: 12, opacity: 0.6 }}>
                 {req.sender.zingleeId}
               </p>
             </div>
-          </div>
 
-          {/* BOTTOM: ACTIONS */}
-          <div style={{
-            display: 'flex',
-            gap: 8,
-            justifyContent: 'flex-end'
-          }}>
-            <button
-              onClick={() => respondRequest(req._id, "reject")}
-              style={{
-                padding: '6px 12px',
-                borderRadius: 8,
-                background: 'rgba(239,68,68,0.15)',
-                border: '1px solid rgba(239,68,68,0.4)',
-                color: '#f87171',
-                cursor: 'pointer',
-                fontSize: 12,
-                fontWeight: 600,
-              }}
-            >
-              Decline
-            </button>
+            <div style={{ display: "flex", gap: 8 }}>
+  {/* Accept Button */}
+  <button
+    onClick={async () => {
+      await respondRequest(req._id, "accept");
+      await getUsers();
+      await getRequests();
+      await getSentRequests();
+    }}
+    style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "6px 12px",
+      borderRadius: 8,
+      border: "1px solid rgba(34,197,94,0.4)",
+      background: "rgba(34,197,94,0.1)",
+      color: "#22c55e",
+      fontSize: 13,
+      fontWeight: 500,
+      cursor: "pointer",
+      transition: "all 0.2s ease"
+    }}
+    onMouseEnter={e => {
+      e.currentTarget.style.background = "rgba(34,197,94,0.2)";
+      e.currentTarget.style.transform = "scale(1.05)";
+    }}
+    onMouseLeave={e => {
+      e.currentTarget.style.background = "rgba(34,197,94,0.1)";
+      e.currentTarget.style.transform = "scale(1)";
+    }}
+  >
+    ✓ Accept
+  </button>
 
-            <button
-              onClick={() => respondRequest(req._id, "accept")}
-              style={{
-                padding: '6px 12px',
-                borderRadius: 8,
-                background: 'linear-gradient(135deg, #22c55e, #16a34a)',
-                border: 'none',
-                color: 'white',
-                cursor: 'pointer',
-                fontSize: 12,
-                fontWeight: 600,
-                boxShadow: '0 4px 12px rgba(34,197,94,0.3)'
-              }}
-            >
-              Accept
-            </button>
+  {/* Reject Button */}
+  <button
+    onClick={async () => {
+      await respondRequest(req._id, "reject");
+      await getUsers();
+      await getRequests();
+      await getSentRequests();
+    }}
+    style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "6px 12px",
+      borderRadius: 8,
+      border: "1px solid rgba(248,113,113,0.4)",
+      background: "rgba(248,113,113,0.1)",
+      color: "#f87171",
+      fontSize: 13,
+      fontWeight: 500,
+      cursor: "pointer",
+      transition: "all 0.2s ease"
+    }}
+    onMouseEnter={e => {
+      e.currentTarget.style.background = "rgba(248,113,113,0.2)";
+      e.currentTarget.style.transform = "scale(1.05)";
+    }}
+    onMouseLeave={e => {
+      e.currentTarget.style.background = "rgba(248,113,113,0.1)";
+      e.currentTarget.style.transform = "scale(1)";
+    }}
+  >
+    ✕ Reject
+  </button>
+</div>
           </div>
+        ))
+      )
+    )}
+
+    {/* 🔹 SENT */}
+    {requestTab === "sent" && (
+      sentRequests.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: 20 }}>
+          No sent requests
         </div>
-      ))}
-    </div>
-  )
+      ) : (
+        sentRequests.map((req) => (
+          <div key={req._id} className="user-item" style={{ justifyContent: "space-between" }}>
+            <div>
+              <p>{req.receiver.fullName}</p>
+              <p style={{ fontSize: 12, opacity: 0.6 }}>
+                {req.receiver.zingleeId}
+              </p>
+            </div>
+
+            <button
+              onClick={async () => {
+                await axios.post("/api/friends/cancel", { requestId: req._id });
+                await getSentRequests();
+                await getRequests();
+                toast.success("Request cancelled");
+              }}
+              style={{
+                background: "rgba(248,113,113,0.1)",
+                border: "1px solid rgba(248,113,113,0.3)",
+                color: "#f87171",
+                padding: "4px 10px",
+                borderRadius: 6,
+                cursor: "pointer"
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        ))
+      )
+    )}
+
+  </div>
 )}
 
         {/* 🌐 COMMUNITIES TAB */}

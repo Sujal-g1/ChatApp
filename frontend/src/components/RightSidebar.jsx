@@ -2,20 +2,65 @@ import React, { useContext, useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChatContext } from '../../context/ChatContext'
 import { AuthContext } from '../../context/AuthContext'
+import axios from "axios";
+import toast from "react-hot-toast";
 import assets from '../assets/assets'
 import { Mic, Phone, Video, BellOff, Ban,Images,UserRound } from 'lucide-react'; 
 
 
 const RightSidebar = () => {
-  const { selectedUser, messages } = useContext(ChatContext)
+  const { selectedUser, messages, getUsers, setSelectedUser } = useContext(ChatContext);
   const { logout, onlineUsers } = useContext(AuthContext)
   const [msgImages, setMsgImages] = useState([])
   const [activeTab, setActiveTab] = useState('info')
-
+  const [actionLoading, setActionLoading] = useState(null);
 
   useEffect(() => {
     setMsgImages(messages.filter(m => m.image).map(m => m.image))
   }, [messages])
+
+// REMOVE FRIEND
+const handleRemoveFriend = async () => {
+  try {
+    setActionLoading("remove");
+
+    await axios.post("/api/friends/remove", {
+      targetUserId: selectedUser._id
+    });
+
+    toast.success("Friend removed");
+
+    // refresh state
+    await getUsers?.();
+    setSelectedUser(null);
+
+  } catch (err) {
+    toast.error(err.response?.data?.message || err.message);
+  } finally {
+    setActionLoading(null);
+  }
+};
+
+// BLOCK USER
+const handleBlockUser = async () => {
+  try {
+    setActionLoading("block");
+
+    await axios.post("/api/friends/block", {
+      targetUserId: selectedUser._id
+    });
+
+    toast.success("User blocked");
+
+    await getUsers?.();
+    setSelectedUser(null);
+
+  } catch (err) {
+    toast.error(err.response?.data?.message || err.message);
+  } finally {
+    setActionLoading(null);
+  }
+};
 
   if (!selectedUser) return null
 
@@ -77,26 +122,6 @@ const RightSidebar = () => {
   {selectedUser.zingleeId}
 </p>
 
-{/* Bio */}
-{/* <p style={{
-  fontSize: 12,
-  color: 'rgba(255,255,255,0.45)',
-  lineHeight: 1.5,
-  maxWidth: 200,
-  margin: '0 auto 12px'
-}}>
-  {selectedUser.bio || 'No bio yet'}
-</p> */}
-
-        {/* <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: 6,
-          background: onlineUsers.includes(selectedUser._id) ? 'rgba(74,222,128,0.1)' : 'rgba(255,255,255,0.05)',
-          border: `1px solid ${onlineUsers.includes(selectedUser._id) ? 'rgba(74,222,128,0.3)' : 'rgba(255,255,255,0.1)'}`,
-          borderRadius: 50, padding: '4px 12px', fontSize: 12,
-          color: onlineUsers.includes(selectedUser._id) ? '#4ade80' : 'rgba(255,255,255,0.4)',
-        }}>
-          {onlineUsers.includes(selectedUser._id) ? '● Online' : '○ Offline'}
-        </div> */}
 
         {/* Quick actions */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 16 }}>
@@ -104,7 +129,9 @@ const RightSidebar = () => {
             { icon: <Phone />, label: 'Call', color: 'rgba(74,222,128,0.15)', border: 'rgba(74,222,128,0.3)', text: '#4ade80' },
             { icon: <Video />, label: 'Video', color: 'rgba(56,189,248,0.15)', border: 'rgba(56,189,248,0.3)', text: '#38bdf8' },
             { icon: <BellOff />, label: 'Mute', color: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.1)', text: 'rgba(255,255,255,0.6)' },
-            { icon: <Ban />, label: 'Block', color: 'rgba(248,113,113,0.1)', border: 'rgba(248,113,113,0.2)', text: '#f87171' },
+
+            { icon: <Ban />, label: 'Block', color: 'rgba(248,113,113,0.1)', border: 'rgba(248,113,113,0.2)', text: '#f87171' ,   action: handleBlockUser},
+
           ].map((btn, i) => (
             <button key={i}
               style={{
@@ -114,6 +141,7 @@ const RightSidebar = () => {
                 color: btn.text, fontSize: 18, transition: 'all 0.2s ease', minWidth: 44,
               }}
               title={btn.label}
+              onClick={btn.action}
             >
               {btn.icon}
               <span style={{ fontSize: 9, opacity: 0.8 }}>{btn.label}</span>
@@ -210,6 +238,32 @@ const RightSidebar = () => {
         </AnimatePresence>
       </div>
 
+            <motion.button
+  whileHover={{ scale: 1.03 }}
+  whileTap={{ scale: 0.96 }}
+  onClick={handleRemoveFriend}
+  disabled={actionLoading === "remove"}
+  style={{
+    alignSelf: 'center',
+    width: '85%',
+    marginTop: 12,
+    marginBottom: 20,
+    padding: '12px',
+    borderRadius: 14,
+    background: 'rgba(248,113,113,0.08)',
+    border: '1px solid rgba(248,113,113,0.25)',
+    color: '#f87171',
+    cursor: 'pointer',
+    fontFamily: 'Outfit, sans-serif',
+    fontSize: 14,
+    fontWeight: 600,
+    transition: 'all 0.2s ease',
+    opacity: actionLoading === "remove" ? 0.6 : 1
+  }}
+>
+  {actionLoading === "remove" ? "Removing..." : "Remove Friend"}
+</motion.button>
+
       {/* Logout */}
       <div style={{ padding: '16px', borderTop: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
         <motion.button
@@ -225,6 +279,8 @@ const RightSidebar = () => {
            Logout
         </motion.button>
       </div>
+
+
     </motion.div>
   )
 }

@@ -9,7 +9,7 @@ export const sendFriendRequest = async (req, res) => {
     const senderId = req.user._id;
     const { receiverId } = req.body;
 
-    // ❌ cannot send to yourself
+    //  cannot send to yourself
     if (senderId.toString() === receiverId) {
       return res.status(400).json({
         success: false,
@@ -17,7 +17,7 @@ export const sendFriendRequest = async (req, res) => {
       });
     }
 
-    // ✅ check receiver exists
+    //  check receiver exists
     const receiver = await User.findById(receiverId);
     if (!receiver) {
       return res.status(404).json({
@@ -26,7 +26,7 @@ export const sendFriendRequest = async (req, res) => {
       });
     }
 
-    // ❌ already friends
+    //  already friends
     const sender = await User.findById(senderId);
     if (sender.friends.includes(receiverId)) {
       return res.status(400).json({
@@ -35,24 +35,29 @@ export const sendFriendRequest = async (req, res) => {
       });
     }
 
-    // ❌ existing request (same direction)
-    const existingRequest = await FriendRequest.findOne({
-      sender: senderId,
-      receiver: receiverId,
-    });
+    //  existing request (same direction)
+let existingRequest = await FriendRequest.findOne({
+  sender: senderId,
+  receiver: receiverId
+});
 
-    if (existingRequest) {
-      return res.status(400).json({
-        success: false,
-        message: "Request already sent",
-      });
-    }
+if (existingRequest) {
+  // 🔥 reset it instead of creating new
+  existingRequest.status = "pending";
+  await existingRequest.save();
 
-    // ❌ reverse request exists (auto-handle later maybe)
-    const reverseRequest = await FriendRequest.findOne({
-      sender: receiverId,
-      receiver: senderId,
-    });
+  return res.json({
+    success: true,
+    request: existingRequest
+  });
+}
+
+    //  reverse request exists (auto-handle later maybe)
+  const reverseRequest = await FriendRequest.findOne({
+  sender: receiverId,
+  receiver: senderId,
+  status: "pending"
+});
 
     if (reverseRequest) {
       return res.status(400).json({
@@ -61,7 +66,7 @@ export const sendFriendRequest = async (req, res) => {
       });
     }
 
-    // ✅ create request
+    //  create request
     const request = await FriendRequest.create({
       sender: senderId,
       receiver: receiverId,
@@ -109,6 +114,14 @@ export const blockUser = async (req, res) => {
       $addToSet: { blockedUsers: targetUserId }
     });
 
+    // remove pending requests also
+await FriendRequest.deleteMany({
+  $or: [
+    { sender: userId, receiver: targetUserId },
+    { sender: targetUserId, receiver: userId }
+  ]
+});
+
     res.json({
       success: true,
       message: "User blocked successfully",
@@ -122,6 +135,30 @@ export const blockUser = async (req, res) => {
     });
   }
 };
+
+// unblock user
+export const unblockUser = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { targetUserId } = req.body;
+
+    await User.findByIdAndUpdate(userId, {
+      $pull: { blockedUsers: targetUserId }
+    });
+
+    res.json({
+      success: true,
+      message: "User unblocked"
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 
 // remove friend
 export const removeFriend = async (req, res) => {
@@ -143,6 +180,14 @@ export const removeFriend = async (req, res) => {
 
     await User.findByIdAndUpdate(targetUserId, {
       $pull: { friends: userId }
+    });
+
+    // 🔥 ADD THIS (IMPORTANT)
+    await FriendRequest.deleteMany({
+      $or: [
+        { sender: userId, receiver: targetUserId },
+        { sender: targetUserId, receiver: userId }
+      ]
     });
 
     res.json({
@@ -279,5 +324,29 @@ export const respondToRequest = async (req, res) => {
   } catch (error) {
     console.log(error.message);
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+//who i send req
+export const getSentRequests = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const requests = await FriendRequest.find({
+      sender: userId,
+      status: "pending"
+    }).populate("receiver", "username profilePic zingleeId");
+
+    res.json({
+      success: true,
+      requests
+    });
+
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
