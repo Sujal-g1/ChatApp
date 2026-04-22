@@ -5,6 +5,7 @@ import Homepage from "./pages/Homepage"
 import LoginPage from "./pages/LoginPage"
 import ProfilePage from "./pages/ProfilePage"
 import LandingPage from "./pages/LandingPage"
+import InstructionsPage from "./pages/InstructionsPage"
 import { Toaster } from "react-hot-toast"
 import { AuthContext } from '../context/AuthContext'
 import { ThemeProvider } from '../context/ThemeContext'
@@ -48,6 +49,11 @@ const AppRoutes = () => {
         <Route path="/welcome" element={
           <motion.div {...pageVariants} style={{ minHeight: '100vh' }}>
             <LandingPage />
+          </motion.div>
+        } />
+        <Route path="/ins" element={
+          <motion.div {...pageVariants} style={{ minHeight: '100vh' }}>
+            <InstructionsPage />
           </motion.div>
         } />
       </Routes>

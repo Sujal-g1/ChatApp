@@ -5,6 +5,7 @@ import { AuthContext } from '../../context/AuthContext'
 import { formatMsgTime } from '../lib/utils'
 import assets from '../assets/assets'
 import toast from 'react-hot-toast'
+import { useNavigate } from "react-router-dom"
 import { ArrowDownFromLine, ArrowUpFromLine, CookingPot, Images, Mic, Pause, Phone, Search, Video } from 'lucide-react'; 
 
 const CallToast = ({ type }) => (
@@ -35,6 +36,8 @@ const mediaRecorderRef = useRef(null)
 const chunksRef = useRef([])
 const streamRef = useRef(null)
   const typingTimer = useRef()
+
+  const navigate = useNavigate()
 
   const iconBtn = {
   display: 'flex',
@@ -188,7 +191,7 @@ const cancelRecording = () => {
             fontSize: 36, boxShadow: '0 20px 40px var(--glow)',
           }}
         >
-            <img src={assets.logo} alt="logo" style={{ width: 40 }} />
+            <img src={assets.logo} alt="logo" style={{ width: 45 }} />
         
         </motion.div>
         <div style={{ textAlign: 'center' }}>
@@ -198,7 +201,28 @@ const cancelRecording = () => {
           <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>
             Select a conversation to start messaging
           </p>
+
+           <button
+    onClick={() => navigate('/ins')}
+    style={{
+      marginTop: 55,
+      padding: '15px 20px',
+      borderRadius: 999,
+      border: '1px solid rgba(255,255,255,0.1)',
+      background: 'linear-gradient(135deg, var(--accent), var(--accent2))',
+      color: '#fff',
+      fontSize: 18,
+      fontWeight: 600,
+      cursor: 'pointer',
+      boxShadow: '0 6px 18px var(--glow)',
+      transition: 'all 0.25s ease'
+    }}
+  >
+   Start with Guide
+  </button>
+
         </div>
+
         {/* floating dots */}
         {[...Array(5)].map((_, i) => (
           <motion.div key={i}
