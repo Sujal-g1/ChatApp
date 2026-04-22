@@ -243,11 +243,12 @@ const cancelRecording = () => {
       </motion.div>
     )
   }
+  // -------------- AFTER SELECTING THE USER ---------------
 
   return (
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-      style={{ display: 'flex', flexDirection: 'column', height: '100%',width:'100', overflow: 'hidden' }}
+     style={{ display: 'flex', flexDirection: 'column', height: '100%', flex: 1, minWidth: 0, overflow: 'hidden' }}
     >
       {/* Chat Header */}
       <div style={{

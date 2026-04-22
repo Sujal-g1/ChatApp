@@ -10,12 +10,10 @@ const Homepage = () => {
 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
   const [showRightSidebar, setShowRightSidebar] = useState(false)
-  const [showSidebar, setShowSidebar] = useState(false) // ✅ NEW
+  const [showSidebar, setShowSidebar] = useState(false)
 
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768)
-    }
+    const handleResize = () => setIsMobile(window.innerWidth < 768)
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
@@ -41,30 +39,18 @@ const Homepage = () => {
         }}
       >
 
-        {/* 🟢 MOBILE */}
         {isMobile ? (
+          /* ─── MOBILE ─── */
           <>
-            {/* Top bar */}
-            {/* <div style={{
-              position: 'absolute',
-              top: 10,
-              left: 10,
-              zIndex: 60,
-              display: 'flex',
-              gap: 10
-            }}>
-              <button className="icon-btn" onClick={() => setShowSidebar(true)}>☰</button>
-
-              {selectedUser && (
-                <button className="icon-btn" onClick={() => setShowRightSidebar(true)}>⚙️</button>
-              )}
-            </div> */}
-
-            {/* Chat */}
-            {selectedUser ? (
-              <ChatContainer setShowRightSidebar={setShowRightSidebar} />
+            {/* Show sidebar or chat depending on selected user */}
+            {!selectedUser ? (
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <Sidebar />
+              </div>
             ) : (
-              <Sidebar />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <ChatContainer setShowRightSidebar={setShowRightSidebar} />
+              </div>
             )}
 
             {/* LEFT SIDEBAR OVERLAY */}
@@ -80,10 +66,9 @@ const Homepage = () => {
                       position: 'absolute',
                       inset: 0,
                       background: 'rgba(0,0,0,0.5)',
-                      zIndex: 40
+                      zIndex: 40,
                     }}
                   />
-
                   <motion.div
                     initial={{ x: -300 }}
                     animate={{ x: 0 }}
@@ -118,10 +103,9 @@ const Homepage = () => {
                       position: 'absolute',
                       inset: 0,
                       background: 'rgba(0,0,0,0.5)',
-                      zIndex: 40
+                      zIndex: 40,
                     }}
                   />
-
                   <motion.div
                     initial={{ x: 300 }}
                     animate={{ x: 0 }}
@@ -138,28 +122,31 @@ const Homepage = () => {
                       backdropFilter: 'blur(20px)',
                     }}
                   >
-                   <RightSidebar setShowRightSidebar={setShowRightSidebar} />
+                    <RightSidebar setShowRightSidebar={setShowRightSidebar} />
                   </motion.div>
                 </>
               )}
             </AnimatePresence>
           </>
         ) : (
+          /* ─── DESKTOP ─── */
           <>
-            {/* 🖥️ DESKTOP (UNCHANGED) */}
-            <div style={{ width: 280 }}>
+            {/* Sidebar — always visible */}
+            <div style={{ width: 320, flexShrink: 0 }}>
               <Sidebar />
             </div>
 
-            <div style={{ flex: 1 }}>
+            {/* Chat area — fills remaining space */}
+            <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
               <ChatContainer setShowRightSidebar={setShowRightSidebar} />
             </div>
 
-            {selectedUser && (
-              <div style={{ width: 260 }}>
+            {/* Right sidebar — only when a user is selected */}
+            {/* {selectedUser && (
+              <div style={{ width: 260, flexShrink: 0 }}>
                 <RightSidebar />
               </div>
-            )}
+            )} */}
           </>
         )}
 
