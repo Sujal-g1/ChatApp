@@ -133,30 +133,14 @@ Zingleee changes that with:
 
 ---
 
-## ⚠️ Important Usage Note
-
-> 🚨 **Desktop Recommended (Important)**  
-> Zingleee is currently **optimized for Desktop use only**.  
-> Mobile UI is not fully responsive yet and may break or feel inconsistent.
-
 ---
 
 ## 🖥️ Live 
 https://Zingleee.vercel.app  
 
 
-👉 **Use Desktop for best experience**
-
 ---
 
-## ⚠️ Mobile Limitations
-
-- Chat layout and sidebars  
-- Voice recording UI  
-- Audio playback alignment  
-- Some animations & interactions  
-
----
 
 ## 🧠 Architecture Overview
 
