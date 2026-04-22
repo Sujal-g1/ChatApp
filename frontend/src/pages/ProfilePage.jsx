@@ -13,6 +13,8 @@ const ProfilePage = () => {
   const [name, setName] = useState(authUser?.fullName || "")
   const [bio, setBio]   = useState(authUser?.bio || "")
   const [username, setUsername] = useState(authUser?.username || "")
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768)
+
 
   const navigate = useNavigate()
 
@@ -42,6 +44,12 @@ const ProfilePage = () => {
   return <div style={{ color: "white", padding: 50 }}>Loading...</div>;
 }
 
+useEffect(() => {
+  const handleResize = () => setIsMobile(window.innerWidth <= 768)
+  window.addEventListener('resize', handleResize)
+  return () => window.removeEventListener('resize', handleResize)
+}, [])
+
   return (
     <div style={{
       minHeight: '100vh', display: 'flex', alignItems: 'center',
@@ -61,11 +69,11 @@ const ProfilePage = () => {
           borderRadius: 28,
           overflow: 'hidden',
           boxShadow: '0 40px 80px rgba(0,0,0,0.4), 0 0 60px var(--glow)',
-          display: 'flex', flexWrap: 'wrap',
+          display: 'flex', flexDirection: isMobile ? 'column' : 'row',
         }}
       >
         {/* Left: Form */}
-        <div style={{ flex: '1 1 300px', padding: '40px 36px' }}>
+        <div style={{ flex: '1 1 300px', padding: '40px 36px',  order: isMobile ? 2 : 1  }}>
           <button
             onClick={() => navigate('/')}
             style={{
@@ -175,7 +183,8 @@ const ProfilePage = () => {
 
         {/* Right: Preview */}
         <div style={{
-          flex: '0 0 220px',
+          flex: isMobile ? '0 0 auto' : '0 0 220px',
+           order: isMobile ? 1 : 2, 
           background: 'rgba(255,255,255,0.02)',
           borderLeft: '1px solid rgba(255,255,255,0.06)',
           display: 'flex', flexDirection: 'column',

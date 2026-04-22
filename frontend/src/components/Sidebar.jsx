@@ -70,28 +70,64 @@ const sendRequest = async (receiverId) => {
         height: '100%', overflow: 'hidden',
         borderRight: '1px solid rgba(255,255,255,0.06)',
         background: 'rgba(0,0,0,0.15)',
+        width: '320px',         
+        flexShrink: 0,
       }}
     >
       {/* Header */}
       <div style={{ padding: '20px 16px 12px', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <div style={{ 
+          display: 'flex', 
+         alignItems: 'center', 
+         justifyContent: 'space-between', 
+         marginBottom: 16,
+         gap: '10px' // Ensures they never physically touch
+       }}>
+
           {/* Logo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ filter: 'drop-shadow(0 0 10px var(--glow))' }}>
-              <ZingleeeLogo size={34} />
-            </div>
-            <span style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: 20, letterSpacing: '-0.02em' }}>
-              Zingle<span style={{ color: 'var(--accent)' }}>ee</span>
-            </span>
-          </div>
+          <div style={{ 
+      display: 'flex', 
+      alignItems: 'center', 
+      gap: 6, 
+      flexShrink: 1, // Allows the text to shrink if the screen is tiny
+      minWidth: 0    // Critical for text-overflow to work
+    }}>
+      <div style={{ filter: 'drop-shadow(0 0 8px var(--glow))', flexShrink: 0 }}>
+        <ZingleeeLogo size={28} /> {/* Reduced from 34 for better mobile fit */}
+      </div>
+      <span style={{ 
+        fontFamily: 'Syne, sans-serif', 
+        fontWeight: 800, 
+        fontSize: 18, // Reduced from 20
+        letterSpacing: '-0.02em',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis' // Gracefully cuts text if there's no room
+      }}>
+        Zingle<span style={{ color: 'var(--accent)' }}>ee</span>
+      </span>
+    </div>
 
           {/* Menu */}
-          <div style={{ position: 'relative' }}>
-            <button className="icon-btn" onClick={() => setMenuOpen(!menuOpen)} style={{ fontSize: 16 }}>
-              ⋮
-            </button>
+        <div style={{ position: 'relative', flexShrink: 0 }}>
+      <button 
+        className="icon-btn" 
+        onClick={() => setMenuOpen(!menuOpen)} 
+        style={{ 
+          width: 34, 
+          height: 34, 
+          fontSize: 14,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        ⋮
+      </button>
 
-            <AnimatePresence>
+      {/* ... keep your AnimatePresence and menu items here ... */}
+  
+          <AnimatePresence>
               {menuOpen && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9, y: -8 }}

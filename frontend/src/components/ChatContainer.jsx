@@ -2,11 +2,12 @@ import React, { useEffect, useRef, useContext, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChatContext } from '../../context/ChatContext'
 import { AuthContext } from '../../context/AuthContext'
+import RightSidebar from '../components/RightSidebar'
 import { formatMsgTime } from '../lib/utils'
 import assets from '../assets/assets'
 import toast from 'react-hot-toast'
 import { useNavigate } from "react-router-dom"
-import { ArrowDownFromLine, ArrowUpFromLine, CookingPot, Images, Mic, Pause, Phone, Search, Video } from 'lucide-react'; 
+import { ArrowDownFromLine,ArrowLeft, ArrowUpFromLine, CookingPot, Images, Mic, Pause, Phone, Search, Video } from 'lucide-react'; 
 
 const CallToast = ({ type }) => (
   <div style={{
@@ -29,13 +30,14 @@ const ChatContainer = () => {
   const [audioBlob, setAudioBlob] = useState(null)
   const [recordTime, setRecordTime] = useState(0)
   const [playingId, setPlayingId] = useState(null)
+  const [showRightSidebar, setShowRightSidebar] = useState(false)
   const [isPreviewPlaying, setIsPreviewPlaying] = useState(false)
   const currentAudioRef = useRef(null)
 
 const mediaRecorderRef = useRef(null)
 const chunksRef = useRef([])
 const streamRef = useRef(null)
-  const typingTimer = useRef()
+const typingTimer = useRef()
 
   const navigate = useNavigate()
 
@@ -196,7 +198,7 @@ const cancelRecording = () => {
         </motion.div>
         <div style={{ textAlign: 'center' }}>
           <h2 style={{ fontFamily: 'Syne, sans-serif', fontSize: 22, fontWeight: 700, marginBottom: 8 }}>
-            {/* Chat Anytime, Anywhere */}
+           Zingleee
           </h2>
           <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>
             Select a conversation to start messaging
@@ -245,7 +247,7 @@ const cancelRecording = () => {
   return (
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-      style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}
+      style={{ display: 'flex', flexDirection: 'column', height: '100%',width:'100', overflow: 'hidden' }}
     >
       {/* Chat Header */}
       <div style={{
@@ -257,10 +259,23 @@ const cancelRecording = () => {
         flexShrink: 0,
       }}>
         {/* Back (mobile) */}
-        <button className="icon-btn" onClick={() => setSelectedUser(null)}
-          style={{ display: 'none' }} /* show on mobile via media query — className="md:hidden" */>
-          ←
-        </button>
+     <button 
+  className="icon-btn md:hidden"
+  onClick={() => setSelectedUser(null)}
+  style={{ 
+    display: 'flex',
+    alignItems: 'center',    
+    justifyContent: 'center', 
+    color: 'white',
+    cursor: 'pointer',
+    zIndex: 10,                
+    width: '36px',            
+    height: '36px',
+    padding: 0            
+  }}
+>
+  <ArrowLeft size={22} />
+</button>
 
         {/* Avatar */}
         <div style={{ position: 'relative' }}>
@@ -296,7 +311,17 @@ const cancelRecording = () => {
           <button className="icon-btn" title="Search in chat" style={{ fontSize: 14 }}>
             <Search />
           </button>
-          <button className="icon-btn" title="More options" style={{ fontSize: 16 }}>⋮</button>
+          <button
+  onClick={(e) => {
+    e.stopPropagation(); // Prevents the click from bubbling
+    setShowRightSidebar(true);
+  }}
+  className="icon-btn" 
+  title="More options" 
+  style={{ fontSize: 16, cursor: 'pointer', zIndex: 10 }}
+> 
+  ⋮ 
+</button>
         </div>
       </div>
 
@@ -403,7 +428,7 @@ const cancelRecording = () => {
     </span>
   </div>
 )
-                  : (
+      : (
                     <div className={isMine ? 'bubble-sent' : 'bubble-received'}>
                       {msg.text}
                     </div>
@@ -496,7 +521,7 @@ const cancelRecording = () => {
   </div>
 )}
 
-{/* PREVIEW */}
+{/* PREVIEW of recording */}
     {audioBlob && (
   <div
     style={{
@@ -569,7 +594,7 @@ const cancelRecording = () => {
   </div>
 )}
 
-        {/* Send */}
+        {/* Send audio msg */}
         {!audioBlob && (
         <motion.button
           className="send-btn"
@@ -584,6 +609,60 @@ const cancelRecording = () => {
         )}
 
       </div>
+
+      
+      {/* Right Sidebar with Flap Animation */}
+<AnimatePresence>
+  {showRightSidebar && (
+    <>
+      {/* 1. The Backdrop (Tap anywhere here to close) */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={() => setShowRightSidebar(false)}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 40,
+        }}
+      />
+
+      {/* 2. The Sidebar "Flap" Container */}
+      {/* 2. The Sidebar "Flap" Container */}
+<motion.div
+  initial={{ x: '100%' }}
+  animate={{ x: 0 }}
+  exit={{ x: '100%' }}
+  transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+  style={{
+    position: 'fixed',
+    top: 0,
+    right: 0,
+    height: '100%',
+    width: '85%',
+    maxWidth: '380px',
+    // 1. Lower the opacity significantly (0.4 - 0.6)
+    // 2. Add backdropFilter for the "frosted" look
+    background: 'rgba(255, 255, 255, 0.03)', 
+    backdropFilter: 'blur(25px) saturate(180%)', 
+    WebkitBackdropFilter: 'blur(25px) saturate(180%)', // For Safari support
+    zIndex: 50,
+    boxShadow: '-10px 0 30px rgba(0,0,0,0.3)',
+    display: 'flex',
+    flexDirection: 'column',
+    borderLeft: '1px solid rgba(255,255,255,0.1)',
+  }}
+>
+  <RightSidebar onClose={() => setShowRightSidebar(false)} />
+</motion.div>
+    </>
+  )}
+</AnimatePresence>
+      
+
     </motion.div>
   )
 }

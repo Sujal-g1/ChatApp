@@ -45,7 +45,7 @@ const Homepage = () => {
         {isMobile ? (
           <>
             {/* Top bar */}
-            <div style={{
+            {/* <div style={{
               position: 'absolute',
               top: 10,
               left: 10,
@@ -58,7 +58,7 @@ const Homepage = () => {
               {selectedUser && (
                 <button className="icon-btn" onClick={() => setShowRightSidebar(true)}>⚙️</button>
               )}
-            </div>
+            </div> */}
 
             {/* Chat */}
             {selectedUser ? (
