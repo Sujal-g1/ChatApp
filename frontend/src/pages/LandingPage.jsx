@@ -81,7 +81,7 @@ const LandingPage = () => {
             transition={{ duration: 0.4 }}
             style={{ fontSize: 15, color: 'rgba(255,255,255,0.45)', margin: 0, letterSpacing: '0.02em' }}
           >
-            Chat Anytime, Anywhere
+          Meet. Match. Message.
           </motion.p>
         )}
       </AnimatePresence>
