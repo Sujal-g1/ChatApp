@@ -202,8 +202,10 @@ const cancelRecording = () => {
             Select a conversation to start messaging
           </p>
 
-           <button
+           <motion.button
     onClick={() => navigate('/ins')}
+    animate={{ y: [0, -8, 0] }}
+    transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
     style={{
       marginTop: 55,
       padding: '15px 20px',
@@ -219,7 +221,7 @@ const cancelRecording = () => {
     }}
   >
    Start with Guide
-  </button>
+  </motion.button>
 
         </div>
 

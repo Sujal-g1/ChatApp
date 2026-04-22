@@ -311,7 +311,7 @@ const sendRequest = async (receiverId) => {
           )
         )}
 
-        {/* 📩 REQUESTS TAB */}
+        {/* 📩 REQUESTS TAB
         {activeTab === "requests" && (
           requests.length === 0 ? (
             <div style={{ textAlign: 'center', padding: 20 }}>
@@ -334,7 +334,108 @@ const sendRequest = async (receiverId) => {
               </div>
             ))
           )
-        )}
+        )} */}
+
+        {/* 📩 REQUESTS TAB */}
+{activeTab === "requests" && (
+  requests.length === 0 ? (
+    <div style={{ textAlign: 'center', padding: 20 }}>
+      No pending requests
+    </div>
+  ) : (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {requests.map((req) => (
+        <div
+          key={req._id}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10,
+            padding: '12px 14px',
+            borderRadius: 14,
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            backdropFilter: 'blur(10px)',
+          }}
+        >
+          {/* TOP: USER INFO */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <img
+              src={req.sender.profilePic || assets.avatar_icon}
+              alt=""
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: '50%',
+                objectFit: 'cover',
+                border: '2px solid var(--border-color)',
+              }}
+            />
+
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{
+                fontSize: 14,
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis'
+              }}>
+                {req.sender.fullName}
+              </p>
+
+              <p style={{
+                fontSize: 12,
+                color: 'rgba(255,255,255,0.5)'
+              }}>
+                {req.sender.zingleeId}
+              </p>
+            </div>
+          </div>
+
+          {/* BOTTOM: ACTIONS */}
+          <div style={{
+            display: 'flex',
+            gap: 8,
+            justifyContent: 'flex-end'
+          }}>
+            <button
+              onClick={() => respondRequest(req._id, "reject")}
+              style={{
+                padding: '6px 12px',
+                borderRadius: 8,
+                background: 'rgba(239,68,68,0.15)',
+                border: '1px solid rgba(239,68,68,0.4)',
+                color: '#f87171',
+                cursor: 'pointer',
+                fontSize: 12,
+                fontWeight: 600,
+              }}
+            >
+              Decline
+            </button>
+
+            <button
+              onClick={() => respondRequest(req._id, "accept")}
+              style={{
+                padding: '6px 12px',
+                borderRadius: 8,
+                background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+                border: 'none',
+                color: 'white',
+                cursor: 'pointer',
+                fontSize: 12,
+                fontWeight: 600,
+                boxShadow: '0 4px 12px rgba(34,197,94,0.3)'
+              }}
+            >
+              Accept
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+)}
 
         {/* 🌐 COMMUNITIES TAB */}
         {activeTab === "communities" && (
