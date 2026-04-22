@@ -44,7 +44,7 @@ const howCards = [
     text: "You decide who gets in. Only accepted users can message you.",
     step: "03",
   },
-  {
+   {
     icon: <Mic size={22} />,
     title: "Send Voice",
     text: "Record, preview, and send voice messages with full control.",
