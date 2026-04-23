@@ -167,7 +167,7 @@ const getSentRequests = async () => {
                     { icon:<Palette />, label: 'Themes', action: () => { setShowThemes(!showThemes); setMenuOpen(false) } },
                     { icon: <BellRing />, label: 'Notifications', action: () => setMenuOpen(false) },
                     { icon: <Settings />, label: 'Settings', action: () => setMenuOpen(false) },
-                   { icon: <Signpost />, label: 'How to Use', action: () => {  navigate('/ins`'); setMenuOpen(false); }, 
+                   { icon: <Signpost />, label: 'How to Use', action: () => {  navigate('/ins'); setMenuOpen(false); }, 
                      danger: false},
                     { icon: <LogOut />, label: 'Logout', action: () => { logout(); setMenuOpen(false) }, danger: true },
                   ].map((item, i) => (
