@@ -7,7 +7,7 @@ import { formatMsgTime } from '../lib/utils'
 import assets from '../assets/assets'
 import toast from 'react-hot-toast'
 import { useNavigate } from "react-router-dom"
-import { ArrowDownFromLine,ArrowLeft, ArrowUpFromLine, CookingPot, Images, Mic, Pause, Phone, Search, Video } from 'lucide-react'; 
+import { ArrowDownFromLine,ArrowLeft, ArrowUpFromLine, CookingPot, Images, Mic, Pause, Phone, Search, Video,Forward, MoreVertical} from 'lucide-react'; 
 
 const CallToast = ({ type }) => (
   <div style={{
@@ -252,79 +252,96 @@ const cancelRecording = () => {
     >
       {/* Chat Header */}
       <div style={{
-        display: 'flex', alignItems: 'center', gap: 12,
-        padding: '14px 16px',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-        background: 'rgba(0,0,0,0.2)',
-        backdropFilter: 'blur(20px)',
-        flexShrink: 0,
-      }}>
-        {/* Back (mobile) */}
-     <button 
-  className="icon-btn md:hidden"
-  onClick={() => setSelectedUser(null)}
-  style={{ 
-    display: 'flex',
-    alignItems: 'center',    
-    justifyContent: 'center', 
-    color: 'white',
-    cursor: 'pointer',
-    zIndex: 10,                
-    width: '36px',            
-    height: '36px',
-    padding: 0            
-  }}
->
-  <ArrowLeft size={22} />
-</button>
+  display: 'flex', 
+  alignItems: 'center', 
+  gap: 12,
+  padding: '14px 16px',
+  borderBottom: '1px solid rgba(255,255,255,0.06)',
+  background: 'rgba(0,0,0,0.2)',
+  backdropFilter: 'blur(20px)',
+  flexShrink: 0,
+}}>
+  {/* 1. Back Button - Added flexShrink: 0 */}
+  <button 
+    className="icon-btn md:hidden"
+    onClick={() => setSelectedUser(null)}
+    style={{ 
+      display: 'flex',
+      alignItems: 'center',    
+      justifyContent: 'center', 
+      color: 'white',
+      cursor: 'pointer',
+      zIndex: 10,                
+      width: '36px',            
+      height: '36px',
+      padding: 0,
+      flexShrink: 0 // <--- Keep this button's size fixed
+    }}
+  >
+    <ArrowLeft size={22} />
+  </button>
 
-        {/* Avatar */}
-        <div style={{ position: 'relative' }}>
-          <img
-            src={selectedUser?.profilePic || assets.avatar_icon}
-            alt=""
-            style={{ width: 42, height: 42, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border-color)' }}
-          />
-          {onlineUsers.includes(selectedUser._id) && (
-            <span className="online-dot" style={{
-              position: 'absolute', bottom: 1, right: 1,
-              border: '2px solid rgba(0,0,0,0.5)',
-            }} />
-          )}
-        </div>
+  {/* 2. Avatar Container - Added flexShrink: 0 */}
+  <div style={{ position: 'relative', flexShrink: 0 }}> 
+    <img
+      src={selectedUser?.profilePic || assets.avatar_icon}
+      alt=""
+      style={{ width: 42, height: 42, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border-color)' }}
+    />
+    {onlineUsers.includes(selectedUser._id) && (
+      <span className="online-dot" style={{
+        position: 'absolute', bottom: 1, right: 1,
+        border: '2px solid rgba(0,0,0,0.5)',
+      }} />
+    )}
+  </div>
 
-        {/* Name + status */}
-        <div style={{ flex: 1 }}>
-          <p style={{ fontWeight: 600, fontSize: 15 }}>{selectedUser.fullName}</p>
-          <p style={{ fontSize: 12, color: onlineUsers.includes(selectedUser._id) ? '#4ade80' : 'rgba(255,255,255,0.4)' }}>
-            {onlineUsers.includes(selectedUser._id) ? '● Online' : '○ Offline'}
-          </p>
-        </div>
+  {/* 3. Name + Status - Added minWidth: 0 and text truncation */}
+  <div style={{ flex: 1, minWidth: 0 }}> {/* <--- minWidth: 0 allows the text to truncate */}
+    <p style={{ 
+      fontWeight: 600, 
+      fontSize: 15,
+      whiteSpace: 'nowrap',    // <--- Don't wrap to 2nd line
+      overflow: 'hidden',      // <--- Hide extra text
+      textOverflow: 'ellipsis' // <--- Add "..."
+    }}>
+      {selectedUser.fullName}
+    </p>
+    <p style={{ 
+      fontSize: 12, 
+      color: onlineUsers.includes(selectedUser._id) ? '#4ade80' : 'rgba(255,255,255,0.4)',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis'
+    }}>
+      {onlineUsers.includes(selectedUser._id) ? '● Online' : '○ Offline'}
+    </p>
+  </div>
 
-        {/* Action buttons */}
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button className="call-btn call-btn-audio" onClick={() => handleCall('audio')} title="Audio Call">
-            <Phone />
-          </button>
-          <button className="call-btn call-btn-video" onClick={() => handleCall('video')} title="Video Call">
-            <Video />
-          </button>
-          <button className="icon-btn" title="Search in chat" style={{ fontSize: 14 }}>
-            <Search />
-          </button>
-          <button
-  onClick={(e) => {
-    e.stopPropagation(); // Prevents the click from bubbling
-    setShowRightSidebar(true);
-  }}
-  className="icon-btn" 
-  title="More options" 
-  style={{ fontSize: 16, cursor: 'pointer', zIndex: 10 }}
-> 
-  ⋮ 
-</button>
-        </div>
-      </div>
+  {/* 4. Action buttons - Added flexShrink: 0 */}
+  <div style={{ display: 'flex', gap: 8, flexShrink: 0, alignItems: 'center' }}> 
+  <button className="icon-btn" onClick={() => handleCall('audio')} title="Audio Call">
+    <Phone size={20} />
+  </button>
+
+  <button className="icon-btn" onClick={() => handleCall('video')} title="Video Call">
+    <Video size={20} />
+  </button>
+
+  <button
+    className="icon-btn"
+    onClick={(e) => {
+      e.stopPropagation();
+      setShowRightSidebar(true);
+    }}
+    title="More options"
+  > 
+    <MoreVertical size={20} /> 
+  </button>
+</div>
+</div>  
+
+      {/* ------- */}
 
       {/* Messages */}
       <div style={{
@@ -602,10 +619,14 @@ const cancelRecording = () => {
           onClick={handleSendMessage}
           whileHover={{ scale: 1.1, rotate: 5 }}
           whileTap={{ scale: 0.92 }}
+          style={{
+          display: 'flex',          
+          alignItems: 'center',     
+          justifyContent: 'center',   
+          padding: 0,                
+          }}
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+        <Forward  size={18}/>
         </motion.button>
         )}
 
