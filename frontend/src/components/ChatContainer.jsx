@@ -32,8 +32,11 @@ const ChatContainer = () => {
   const [playingId, setPlayingId] = useState(null)
   const [showRightSidebar, setShowRightSidebar] = useState(false)
   const [isPreviewPlaying, setIsPreviewPlaying] = useState(false)
-  const currentAudioRef = useRef(null)
+  const [showEmoji, setShowEmoji] = useState(false)
+  const [activeEmojiTab, setActiveEmojiTab] = useState("smileys")
 
+  const emojiRef = useRef()
+  const currentAudioRef = useRef(null)
 const mediaRecorderRef = useRef(null)
 const chunksRef = useRef([])
 const streamRef = useRef(null)
@@ -52,6 +55,41 @@ const typingTimer = useRef()
   border: '1px solid rgba(255,255,255,0.08)',
   color: 'white',
   cursor: 'pointer',
+}
+
+const emojiCategories = {
+  smileys: [
+    "😀","😁","😂","🤣","😊","😍","😘","😎","🤩","🥳",
+    "😢","😭","😡","😤","😴","😵","🤯","😇","😈","🥺",
+    "😜","😝","😏","😬","😅","🤭","🫠","🫡"
+  ],
+
+  animals: [
+    "🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯",
+    "🦁","🐮","🐷","🐸","🐵","🐔","🐧","🐦","🦄","🐝",
+    "🐢","🐍","🐙","🦋"
+  ],
+
+  food: [
+    "🍔","🍕","🍟","🌭","🍿","🍗","🍖","🥓","🍞","🥐",
+    "🍩","🍪","🎂","🍰","🧁","🍫","🍬","🍭","🍎","🍉",
+    "🍇","🍓","🍒","🥭","🍌","🥤","☕"
+  ],
+
+  gestures: [
+    "👍","👎","👌","✌️","🤞","🤟","🤘","👏","🙌","🙏",
+    "🤝","💪","🫶","👊","✊","🖐️","👋","🤚"
+  ],
+
+  symbols: [
+    "❤️","💔","💖","💯","🔥","✨","⭐","🌟","⚡","💥",
+    "🎉","🎊","💀","☠️","👑","🎯","🚀"
+  ],
+
+  objects: [
+    "📱","💻","⌚","🎧","📷","🎥","📞","🔋","💡","📦",
+    "🧸","🎮","🕹️","📚","✏️","🖊️"
+  ]
 }
 
   const handleSendMessage = async (e) => {
@@ -74,6 +112,10 @@ const typingTimer = useRef()
     }
     reader.readAsDataURL(file)
   }
+
+  const handleEmojiClick = (emoji) => {
+  setInput(prev => prev + emoji)
+}
 
   // recording
 const startRecording = async () => {
@@ -170,6 +212,23 @@ const cancelRecording = () => {
       scrollEnd.current.scrollIntoView({ behavior: 'smooth' })
     }
   }, [messages])
+
+  useEffect(() => {
+  if (scrollEnd.current && messages) {
+    scrollEnd.current.scrollIntoView({ behavior: 'smooth' })
+  }
+}, [messages])
+
+useEffect(() => {
+  const handleClickOutside = (e) => {
+    if (emojiRef.current && !emojiRef.current.contains(e.target)) {
+      setShowEmoji(false)
+    }
+  }
+
+  document.addEventListener("mousedown", handleClickOutside)
+  return () => document.removeEventListener("mousedown", handleClickOutside)
+}, [])
 
   if (!selectedUser) {
     return (
@@ -493,7 +552,89 @@ const cancelRecording = () => {
       {/* Send Bar */}
       <div className="send-bar">
         {/* Emoji (future) */}
-        <button className="icon-btn" title="Emoji" style={{ fontSize: 18, flexShrink: 0 }}>😊</button>
+          <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+
+  {/* Emoji Button */}
+  <button
+    className="icon-btn"
+    title="Emoji"
+    style={{ fontSize: 18, flexShrink: 0 }}
+    onClick={() => setShowEmoji(prev => !prev)}
+  >
+    😊
+  </button>
+
+  {/* ✅ EMOJI PANEL (ADD HERE) */}
+ {showEmoji && (
+  <div
+    ref={emojiRef}
+    style={{
+      position: "absolute",
+      bottom: "55px",
+      left: 0,
+      background: "rgba(20,20,40,0.95)",
+      border: "1px solid rgba(255,255,255,0.08)",
+      borderRadius: 12,
+      width: "min(320px, 90vw)",
+      zIndex: 100,
+      backdropFilter: "blur(20px)",
+      overflow: "hidden"
+    }}
+  >
+
+    {/* 🔹 CATEGORY TABS */}
+    <div style={{
+      display: "flex",
+      overflowX: "auto",
+      whiteSpace: "nowrap",
+      borderBottom: "1px solid rgba(255,255,255,0.08)"
+    }}>
+      {Object.keys(emojiCategories).map((key) => (
+        <button
+          key={key}
+          onClick={() => setActiveEmojiTab(key)}
+          style={{
+            flex: 1,
+            padding: "6px 4px",
+            fontSize: 12,
+            background: activeEmojiTab === key ? "rgba(255,255,255,0.1)" : "transparent",
+            border: "none",
+            color: "white",
+            cursor: "pointer"
+          }}
+        >
+          {key}
+        </button>
+      ))}
+    </div>
+
+    {/* 🔹 EMOJI GRID */}
+    <div style={{
+      padding: 10,
+      display: "grid",
+      gridTemplateColumns: "repeat(8, 1fr)",
+      gap: 6,
+      maxHeight: "260px",
+      overflowY: "auto"
+    }}>
+      {emojiCategories[activeEmojiTab].map((emoji, i) => (
+        <span
+          key={i}
+          onClick={() => handleEmojiClick(emoji)}
+          style={{
+            fontSize: 22,
+            cursor: "pointer"
+          }}
+        >
+          {emoji}
+        </span>
+      ))}
+    </div>
+
+  </div>
+)}
+
+</div>
 
         {/* Input */}
         <div className="send-input-wrap">
