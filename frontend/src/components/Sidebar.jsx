@@ -8,7 +8,7 @@ import { ZingleeeLogo } from '../pages/LandingPage'
 import assets from '../assets/assets'
 import axios from "axios";
 import toast from "react-hot-toast";
-import {Signpost} from 'lucide-react'; 
+import {Signpost ,UserRound, BellRing,Settings,LogOut,Palette } from 'lucide-react'; 
 
 const Sidebar = () => {
   const { getUsers, users, selectedUser, setSelectedUser, unseenMessages, setUnseenMessages, getRequests, requests, respondRequest  } = useContext(ChatContext)
@@ -163,13 +163,13 @@ const getSentRequests = async () => {
                   }}
                 >
                   {[
-                    { icon: '👤', label: 'Edit Profile', action: () => { navigate('/profile'); setMenuOpen(false) } },
-                    { icon: '🎨', label: 'Themes', action: () => { setShowThemes(!showThemes); setMenuOpen(false) } },
-                    { icon: '🔔', label: 'Notifications', action: () => setMenuOpen(false) },
-                    { icon: '⚙️', label: 'Settings', action: () => setMenuOpen(false) },
+                    { icon: <UserRound />, label: 'Edit Profile', action: () => { navigate('/profile'); setMenuOpen(false) } },
+                    { icon:<Palette />, label: 'Themes', action: () => { setShowThemes(!showThemes); setMenuOpen(false) } },
+                    { icon: <BellRing />, label: 'Notifications', action: () => setMenuOpen(false) },
+                    { icon: <Settings />, label: 'Settings', action: () => setMenuOpen(false) },
                    { icon: <Signpost />, label: 'How to Use', action: () => {  navigate('/ins`'); setMenuOpen(false); }, 
                      danger: false},
-                    { icon: '🚪', label: 'Logout', action: () => { logout(); setMenuOpen(false) }, danger: true },
+                    { icon: <LogOut />, label: 'Logout', action: () => { logout(); setMenuOpen(false) }, danger: true },
                   ].map((item, i) => (
                     <button key={i}
                       onClick={item.action}
