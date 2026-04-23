@@ -380,7 +380,7 @@ const cancelRecording = () => {
       backdropFilter: 'blur(10px)',
       border: '1px solid rgba(255,255,255,0.08)',
       boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-      minWidth: 180,
+      maxWidth: '100%'
     }}
   >
     {/* Play Button */}
@@ -430,7 +430,7 @@ const cancelRecording = () => {
   </div>
 )
       : (
-                    <div className={isMine ? 'bubble-sent' : 'bubble-received'}>
+          <div className={isMine ? 'bubble-sent' : 'bubble-received'}>
                       {msg.text}
                     </div>
                   )}
