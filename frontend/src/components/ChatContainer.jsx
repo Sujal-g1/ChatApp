@@ -7,7 +7,7 @@ import { formatMsgTime } from '../lib/utils'
 import assets from '../assets/assets'
 import toast from 'react-hot-toast'
 import { useNavigate } from "react-router-dom"
-import { ArrowDownFromLine,ArrowLeft, ArrowUpFromLine, CookingPot, Images, Mic, Pause, Phone, Search, Video,Forward, MoreVertical, Camera, CameraOff, MicOff, PhoneOff} from 'lucide-react'; 
+import { ArrowDownFromLine,ArrowLeft, ArrowUpFromLine, CookingPot, Images, Mic, Pause, Phone, Search, Video,Forward, MoreVertical, Camera, CameraOff, MicOff, PhoneOff, RefreshCw} from 'lucide-react'; 
 
 const CallToast = ({ type }) => (
   <div style={{
@@ -40,6 +40,8 @@ const ChatContainer = () => {
   const [isMuted, setIsMuted] = useState(false);
   const [isCameraOff, setIsCameraOff] = useState(false);
   const [callStatus, setCallStatus] = useState("Connecting...");
+  const [isFrontCamera, setIsFrontCamera] = useState(true);
+
 
 
 const emojiRef = useRef()
@@ -270,7 +272,9 @@ if (!peerConnection.current) {
 // get camera + mic
 localStream.current =
   await navigator.mediaDevices.getUserMedia({
-    video: true,
+   video: {
+facingMode: "environment"
+},
     audio: true
   });
 
@@ -327,6 +331,54 @@ setIncomingCall({
     callerInfo
 });
 });
+
+// switchCamera
+const switchCamera = async () => {
+try {
+if (!localStream.current) return;
+
+// stop old video tracks
+localStream.current.getVideoTracks().forEach(track => {
+  track.stop();
+});
+
+const newStream =
+  await navigator.mediaDevices.getUserMedia({
+    video: {
+      facingMode: isFrontCamera
+        ? "environment"
+        : "user"
+    },
+    audio: true
+  });
+
+const newVideoTrack =
+  newStream.getVideoTracks()[0];
+
+// replace local video preview
+if (localVideoRef.current) {
+  localVideoRef.current.srcObject = newStream;
+}
+
+// replace track in peer connection
+const sender =
+  peerConnection.current
+    ?.getSenders()
+    .find(sender =>
+      sender.track?.kind === "video"
+    );
+
+if (sender) {
+  await sender.replaceTrack(newVideoTrack);
+}
+
+localStream.current = newStream;
+setIsFrontCamera(!isFrontCamera);
+
+} catch (error) {
+console.log("Switch camera error:", error);
+}
+};
 
 
 socket.on("call-answered", async ({ answer }) => {
@@ -1299,6 +1351,27 @@ boxShadow: "0 10px 30px rgba(0,0,0,0.25)"
 }}
 
 >
+  <motion.button
+whileHover={{ scale: 1.08 }}
+whileTap={{ scale: 0.94 }}
+onClick={switchCamera}
+style={{
+width: 58,
+height: 58,
+borderRadius: "50%",
+border: "1px solid var(--border-color)",
+background: "var(--glass)",
+color: "white",
+cursor: "pointer",
+display: "flex",
+alignItems: "center",
+justifyContent: "center"
+}}
+
+>
+<RefreshCw />
+</motion.button>
+
 
 {/* Mute Button */}
 <motion.button
