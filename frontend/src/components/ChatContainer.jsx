@@ -332,7 +332,36 @@ setIncomingCall({
 });
 });
 
-// switchCamera
+socket.on("call-answered", async ({ answer }) => {
+if (!peerConnection.current) return;
+await peerConnection.current.setRemoteDescription(
+  new RTCSessionDescription(answer)
+);
+});
+
+socket.on("ice-candidate", async ({ candidate }) => {
+if (!peerConnection.current || !candidate) return;
+await peerConnection.current.addIceCandidate(candidate);
+});
+socket.on("call-ended", () => {
+endCall();
+});
+socket.on("call-rejected", () => {
+toast.error("Call rejected");
+endCall();
+});
+return () => {
+socket.off("incoming-call");
+socket.off("call-answered");
+socket.off("ice-candidate");
+socket.off("call-ended");
+socket.off("call-rejected");
+};
+}, [socket]);
+
+// noti vc ends
+
+// switch camera 
 const switchCamera = async () => {
 try {
 if (!localStream.current) return;
@@ -379,41 +408,7 @@ setIsFrontCamera(!isFrontCamera);
 console.log("Switch camera error:", error);
 }
 };
-
-
-socket.on("call-answered", async ({ answer }) => {
-if (!peerConnection.current) return;
-
-await peerConnection.current.setRemoteDescription(
-  new RTCSessionDescription(answer)
-);
-
-});
-
-socket.on("ice-candidate", async ({ candidate }) => {
-if (!peerConnection.current || !candidate) return;
-
-await peerConnection.current.addIceCandidate(candidate);
-
-});
-
-socket.on("call-ended", () => {
-endCall();
-});
-
-socket.on("call-rejected", () => {
-toast.error("Call rejected");
-endCall();
-});
-
-return () => {
-socket.off("incoming-call");
-socket.off("call-answered");
-socket.off("ice-candidate");
-socket.off("call-ended");
-socket.off("call-rejected");
-};
-}, [socket]);
+// switch camera  ends
 
 const acceptCall = async () => {
 setShowVideoCall(true);
@@ -1351,7 +1346,8 @@ boxShadow: "0 10px 30px rgba(0,0,0,0.25)"
 }}
 
 >
-  <motion.button
+
+<motion.button
 whileHover={{ scale: 1.08 }}
 whileTap={{ scale: 0.94 }}
 onClick={switchCamera}
