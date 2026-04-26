@@ -7,7 +7,7 @@ import { formatMsgTime } from '../lib/utils'
 import assets from '../assets/assets'
 import toast from 'react-hot-toast'
 import { useNavigate } from "react-router-dom"
-import { ArrowDownFromLine,ArrowLeft, ArrowUpFromLine, CookingPot, Images, Mic, Pause, Phone, Search, Video,Forward, MoreVertical} from 'lucide-react'; 
+import { ArrowDownFromLine,ArrowLeft, ArrowUpFromLine, CookingPot, Images, Mic, Pause, Phone, Search, Video,Forward, MoreVertical, Camera, CameraOff, MicOff, PhoneOff} from 'lucide-react'; 
 
 const CallToast = ({ type }) => (
   <div style={{
@@ -37,6 +37,10 @@ const ChatContainer = () => {
 
   const [showVideoCall, setShowVideoCall] = useState(false);
   const [incomingCall, setIncomingCall] = useState(null);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isCameraOff, setIsCameraOff] = useState(false);
+  const [callStatus, setCallStatus] = useState("Connecting...");
+
 
 const emojiRef = useRef()
 const currentAudioRef = useRef(null)
@@ -234,6 +238,9 @@ urls: "stun:stun.l.google.com:19302"
 });
 
 peerConnection.current.ontrack = (event) => {
+  console.log("REMOTE VIDEO RECEIVED");
+
+setCallStatus("Connected");
 if (remoteVideoRef.current) {
 remoteVideoRef.current.srcObject = event.streams[0];
 }
@@ -428,6 +435,30 @@ remoteVideoRef.current.srcObject = null;
 
 setShowVideoCall(false);
 setIncomingCall(null);
+};
+
+const toggleMute = () => {
+if (!localStream.current) return;
+
+const audioTrack = localStream.current
+.getAudioTracks()[0];
+
+if (audioTrack) {
+audioTrack.enabled = !audioTrack.enabled;
+setIsMuted(!audioTrack.enabled);
+}
+};
+
+const toggleCamera = () => {
+if (!localStream.current) return;
+
+const videoTrack = localStream.current
+.getVideoTracks()[0];
+
+if (videoTrack) {
+videoTrack.enabled = !videoTrack.enabled;
+setIsCameraOff(!videoTrack.enabled);
+}
 };
 
 
@@ -1160,7 +1191,7 @@ useEffect(() => {
 )} </AnimatePresence>
 
 {/* full screen vc */}
-<AnimatePresence>
+  <AnimatePresence>
   {showVideoCall && (
     <motion.div
       initial={{ opacity: 0 }}
@@ -1171,12 +1202,10 @@ useEffect(() => {
         inset: 0,
         background: "#000",
         zIndex: 10000,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center"
+        overflow: "hidden"
       }}
     >
-      {/* Remote Video - Full Screen */}
+      {/* Remote Video Full Screen */}
       <video
         ref={remoteVideoRef}
         autoPlay
@@ -1187,7 +1216,43 @@ useEffect(() => {
           objectFit: "cover"
         }}
       />
-  {/* Local Video - Small Floating Box */}
+
+```
+  {/* Top Gradient Header */}
+  <div
+    style={{
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      padding: "24px 20px",
+      background:
+        "linear-gradient(to bottom, rgba(0,0,0,0.65), transparent)",
+      zIndex: 5
+    }}
+  >
+    <h2
+      style={{
+        color: "white",
+        fontSize: 22,
+        fontWeight: 700,
+        marginBottom: 4
+      }}
+    >
+      {selectedUser?.fullName || "Video Call"}
+    </h2>
+
+    <p
+      style={{
+        color: "rgba(255,255,255,0.75)",
+        fontSize: 14
+      }}
+    >
+      {callStatus}
+    </p>
+  </div>
+
+  {/* Local Video Floating Card */}
   <video
     ref={localVideoRef}
     autoPlay
@@ -1195,50 +1260,155 @@ useEffect(() => {
     playsInline
     style={{
       position: "absolute",
-      top: 20,
+      top: 90,
       right: 20,
       width: 220,
       height: 160,
-      borderRadius: 18,
+      borderRadius: 22,
       objectFit: "cover",
-      border: "2px solid rgba(255,255,255,0.2)",
+      border: "2px solid rgba(255,255,255,0.18)",
       background: "#111",
-      zIndex: 2
+      boxShadow: "0 20px 50px rgba(0,0,0,0.35)",
+      zIndex: 6
     }}
   />
 
-  {/* Bottom Controls */}
-  <div
-    style={{
-      position: "absolute",
-      bottom: 40,
-      left: "50%",
-      transform: "translateX(-50%)",
-      display: "flex",
-      gap: 20,
-      zIndex: 3
-    }}
-  >
-    {/* End Call Button */}
-    <button
-      onClick={endCall}
-      style={{
-        width: 64,
-        height: 64,
-        borderRadius: "50%",
-        border: "none",
-        background: "#ef4444",
-        color: "white",
-        cursor: "pointer",
-        fontWeight: 700,
-        fontSize: 14
-      }}
-    >
-      End
-    </button>
-  </div>
+ {/* Bottom Controls */}
+
+{/* Bottom Controls */}
+
+<div
+  style={{
+    position: "absolute",
+    bottom: 40,
+    left: "50%",
+    transform: "translateX(-50%)",
+    display: "flex",
+    alignItems: "center",
+    gap: 16,
+    zIndex: 7,
+
+padding: "12px 18px",
+borderRadius: 999,
+
+background: "rgba(0,0,0,0.25)",
+backdropFilter: "blur(20px)",
+border: "1px solid var(--border-color)",
+boxShadow: "0 10px 30px rgba(0,0,0,0.25)"
+
+}}
+
+>
+
+{/* Mute Button */}
+<motion.button
+whileHover={{ scale: 1.08, y: -2 }}
+whileTap={{ scale: 0.94 }}
+onClick={toggleMute}
+style={{
+width: 58,
+height: 58,
+borderRadius: "50%",
+border: "1px solid var(--border-color)",
+
+  background: isMuted
+    ? "rgba(239,68,68,0.15)"
+    : "var(--glass)",
+
+  color: "white",
+  cursor: "pointer",
+
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+
+  backdropFilter: "blur(16px)",
+  boxShadow: isMuted
+    ? "0 0 20px rgba(239,68,68,0.2)"
+    : "0 0 15px var(--glow)",
+
+  transition: "all 0.25s ease"
+}}
+
+>
+{isMuted ? <MicOff size={22} /> : <Mic size={22} />}
+
+</motion.button>
+
+{/* Camera Button */}
+<motion.button
+whileHover={{ scale: 1.08, y: -2 }}
+whileTap={{ scale: 0.94 }}
+onClick={toggleCamera}
+style={{
+width: 58,
+height: 58,
+borderRadius: "50%",
+border: "1px solid var(--border-color)",
+  background: isCameraOff
+    ? "rgba(239,68,68,0.15)"
+    : "var(--glass)",
+
+  color: "white",
+  cursor: "pointer",
+
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+
+  backdropFilter: "blur(16px)",
+  boxShadow: isCameraOff
+    ? "0 0 20px rgba(239,68,68,0.2)"
+    : "0 0 15px var(--glow)",
+
+  transition: "all 0.25s ease"
+}}
+
+>
+{isCameraOff ? <CameraOff size={22} /> : <Camera size={22} />}
+
+</motion.button>
+
+{/* End Call Button */}
+<motion.button
+whileHover={{ scale: 1.1, y: -2 }}
+whileTap={{ scale: 0.92 }}
+onClick={endCall}
+style={{
+width: 70,
+height: 70,
+borderRadius: "50%",
+border: "none",
+
+  background:
+    "linear-gradient(135deg, #ef4444, #dc2626)",
+
+  color: "white",
+  cursor: "pointer",
+
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+
+  boxShadow:
+    "0 10px 30px rgba(239,68,68,0.35)",
+
+  transition: "all 0.25s ease"
+}}
+
+>
+<PhoneOff size={24} />
+</motion.button>
+
+</div>
+
 </motion.div>
+
 )} </AnimatePresence>
+
+      
+  
+
 
 
 
