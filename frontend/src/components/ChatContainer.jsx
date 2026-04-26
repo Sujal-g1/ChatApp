@@ -21,7 +21,7 @@ const CallToast = ({ type }) => (
 )
 
 const ChatContainer = () => {
-  const { authUser, onlineUsers } = useContext(AuthContext)
+  const { authUser, onlineUsers,socket } = useContext(AuthContext)
   const { selectedUser, setSelectedUser, getMessages, messages, sendMessage } = useContext(ChatContext)
   const scrollEnd = useRef()
   const [input, setInput] = useState('')
@@ -35,14 +35,24 @@ const ChatContainer = () => {
   const [showEmoji, setShowEmoji] = useState(false)
   const [activeEmojiTab, setActiveEmojiTab] = useState("smileys")
 
-  const emojiRef = useRef()
-  const currentAudioRef = useRef(null)
+  const [showVideoCall, setShowVideoCall] = useState(false);
+  const [incomingCall, setIncomingCall] = useState(null);
+
+const emojiRef = useRef()
+const currentAudioRef = useRef(null)
 const mediaRecorderRef = useRef(null)
 const chunksRef = useRef([])
 const streamRef = useRef(null)
 const typingTimer = useRef()
 
-  const navigate = useNavigate()
+const localVideoRef = useRef(null);
+const remoteVideoRef = useRef(null);
+
+const peerConnection = useRef(null);
+const localStream = useRef(null);
+
+
+const navigate = useNavigate()
 
   const iconBtn = {
   display: 'flex',
@@ -199,9 +209,229 @@ const cancelRecording = () => {
     typingTimer.current = setTimeout(() => setIsTyping(false), 1000)
   }
 
-  const handleCall = (type) => {
-    toast.custom(() => <CallToast type={type} />, { duration: 3000 })
+  // ------------------------------------video call ------------------------------------
+const handleCall = async (type) => {
+  console.log("CALL BUTTON CLICKED:", type);
+if (type === "video") {
+setShowVideoCall(true);
+await startCall();
+return;
+}
+
+toast.custom(() => <CallToast type={type} />, {
+duration: 3000
+});
+};
+
+// vc connection,
+ const createPeerConnection = () => {
+peerConnection.current = new RTCPeerConnection({
+iceServers: [
+{
+urls: "stun:stun.l.google.com:19302"
+}
+]
+});
+
+peerConnection.current.ontrack = (event) => {
+if (remoteVideoRef.current) {
+remoteVideoRef.current.srcObject = event.streams[0];
+}
+};
+
+peerConnection.current.onicecandidate = (event) => {
+if (event.candidate) {
+socket.emit("ice-candidate", {
+to: selectedUser?._id,
+candidate: event.candidate
+});
+}
+};
+};
+
+// start vc
+const startCall = async () => {
+try {
+console.log("START CALL FUNCTION RUNNING");
+
+// create only if missing
+if (!peerConnection.current) {
+  console.log("Creating peer connection...");
+  createPeerConnection();
+}
+
+// get camera + mic
+localStream.current =
+  await navigator.mediaDevices.getUserMedia({
+    video: true,
+    audio: true
+  });
+
+// show local video
+if (localVideoRef.current) {
+  localVideoRef.current.srcObject = localStream.current;
+}
+
+// safety check again
+if (!peerConnection.current) {
+  console.log("Peer connection missing again, recreating...");
+  createPeerConnection();
+}
+
+// add tracks safely
+localStream.current.getTracks().forEach((track) => {
+  if (peerConnection.current) {
+    peerConnection.current.addTrack(track, localStream.current);
   }
+});
+
+// create offer
+const offer = await peerConnection.current.createOffer();
+
+await peerConnection.current.setLocalDescription(offer);
+
+console.log("EMITTING CALL USER EVENT");
+
+socket.emit("call-user", {
+  to: selectedUser?._id,
+  offer,
+  callerInfo: {
+    name: authUser.fullName,
+    profilePic: authUser.profilePic
+  }
+});
+
+} catch (error) {
+console.log("START CALL ERROR:", error);
+}
+};
+
+
+// noti vc
+useEffect(() => {
+  if (!socket) return;
+socket.on("incoming-call", ({ from, offer, callerInfo }) => {
+console.log("INCOMING CALL RECEIVED");
+console.log("From:", from);
+console.log("Caller Info:", callerInfo);
+setIncomingCall({
+    from,
+    offer,
+    callerInfo
+});
+});
+
+
+socket.on("call-answered", async ({ answer }) => {
+if (!peerConnection.current) return;
+
+await peerConnection.current.setRemoteDescription(
+  new RTCSessionDescription(answer)
+);
+
+});
+
+socket.on("ice-candidate", async ({ candidate }) => {
+if (!peerConnection.current || !candidate) return;
+
+await peerConnection.current.addIceCandidate(candidate);
+
+});
+
+socket.on("call-ended", () => {
+endCall();
+});
+
+socket.on("call-rejected", () => {
+toast.error("Call rejected");
+endCall();
+});
+
+return () => {
+socket.off("incoming-call");
+socket.off("call-answered");
+socket.off("ice-candidate");
+socket.off("call-ended");
+socket.off("call-rejected");
+};
+}, [socket]);
+
+const acceptCall = async () => {
+setShowVideoCall(true);
+
+createPeerConnection();
+
+localStream.current =
+await navigator.mediaDevices.getUserMedia({
+video: true,
+audio: true
+});
+
+if (localVideoRef.current) {
+localVideoRef.current.srcObject = localStream.current;
+}
+
+localStream.current.getTracks().forEach((track) => {
+peerConnection.current.addTrack(track, localStream.current);
+});
+
+await peerConnection.current.setRemoteDescription(
+new RTCSessionDescription(incomingCall.offer)
+);
+
+const answer = await peerConnection.current.createAnswer();
+
+await peerConnection.current.setLocalDescription(answer);
+
+socket.emit("answer-call", {
+to: incomingCall.from,
+answer
+});
+
+setIncomingCall(null);
+};
+
+const rejectCall = () => {
+socket.emit("reject-call", {
+to: incomingCall.from
+});
+
+setIncomingCall(null);
+};
+
+const endCall = () => {
+if (selectedUser?._id) {
+socket.emit("end-call", {
+to: selectedUser._id
+});
+}
+
+if (peerConnection.current) {
+peerConnection.current.close();
+peerConnection.current = null;
+}
+
+if (localStream.current) {
+localStream.current.getTracks().forEach((track) => {
+track.stop();
+});
+localStream.current = null;
+}
+
+if (localVideoRef.current) {
+localVideoRef.current.srcObject = null;
+}
+
+if (remoteVideoRef.current) {
+remoteVideoRef.current.srcObject = null;
+}
+
+setShowVideoCall(false);
+setIncomingCall(null);
+};
+
+
+// video call end
 
   useEffect(() => {
     if (selectedUser) getMessages(selectedUser._id)
@@ -825,6 +1055,192 @@ useEffect(() => {
   )}
 </AnimatePresence>
       
+      {/* vc */}
+  <AnimatePresence>
+  {incomingCall && (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.75)",
+        zIndex: 9999,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 20
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 360,
+          padding: 30,
+          borderRadius: 24,
+          background: "rgba(20,20,40,0.96)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          backdropFilter: "blur(20px)",
+          textAlign: "center",
+          color: "white",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.4)"
+        }}
+      >
+        <img
+          src={
+            incomingCall?.callerInfo?.profilePic ||
+            assets.avatar_icon
+          }
+          alt="caller"
+          style={{
+            width: 90,
+            height: 90,
+            borderRadius: "50%",
+            objectFit: "cover",
+            marginBottom: 16,
+            border: "2px solid rgba(255,255,255,0.08)"
+          }}
+        />
+    <h2
+      style={{
+        fontSize: 22,
+        fontWeight: 700,
+        marginBottom: 8
+      }}
+    >
+      {incomingCall?.callerInfo?.name || "Incoming Call"}
+    </h2>
+
+    <p
+      style={{
+        opacity: 0.7,
+        marginBottom: 24,
+        fontSize: 14
+      }}
+    >
+      is calling you...
+    </p>
+
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        gap: 16
+      }}
+    >
+      <button
+        onClick={acceptCall}
+        style={{
+          padding: "12px 20px",
+          borderRadius: 999,
+          border: "none",
+          cursor: "pointer",
+          fontWeight: 600
+        }}
+      >
+        Accept
+      </button>
+
+      <button
+        onClick={rejectCall}
+        style={{
+          padding: "12px 20px",
+          borderRadius: 999,
+          border: "none",
+          cursor: "pointer",
+          fontWeight: 600
+        }}
+      >
+        Reject
+      </button>
+    </div>
+  </div>
+</motion.div>
+)} </AnimatePresence>
+
+{/* full screen vc */}
+<AnimatePresence>
+  {showVideoCall && (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "#000",
+        zIndex: 10000,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center"
+      }}
+    >
+      {/* Remote Video - Full Screen */}
+      <video
+        ref={remoteVideoRef}
+        autoPlay
+        playsInline
+        style={{
+          width: "100%",
+          height: "100%",
+          objectFit: "cover"
+        }}
+      />
+  {/* Local Video - Small Floating Box */}
+  <video
+    ref={localVideoRef}
+    autoPlay
+    muted
+    playsInline
+    style={{
+      position: "absolute",
+      top: 20,
+      right: 20,
+      width: 220,
+      height: 160,
+      borderRadius: 18,
+      objectFit: "cover",
+      border: "2px solid rgba(255,255,255,0.2)",
+      background: "#111",
+      zIndex: 2
+    }}
+  />
+
+  {/* Bottom Controls */}
+  <div
+    style={{
+      position: "absolute",
+      bottom: 40,
+      left: "50%",
+      transform: "translateX(-50%)",
+      display: "flex",
+      gap: 20,
+      zIndex: 3
+    }}
+  >
+    {/* End Call Button */}
+    <button
+      onClick={endCall}
+      style={{
+        width: 64,
+        height: 64,
+        borderRadius: "50%",
+        border: "none",
+        background: "#ef4444",
+        color: "white",
+        cursor: "pointer",
+        fontWeight: 700,
+        fontSize: 14
+      }}
+    >
+      End
+    </button>
+  </div>
+</motion.div>
+)} </AnimatePresence>
+
+
 
     </motion.div>
   )

@@ -33,6 +33,71 @@ io.on("connection" , (socket)=>{
     // emit online users to all connected clients
     io.emit("getOnlineUsers" , Object.keys(userSocketMap));
 
+    // video call starts --
+
+    // Caller sends offer 
+ socket.on("call-user", ({ to, offer, callerInfo }) => {
+console.log(" CALL USER EVENT ")
+console.log("Caller User ID:", userId);
+console.log("Receiver User ID:", to);
+console.log("Current userSocketMap:", userSocketMap);
+
+const receiverSocketId = userSocketMap[to];
+
+console.log("Receiver Socket ID:", receiverSocketId);
+
+if (receiverSocketId) {
+    console.log("Sending incoming-call event...");
+
+    io.to(receiverSocketId).emit("incoming-call", {
+        from: userId,
+        offer,
+        callerInfo
+    });
+} else {
+    console.log("Receiver not found or offline");
+}
+
+});
+
+
+    // Receiver sends answer 
+    socket.on("answer-call", ({ to, answer }) => { 
+        const callerSocketId = userSocketMap[to]; 
+        if (callerSocketId) {
+             io.to(callerSocketId).emit("call-answered", { answer
+              }); 
+            }
+         });
+
+    // Reject call 
+    socket.on("reject-call", ({ to }) => {
+         const callerSocketId = userSocketMap[to]; 
+         if (callerSocketId) { 
+            io.to(callerSocketId).emit("call-rejected"); 
+        }
+     });
+
+
+     // ICE candidate exchange 
+     socket.on("ice-candidate", ({ to, candidate }) => {
+         const targetSocketId = userSocketMap[to];
+          if (targetSocketId) { 
+            io.to(targetSocketId).emit("ice-candidate", { candidate });
+         }
+         }); 
+     
+     // End call 
+     socket.on("end-call", ({ to }) => { 
+        const targetSocketId = userSocketMap[to];
+         if (targetSocketId) {
+             io.to(targetSocketId).emit("call-ended"); 
+            }
+         });
+
+       // video call  ends--
+
+
     socket.on("disconnect" , ()=>{
         console.log("User DisConnected" , userId);
         delete userSocketMap[userId];
