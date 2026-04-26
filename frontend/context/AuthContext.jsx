@@ -31,7 +31,6 @@ export const AuthProvider = ({children}) => {
     }
 
     // login fn to handle user auth and socket connection
-     
    const login = async (state, credentials) => {
   try {
     let data;
@@ -104,8 +103,6 @@ transports: ["websocket"]
 });
 
 newSocket.on("connect", () => {
-console.log("Socket connected:", newSocket.id);
-console.log("Connected User ID:", userData._id);
 });
 
 newSocket.on("getOnlineUsers", (userIds) => {

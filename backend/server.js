@@ -26,7 +26,6 @@ export const userSocketMap = {
 //  socket.io connection handler
 io.on("connection" , (socket)=>{
     const userId = socket.handshake.query.userId;
-    console.log("User Connected" , userId);
 
     if(userId) userSocketMap[userId] = socket.id;
 
@@ -37,27 +36,18 @@ io.on("connection" , (socket)=>{
 
     // Caller sends offer 
  socket.on("call-user", ({ to, offer, callerInfo }) => {
-console.log(" CALL USER EVENT ")
-console.log("Caller User ID:", userId);
-console.log("Receiver User ID:", to);
-console.log("Current userSocketMap:", userSocketMap);
 
 const receiverSocketId = userSocketMap[to];
 
-console.log("Receiver Socket ID:", receiverSocketId);
-
 if (receiverSocketId) {
-    console.log("Sending incoming-call event...");
-
     io.to(receiverSocketId).emit("incoming-call", {
         from: userId,
         offer,
         callerInfo
     });
 } else {
-    console.log("Receiver not found or offline");
+    console.error("receiver not found");
 }
-
 });
 
 

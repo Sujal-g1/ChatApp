@@ -199,9 +199,7 @@ const cancelRecording = () => {
     mediaRecorderRef.current.onstop = null
     mediaRecorderRef.current.stop()
   }
-
   streamRef.current?.getTracks().forEach(track => track.stop())
-
   chunksRef.current = []
   setIsRecording(false)
   setAudioBlob(null)
@@ -217,7 +215,6 @@ const cancelRecording = () => {
 
   // ------------------------------------video call ------------------------------------
 const handleCall = async (type) => {
-  console.log("CALL BUTTON CLICKED:", type);
 if (type === "video") {
 setShowVideoCall(true);
 await startCall();
@@ -240,7 +237,6 @@ urls: "stun:stun.l.google.com:19302"
 });
 
 peerConnection.current.ontrack = (event) => {
-  console.log("REMOTE VIDEO RECEIVED");
 
 setCallStatus("Connected");
 if (remoteVideoRef.current) {
@@ -261,7 +257,6 @@ candidate: event.candidate
 // start vc
 const startCall = async () => {
 try {
-console.log("START CALL FUNCTION RUNNING");
 
 // create only if missing
 if (!peerConnection.current) {
@@ -300,8 +295,6 @@ localStream.current.getTracks().forEach((track) => {
 const offer = await peerConnection.current.createOffer();
 
 await peerConnection.current.setLocalDescription(offer);
-
-console.log("EMITTING CALL USER EVENT");
 
 socket.emit("call-user", {
   to: selectedUser?._id,
@@ -375,8 +368,8 @@ const newStream =
   await navigator.mediaDevices.getUserMedia({
     video: {
       facingMode: isFrontCamera
-        ? "environment"
-        : "user"
+        ? "user"
+        : "environment"
     },
     audio: true
   });
