@@ -94,14 +94,15 @@ const handleShareInvite = async () => {
 
 Join using my ID: ${userId}
 
-Try it here: ${liveUrl}`;
+// Try it here: ${liveUrl}
+`;
 
   if (navigator.share) {
     try {
       await navigator.share({
         title: "Join with me on Zingleee",
         text: shareText,
-        // url: liveUrl,
+        url: liveUrl,
       });
     } catch (error) {
       console.log("Share cancelled", error);
