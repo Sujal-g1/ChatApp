@@ -260,7 +260,6 @@ try {
 
 // create only if missing
 if (!peerConnection.current) {
-  console.log("Creating peer connection...");
   createPeerConnection();
 }
 
@@ -315,9 +314,6 @@ console.log("START CALL ERROR:", error);
 useEffect(() => {
   if (!socket) return;
 socket.on("incoming-call", ({ from, offer, callerInfo }) => {
-console.log("INCOMING CALL RECEIVED");
-console.log("From:", from);
-console.log("Caller Info:", callerInfo);
 setIncomingCall({
     from,
     offer,
@@ -405,9 +401,7 @@ console.log("Switch camera error:", error);
 
 const acceptCall = async () => {
 setShowVideoCall(true);
-
 createPeerConnection();
-
 localStream.current =
 await navigator.mediaDevices.getUserMedia({
 video: true,
@@ -427,14 +421,11 @@ new RTCSessionDescription(incomingCall.offer)
 );
 
 const answer = await peerConnection.current.createAnswer();
-
 await peerConnection.current.setLocalDescription(answer);
-
 socket.emit("answer-call", {
 to: incomingCall.from,
 answer
 });
-
 setIncomingCall(null);
 };
 

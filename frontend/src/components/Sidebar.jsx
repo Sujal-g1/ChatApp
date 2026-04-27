@@ -8,7 +8,7 @@ import { ZingleeeLogo } from '../pages/LandingPage'
 import assets from '../assets/assets'
 import axios from "axios";
 import toast from "react-hot-toast";
-import {Signpost ,UserRound, BellRing,Settings,LogOut,Palette } from 'lucide-react'; 
+import {Signpost ,UserRound, BellRing,Settings,LogOut,Palette, Share2 } from 'lucide-react'; 
 
 const Sidebar = () => {
   const { getUsers, users, selectedUser, setSelectedUser, unseenMessages, setUnseenMessages, getRequests, requests, respondRequest  } = useContext(ChatContext)
@@ -83,6 +83,36 @@ const getSentRequests = async () => {
   getRequests();
   getSentRequests();
 }, []);
+
+
+// share profile
+const handleShareInvite = async () => {
+  const userId = authUser?.zingleeId || authUser?._id;
+  const liveUrl = "https://zingleee.vercel.app";
+
+  const shareText = `Hey! I'm using Zingleee.
+
+Join using my ID: ${userId}
+
+Try it here: ${liveUrl}`;
+
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: "Join with me on Zingleee",
+        text: shareText,
+        url: liveUrl,
+      });
+    } catch (error) {
+      console.log("Share cancelled", error);
+    }
+  } else {
+    await navigator.clipboard.writeText(shareText);
+    toast.success("Invite copied to clipboard!");
+  }
+
+  setMenuOpen(false);
+};
 
   return (
     <motion.div
@@ -167,6 +197,7 @@ const getSentRequests = async () => {
                     { icon:<Palette />, label: 'Themes', action: () => { setShowThemes(!showThemes); setMenuOpen(false) } },
                     { icon: <BellRing />, label: 'Notifications', action: () => setMenuOpen(false) },
                     { icon: <Settings />, label: 'Settings', action: () => setMenuOpen(false) },
+                    {icon: <Share2 />,label: 'Invite Friends',action: () => handleShareInvite(),danger: false,},
                    { icon: <Signpost />, label: 'How to Use', action: () => {  navigate('/ins'); setMenuOpen(false); }, 
                      danger: false},
                     { icon: <LogOut />, label: 'Logout', action: () => { logout(); setMenuOpen(false) }, danger: true },
