@@ -85,7 +85,7 @@ const getSentRequests = async () => {
 }, []);
 
 
-// share profile
+// share profile ----------------------
 const handleShareInvite = async () => {
   const userId = authUser?.zingleeId || authUser?._id;
   const liveUrl = "https://zingleee.vercel.app";
@@ -101,7 +101,7 @@ Try it here: ${liveUrl}`;
       await navigator.share({
         title: "Join with me on Zingleee",
         text: shareText,
-        url: liveUrl,
+        // url: liveUrl,
       });
     } catch (error) {
       console.log("Share cancelled", error);
