@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChatContext } from '../../context/ChatContext'
@@ -29,9 +29,22 @@ const incomingMap = new Set(requests.map(r => r.sender._id));
 
   const navigate = useNavigate()
 
+  const sortedUsers = useMemo(() => {
+    return [...users].sort((a, b) => {
+      const lastA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+      const lastB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+
+      if (lastA !== lastB) {
+        return lastB - lastA;
+      }
+
+      return a.fullName.localeCompare(b.fullName);
+    });
+  }, [users]);
+
   const filteredUsers = searchInput
-    ? users.filter(u => u.fullName.toLowerCase().includes(searchInput.toLowerCase()))
-    : users
+    ? sortedUsers.filter(u => u.fullName.toLowerCase().includes(searchInput.toLowerCase()))
+    : sortedUsers
 
 
 // search users 
@@ -399,6 +412,7 @@ Join using my ID: ${userId}
               No friends yet
             </motion.div>
           ) : (
+
             filteredUsers.map((user, idx) => (
               <motion.div
                 key={user._id}
@@ -411,14 +425,101 @@ Join using my ID: ${userId}
                   setUnseenMessages(prev => ({ ...prev, [user._id]: 0 }))
                 }}
               >
-                <img
-                  src={user?.profilePic || assets.avatar_icon}
-                  alt=""
-                  style={{ width: 42, height: 42, borderRadius: '50%' }}
-                />
-                <p>{user.fullName}</p>
+                <>
+  <img
+    src={user?.profilePic || assets.avatar_icon}
+    alt=""
+    style={{
+      width: 42,
+      height: 42,
+      borderRadius: "50%",
+      objectFit: "cover"
+    }}
+  />
+
+  <div
+    style={{
+      flex: 1,
+      minWidth: 0,
+      marginLeft: 10
+    }}
+  >
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center"
+      }}
+    >
+      <p
+        style={{
+          fontWeight: 600,
+          margin: 0
+        }}
+      >
+        {user.fullName}
+      </p>
+
+      {user.lastMessageAt && (
+        <span
+          style={{
+            fontSize: 11,
+            opacity: 0.6
+          }}
+        >
+          {new Date(user.lastMessageAt).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit"
+          })}
+        </span>
+      )}
+    </div>
+
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center"
+      }}
+    >
+      <p
+        style={{
+          fontSize: 12,
+          opacity: 0.6,
+          margin: 0,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap"
+        }}
+      >
+        {user.lastMessagePreview || "Start chatting"}
+      </p>
+
+      {unseenMessages[user._id] > 0 && (
+        <div
+          style={{
+            minWidth: 20,
+            height: 20,
+            borderRadius: "50%",
+            background: "var(--accent)",
+            color: "white",
+            fontSize: 11,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
+          }}
+        >
+          {unseenMessages[user._id]}
+        </div>
+      )}
+    </div>
+  </div>
+</>
+
               </motion.div>
             ))
+
+            
           )
         )}
 

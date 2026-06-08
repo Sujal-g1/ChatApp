@@ -16,6 +16,28 @@ export const ChatProvider = ({children})=>{
 
     const {socket, axios} = useContext(AuthContext);
 
+    // const updateUserLastMessage = (userId, lastMessageAt) => {
+    //   setUsers((prevUsers) => {
+    //     const updated = prevUsers.map((user) =>
+    //       String(user._id) === String(userId)
+    //         ? { ...user, lastMessageAt }
+    //         : user
+    //     );
+    
+    //     return updated.sort((a, b) => {
+    //       const lastA = a.lastMessageAt
+    //         ? new Date(a.lastMessageAt).getTime()
+    //         : 0;
+    
+    //       const lastB = b.lastMessageAt
+    //         ? new Date(b.lastMessageAt).getTime()
+    //         : 0;
+    
+    //       return lastB - lastA;
+    //     });
+    //   });
+    // };
+
 
     //fn to get all users for sidebar
     // const getUsers = async()=>{
@@ -101,6 +123,23 @@ export const ChatProvider = ({children})=>{
 
     if (data.success) {
       setMessages((prev) => [...prev, data.newMessage]);
+      setUsers(prev =>
+        prev.map(user =>
+          String(user._id) === String(selectedUser._id)
+            ? {
+                ...user,
+                lastMessageAt: data.newMessage.createdAt,
+                lastMessagePreview:
+                  data.newMessage.audio
+                    ? "🎤 Voice Message"
+                    : data.newMessage.image
+                    ? "📷 Photo"
+                    : data.newMessage.text
+              }
+            : user
+        )
+      );
+
     } else {
       toast.error(data.message);
     }
@@ -125,6 +164,22 @@ export const ChatProvider = ({children})=>{
 
         const onNewMessage = (newMessage) => {
             const senderId = String(newMessage.senderId);
+            setUsers(prev =>
+              prev.map(user =>
+                String(user._id) === senderId
+                  ? {
+                      ...user,
+                      lastMessageAt: newMessage.createdAt,
+                      lastMessagePreview:
+                        newMessage.audio
+                          ? "🎤 Voice Message"
+                          : newMessage.image
+                          ? "📷 Photo"
+                          : newMessage.text
+                    }
+                  : user
+              )
+            );
 
             if (selectedUser && senderId === String(selectedUser._id)) {
                 newMessage.seen = true;
@@ -138,8 +193,37 @@ export const ChatProvider = ({children})=>{
             }
         };
 
+        const onMessageSeen = ({ messageId }) => {
+          setMessages(prev =>
+            prev.map(msg =>
+              String(msg._id) === String(messageId)
+                ? { ...msg, seen: true }
+                : msg
+            )
+          );
+        };
+
+        const onMessagesSeen = ({ messageIds }) => {
+          setMessages(prev =>
+            prev.map(msg =>
+              messageIds.some(
+                id => String(id) === String(msg._id)
+              )
+                ? { ...msg, seen: true }
+                : msg
+            )
+          );
+        };
+
         socket.on("newMessage", onNewMessage);
-        return () => socket.off("newMessage", onNewMessage);
+        socket.on("messageSeen", onMessageSeen);
+        socket.on("messagesSeen", onMessagesSeen);
+
+        return () => {
+        socket.off("newMessage", onNewMessage);
+        socket.off("messageSeen", onMessageSeen);
+        socket.off("messagesSeen", onMessagesSeen);
+};
     };
 
     const subscribeToFriendEvents = () => {

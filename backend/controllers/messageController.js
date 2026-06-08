@@ -5,15 +5,106 @@ import { emitToUser } from "../server.js";
 
 
 // get all users except logged user
-export const getUserForSidebar = async (req, res) => {
+export const getUserForSidebar = async (req, res) => { 
   try {
-    const user = await User.findById(req.user._id)
+    const myId = req.user._id;
+    const user = await User.findById(myId)
       .populate("friends", "fullName username bio profilePic zingleeId status");
+
+    const unseenCounts = await Message.aggregate([
+      {
+        $match: {
+          receiverId: myId,
+          seen: false,
+        },
+      },
+      {
+        $group: {
+          _id: "$senderId",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const unseenMessages = unseenCounts.reduce((counts, item) => {
+      counts[item._id.toString()] = item.count;
+      return counts;
+    }, {});
+
+    const lastMessages = await Message.aggregate([
+      {
+        $match: {
+          $or: [
+            { senderId: myId },
+            { receiverId: myId },
+          ],
+        },
+      },
+      { $sort: { createdAt: -1 } },
+      {
+        $addFields: {
+          chatUserId: {
+            $cond: [
+              { $eq: ["$senderId", myId] },
+              "$receiverId",
+              "$senderId",
+            ],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$chatUserId",
+          lastMessageAt: { $first: "$createdAt" },
+          lastText: { $first: "$text" },
+          lastImage: { $first: "$image" },
+          lastAudio: { $first: "$audio" },
+        },
+      },
+    ]);
+
+    const lastMessageMap = lastMessages.reduce((messages, item) => {
+      messages[item._id.toString()] = {
+        lastMessageAt: item.lastMessageAt,
+        lastText: item.lastText,
+        lastImage: item.lastImage,
+        lastAudio: item.lastAudio,
+      };
+    
+      return messages;
+    }, {});
+
+    const usersWithChatActivity = user.friends.map((friend) => {
+      const friendObject = friend.toObject();
+    
+      const chatData =
+        lastMessageMap[friend._id.toString()] || {};
+    
+      friendObject.lastMessageAt = chatData.lastMessageAt || null;
+    
+      if (chatData.lastAudio) {
+        friendObject.lastMessagePreview = "🎤 Voice Message";
+      } else if (chatData.lastImage) {
+        friendObject.lastMessagePreview = "📷 Photo";
+      } else {
+        friendObject.lastMessagePreview =
+          chatData.lastText || "";
+      }
+    
+      return friendObject;
+    });
+
+    usersWithChatActivity.sort((a, b) => {
+      if (!a.lastMessageAt) return 1;
+      if (!b.lastMessageAt) return -1;
+    
+      return new Date(b.lastMessageAt) - new Date(a.lastMessageAt);
+    });
 
     res.json({
       success: true,
-      users: user.friends,
-      unseenMessages: {}
+      users: usersWithChatActivity,
+      unseenMessages
     });
 
   } catch (error) {
@@ -36,9 +127,36 @@ export const getMessages = async(req, res)=>{
                  {senderId :myId , receiverId:selectedUserId},
                  {senderId:selectedUserId,receiverId:myId}
             ]
-        })
+        }).sort({ createdAt: 1 })
 
-        await Message.updateMany({senderId:selectedUserId , receiverId:myId},{seen:true});
+        // await Message.updateMany({senderId:selectedUserId , receiverId:myId},{seen:true});
+
+        const unseenMessages = await Message.find({
+          senderId: selectedUserId,
+          receiverId: myId,
+          seen: false
+        });
+        
+        const messageIds = unseenMessages.map(msg => msg._id);
+        
+        await Message.updateMany(
+          {
+            senderId: selectedUserId,
+            receiverId: myId,
+            seen: false
+          },
+          {
+            seen: true
+          }
+        );
+        
+        emitToUser(
+          selectedUserId,
+          "messagesSeen",
+          {
+            messageIds
+          }
+        );
 
         res.json({success:true , messages})
     }
@@ -49,17 +167,54 @@ export const getMessages = async(req, res)=>{
 }
 
 // apu to mark msg as seen using msg id
-export const  markMessageAsSeen = async(req, res)=>{
-    try{
-        const  {id} = req.params;
-        await Message.findByIdAndUpdate(id , {seen:true})
-        res.json({success:true})
+
+// export const  markMessageAsSeen = async(req, res)=>{
+//     try{
+//         const  {id} = req.params;
+//         await Message.findByIdAndUpdate(id , {seen:true})
+//         res.json({success:true})
+//     }
+//     catch(error){
+//           console.log(error.message)
+//         res.json({success:false , message:error.message})
+//     }
+// }
+
+export const markMessageAsSeen = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const message = await Message.findByIdAndUpdate(
+      id,
+      { seen: true },
+      { new: true }
+    );
+
+    if (!message) {
+      return res.json({
+        success: false,
+        message: "Message not found"
+      });
     }
-    catch(error){
-          console.log(error.message)
-        res.json({success:false , message:error.message})
-    }
-}
+
+    emitToUser(
+      message.senderId.toString(),
+      "messageSeen",
+      {
+        messageId: message._id
+      }
+    );
+
+    res.json({ success: true });
+
+  } catch (error) {
+    console.log(error.message);
+    res.json({
+      success: false,
+      message: error.message
+    });
+  }
+};
 
 // send msg to selected user
 export const sendMessage = async (req, res) => {
