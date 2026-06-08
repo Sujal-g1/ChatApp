@@ -120,27 +120,44 @@ export const ChatProvider = ({children})=>{
   }
 };
 
-    // fn to subscribe to msgs for selected user
-    const subscribeToMessages = async ()=>{
-        if(!socket) return;
-        socket.on("newMessage" , (newMessage)=>{
-            if(selectedUser && newMessage.senderId === selectedUser._id){
-                newMessage.seen = true;
-                setMessages((prevMessages)=> [...prevMessages, newMessage]);
-                axios.put(`/api/messages/mark/${newMessage._id}`);
-            }
-            else{
-                setUnseenMessages((prevUnseenMessages)=>({
-                    ...prevUnseenMessages, [newMessage.senderId] : prevUnseenMessages[newMessage.senderId] ? prevUnseenMessages[newMessage.senderId] + 1 : 1
-                }))
-            }
-        })
-    }
+    const subscribeToMessages = () => {
+        if (!socket) return;
 
-    //  // fn to Unsubscribe from msgs 
-const unsubscribeFromMessages = async ()=>{
-        if(socket) socket.off("newMessage");
-    }
+        const onNewMessage = (newMessage) => {
+            const senderId = String(newMessage.senderId);
+
+            if (selectedUser && senderId === String(selectedUser._id)) {
+                newMessage.seen = true;
+                setMessages((prevMessages) => [...prevMessages, newMessage]);
+                axios.put(`/api/messages/mark/${newMessage._id}`);
+            } else {
+                setUnseenMessages((prev) => ({
+                    ...prev,
+                    [senderId]: (prev[senderId] || 0) + 1,
+                }));
+            }
+        };
+
+        socket.on("newMessage", onNewMessage);
+        return () => socket.off("newMessage", onNewMessage);
+    };
+
+    const subscribeToFriendEvents = () => {
+        if (!socket) return;
+
+        const onNewFriendRequest = () => getRequests();
+        const onFriendListUpdated = () => getUsers();
+
+        socket.on("newFriendRequest", onNewFriendRequest);
+        socket.on("friendRequestCancelled", onNewFriendRequest);
+        socket.on("friendListUpdated", onFriendListUpdated);
+
+        return () => {
+            socket.off("newFriendRequest", onNewFriendRequest);
+            socket.off("friendRequestCancelled", onNewFriendRequest);
+            socket.off("friendListUpdated", onFriendListUpdated);
+        };
+    };
 
     // fn to get req
     const getRequests = async () => {
@@ -167,10 +184,14 @@ const unsubscribeFromMessages = async ()=>{
 };
 
 
-    useEffect(()=>{
-        subscribeToMessages();
-        return ()=> unsubscribeFromMessages();
-    },[socket, selectedUser])
+    useEffect(() => {
+        const cleanupMessages = subscribeToMessages();
+        const cleanupFriends = subscribeToFriendEvents();
+        return () => {
+            cleanupMessages?.();
+            cleanupFriends?.();
+        };
+    }, [socket, selectedUser]);
 
     const value = {
         messages,

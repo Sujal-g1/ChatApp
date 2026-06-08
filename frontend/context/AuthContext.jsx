@@ -1,4 +1,4 @@
-import { createContext, useEffect, useState } from "react";
+import { createContext, useEffect, useRef, useState } from "react";
 import axios from "axios"
 import toast from "react-hot-toast"
 import {io} from "socket.io-client"
@@ -15,6 +15,7 @@ export const AuthProvider = ({children}) => {
     const [authUser, setAuthUser] = useState(null);
     const [onlineUsers, setOnlineUsers] = useState([]);
     const [socket, setSocket] = useState(null);
+    const socketRef = useRef(null);
 
     // check is user is authenticated and if so ,set the user data and connect the socket
      const checkAuth = async() => {
@@ -67,7 +68,9 @@ export const AuthProvider = ({children}) => {
         setOnlineUsers([])
          delete axios.defaults.headers.common["Authorization"];
          toast.success("Logged out Successfully")
-         socket?.disconnect();
+         socketRef.current?.disconnect();
+         socketRef.current = null;
+         setSocket(null);
     }
 
 
@@ -88,29 +91,24 @@ export const AuthProvider = ({children}) => {
 
     // connect socket fn to handle socket connection and online users updates
     const connectSocket = (userData) => {
-if (!userData) return;
+        if (!userData) return;
 
-// disconnect old socket first
-if (socket) {
-socket.disconnect();
-}
+        socketRef.current?.disconnect();
 
-const newSocket = io(backendUrl, {
-query: {
-userId: userData._id
-},
-transports: ["websocket"]
-});
+        const newSocket = io(backendUrl, {
+            query: { userId: userData._id },
+            reconnection: true,
+            reconnectionAttempts: Infinity,
+            reconnectionDelay: 1000,
+        });
 
-newSocket.on("connect", () => {
-});
+        newSocket.on("getOnlineUsers", (userIds) => {
+            setOnlineUsers(userIds);
+        });
 
-newSocket.on("getOnlineUsers", (userIds) => {
-setOnlineUsers(userIds);
-});
-
-setSocket(newSocket);
-};
+        socketRef.current = newSocket;
+        setSocket(newSocket);
+    };
 
 
     useEffect(() => {

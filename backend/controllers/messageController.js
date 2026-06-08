@@ -1,7 +1,7 @@
 import Message from "../models/Message.js";
 import User from "../models/User.js";
 import cloudinary from "../config/cloudinary.js";
-import { io , userSocketMap } from "../server.js";
+import { emitToUser } from "../server.js";
 
 
 // get all users except logged user
@@ -131,11 +131,8 @@ if (!text && !imageUrl && !audioUrl) {
       audio: audioUrl
     });
 
-    // ⚡ emit real-time message
-    const receiverSocketId = userSocketMap[receiverId];
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("newMessage", newMessage);
-    }
+    // emit real-time message to receiver
+    emitToUser(receiverId, "newMessage", newMessage.toObject());
 
     res.json({
       success: true,

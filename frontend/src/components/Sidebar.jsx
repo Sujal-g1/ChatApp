@@ -12,7 +12,7 @@ import {Signpost ,UserRound, BellRing,Settings,LogOut,Palette, Share2 } from 'lu
 
 const Sidebar = () => {
   const { getUsers, users, selectedUser, setSelectedUser, unseenMessages, setUnseenMessages, getRequests, requests, respondRequest  } = useContext(ChatContext)
-  const { logout, onlineUsers, authUser } = useContext(AuthContext)
+  const { logout, onlineUsers, authUser, socket } = useContext(AuthContext)
   const { theme, setTheme, THEMES } = useTheme()
   const [searchInput, setSearchInput] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
@@ -83,6 +83,26 @@ const getSentRequests = async () => {
   getRequests();
   getSentRequests();
 }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const refreshSent = () => getSentRequests();
+    const refreshAll = () => {
+      getSentRequests();
+      getUsers();
+    };
+
+    socket.on("friendRequestAccepted", refreshAll);
+    socket.on("friendRequestRejected", refreshSent);
+    socket.on("friendListUpdated", refreshAll);
+
+    return () => {
+      socket.off("friendRequestAccepted", refreshAll);
+      socket.off("friendRequestRejected", refreshSent);
+      socket.off("friendListUpdated", refreshAll);
+    };
+  }, [socket]);
 
 
 // share profile ----------------------

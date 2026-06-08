@@ -1,6 +1,11 @@
 import mongoose from "mongoose";
 import FriendRequest from "../models/FriendRequest.js";
 import User from "../models/User.js";
+import { emitToUser } from "../server.js";
+
+const populateRequest = (id) =>
+  FriendRequest.findById(id).populate("sender", "username profilePic zingleeId fullName")
+    .populate("receiver", "username profilePic zingleeId fullName");
 
 
 // send req
@@ -42,9 +47,11 @@ let existingRequest = await FriendRequest.findOne({
 });
 
 if (existingRequest) {
-  // 🔥 reset it instead of creating new
   existingRequest.status = "pending";
   await existingRequest.save();
+
+  const populated = await populateRequest(existingRequest._id);
+  emitToUser(receiverId, "newFriendRequest", populated?.toObject());
 
   return res.json({
     success: true,
@@ -66,11 +73,13 @@ if (existingRequest) {
       });
     }
 
-    //  create request
     const request = await FriendRequest.create({
       sender: senderId,
       receiver: receiverId,
     });
+
+    const populated = await populateRequest(request._id);
+    emitToUser(receiverId, "newFriendRequest", populated?.toObject());
 
     res.status(201).json({
       success: true,
@@ -237,6 +246,8 @@ export const cancelRequest = async (req, res) => {
     request.status = "rejected";
     await request.save();
 
+    emitToUser(request.receiver, "friendRequestCancelled", { requestId: request._id });
+
     res.json({
       success: true,
       message: "Request cancelled",
@@ -315,6 +326,14 @@ export const respondToRequest = async (req, res) => {
     }
 
     await request.save();
+
+    if (action === "accept") {
+      emitToUser(request.sender, "friendRequestAccepted", { requestId: request._id });
+      emitToUser(request.receiver, "friendListUpdated");
+      emitToUser(request.sender, "friendListUpdated");
+    } else {
+      emitToUser(request.sender, "friendRequestRejected", { requestId: request._id });
+    }
 
     res.json({
       success: true,

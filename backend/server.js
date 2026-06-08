@@ -17,17 +17,25 @@ export const io = new Server(server , {
     cors:{origin:"*"}
 })
 
-// store online users
-//  {userId:socketId}
-export const userSocketMap = {
+// store online users { userId: socketId }
+export const userSocketMap = {}
 
+export const emitToUser = (userId, event, data) => {
+    const id = userId?.toString();
+    const socketId = userSocketMap[id];
+    if (socketId) {
+        io.to(socketId).emit(event, data);
+    }
 }
  
 //  socket.io connection handler
 io.on("connection" , (socket)=>{
     const userId = socket.handshake.query.userId;
 
-    if(userId) userSocketMap[userId] = socket.id;
+    if (userId) {
+        userSocketMap[userId] = socket.id;
+        socket.join(userId.toString());
+    }
 
     // emit online users to all connected clients
     io.emit("getOnlineUsers" , Object.keys(userSocketMap));
