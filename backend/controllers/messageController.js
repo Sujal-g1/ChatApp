@@ -274,11 +274,7 @@ if (!text && !imageUrl && !audioUrl) {
       text,
       image: imageUrl,
       audio: audioUrl,
-      expiresAt: new Date(Date.now() + 60000)
     });
-
-    console.log("MESSAGE CREATED:");
-    console.log(newMessage);
 
     // emit real-time message to receiver
     emitToUser(receiverId, "newMessage", newMessage.toObject());
