@@ -166,19 +166,8 @@ export const getMessages = async(req, res)=>{
     }
 }
 
-// apu to mark msg as seen using msg id
+// api to mark msg as seen using msg id
 
-// export const  markMessageAsSeen = async(req, res)=>{
-//     try{
-//         const  {id} = req.params;
-//         await Message.findByIdAndUpdate(id , {seen:true})
-//         res.json({success:true})
-//     }
-//     catch(error){
-//           console.log(error.message)
-//         res.json({success:false , message:error.message})
-//     }
-// }
 
 export const markMessageAsSeen = async (req, res) => {
   try {
@@ -253,6 +242,7 @@ if (sender.blockedUsers.includes(receiverId)) {
   });
 }
 
+
     // 📷 handle image upload
     let imageUrl;
     if (image) {
@@ -283,8 +273,12 @@ if (!text && !imageUrl && !audioUrl) {
       receiverId,
       text,
       image: imageUrl,
-      audio: audioUrl
+      audio: audioUrl,
+      expiresAt: new Date(Date.now() + 60000)
     });
+
+    console.log("MESSAGE CREATED:");
+    console.log(newMessage);
 
     // emit real-time message to receiver
     emitToUser(receiverId, "newMessage", newMessage.toObject());
