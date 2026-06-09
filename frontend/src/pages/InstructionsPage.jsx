@@ -255,7 +255,7 @@ const InstructionsPage = () => {
             transition={{ duration: 0.5, delay: 0.15 }}
             style={{ fontSize: "clamp(36px, 8vw, 56px)", marginBottom: 14 }}
           >
-            Welcome to Zinglee
+            Welcome to Zingleee
           </motion.h1>
 
           <motion.p
