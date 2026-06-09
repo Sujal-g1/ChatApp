@@ -7,6 +7,7 @@ import { connectDB } from "./config/db.js";
 import userRouter from "./routes/userRoutes.js";
 import friendRouter from "./routes/friendRoutes.js";
 import messageRouter from "./routes/messageRoutes.js";
+import keyRouter from "./routes/keyRoutes.js";
 import { Server } from "socket.io";
 
 const app = express();
@@ -119,6 +120,7 @@ app.use("/api/status" ,(req , res)=>res.send("Server is running"));
 app.use("/api/auth" , userRouter);
 app.use("/api/friends", friendRouter);
 app.use("/api/messages" , messageRouter);
+app.use("/api/keys", keyRouter);
 
 
 // connecting to db

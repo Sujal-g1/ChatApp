@@ -2,6 +2,7 @@ import { createContext, useEffect, useRef, useState } from "react";
 import axios from "axios"
 import toast from "react-hot-toast"
 import {io} from "socket.io-client"
+import { initializeEncryption } from "../src/lib/initializeEncryption";
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
 axios.defaults.baseURL = backendUrl;
@@ -23,6 +24,7 @@ export const AuthProvider = ({children}) => {
             const {data} = await axios.get("/api/auth/check");
             if (data.success){
                 setAuthUser(data.user)
+                await initializeEncryption( axios);
                 connectSocket(data.user )
             }
             
@@ -45,10 +47,11 @@ export const AuthProvider = ({children}) => {
     }
 
     if (data.success) {
-      setAuthUser(data.userData);
-      connectSocket(data.userData);
       axios.defaults.headers.common["Authorization"] = `Bearer ${data.token}`;
       setToken(data.token);
+      setAuthUser(data.userData);
+      await initializeEncryption( axios );
+      connectSocket(data.userData);
       localStorage.setItem("token", data.token);
       toast.success(data.message);
     } else {
