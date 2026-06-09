@@ -25,8 +25,18 @@ seen:{
 },
 audio: {
   type: String
-}
+},
+expiresAt:{
+    type:Date,
+    default: () =>
+        new Date(Date.now() + 60 * 1000)
+  }
 }, {timestamps:true})
+
+messageSchema.index(
+    { expiresAt: 1 },
+    { expireAfterSeconds: 0 }
+  );
 
 const Message = mongoose.model("Message" , messageSchema);
 

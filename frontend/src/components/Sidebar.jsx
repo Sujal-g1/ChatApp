@@ -29,6 +29,13 @@ const incomingMap = new Set(requests.map(r => r.sender._id));
 
   const navigate = useNavigate()
 
+  const fireflies = Array.from({ length: 12 }, (_, i) => ({
+    top: `${Math.random() * 100}%`,
+    delay: Math.random() * 10,
+    duration: 8 + Math.random() * 8,
+  }));
+
+
   const sortedUsers = useMemo(() => {
     return [...users].sort((a, b) => {
       const lastA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
@@ -150,17 +157,50 @@ Join using my ID: ${userId}
 
   return (
     <motion.div
-      initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
-      transition={{ duration: 0.4 }}
-      style={{
-        display: 'flex', flexDirection: 'column',
-        height: '100%', overflow: 'hidden',
-        borderRight: '1px solid rgba(255,255,255,0.06)',
-        background: 'rgba(0,0,0,0.15)',
-        width: '320px',         
-        flexShrink: 0,
-      }}
-    >
+    initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
+    transition={{ duration: 0.4 }}
+    style={{
+      display: 'flex', flexDirection: 'column',
+      height: '100%', overflow: 'hidden',
+      borderRight: '1px solid rgba(255,255,255,0.06)',
+      background: 'rgba(0,0,0,0.15)',
+      width: '320px',         
+      flexShrink: 0,
+      position: 'relative', // ─── CRITICAL: Anchors absolute animations inside the sidebar bounds
+    }}
+  >
+    
+    {/* ─── 2. INSTALLED FIREFLY ANIMATION LAYER ─────────────────────────── */}
+    {fireflies.map((firefly, index) => (
+      <motion.div
+        key={index}
+        animate={{
+          x: ["-50px", "350px"], // Changed from viewport width (vw) to explicit px values to match sidebar width
+          opacity: [0, 1, 1, 0],
+        }}
+        transition={{
+          duration: firefly.duration,
+          repeat: Infinity,
+          delay: firefly.delay,
+          ease: "linear",
+        }}
+        style={{
+          position: "absolute",
+          top: firefly.top,
+          left: 0,
+          width: 4,
+          height: 4,
+          borderRadius: "50%",
+          background: "white",
+          boxShadow: "0 0 10px rgba(255,255,255,0.8)",
+          pointerEvents: "none",
+          zIndex: 1, // Stays in background layer
+        }}
+      />
+    ))}
+    {/* ─── END OF ANIMATION LAYER ──────────────────────────────────────── */}
+
+    
       {/* Header */}
       <div style={{ padding: '20px 16px 12px', flexShrink: 0 }}>
         <div style={{ 
