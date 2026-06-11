@@ -2,7 +2,8 @@ import { generateKeyPair } from "./crypto";
 import {
   getPrivateKey,
   savePrivateKey,
-  savePublicKey
+  savePublicKey,
+  getPublicKey,
 } from "./keyStorage";
 
 let encryptionInitialized = false;
@@ -16,24 +17,68 @@ export const initializeEncryption = async (axios) => {
 
   try {
 
-    const existingKey =
-      await getPrivateKey();
+    const existingKey = await getPrivateKey();
 
     console.log(
       "PRIVATE KEY FROM INDEXEDDB:",
       existingKey
     );
 
-    if (existingKey) {
+   const existingPrivateKey =
+  await getPrivateKey();
 
-      console.log(
-        "Private key exists"
+if(existingPrivateKey){
+
+  console.log(
+    "Private key exists"
+  );
+
+  try{
+
+    const storedPublicKey =
+      await getPublicKey();
+
+    const { data } =
+      await axios.get(
+        "/api/auth/check"
       );
 
-      encryptionInitialized = true;
+    if(
+      !data.user.publicKey &&
+      storedPublicKey
+    ){
 
-      return;
+      console.log(
+        "Re-uploading missing public key..."
+      );
+
+      await axios.post(
+        "/api/keys/public-key",
+        {
+          publicKey:
+            storedPublicKey
+        }
+      );
+
+      console.log(
+        "Public key restored"
+      );
     }
+
+  }
+  catch(error){
+
+    console.log(
+      "Public key recovery failed"
+    );
+
+    console.log(error);
+  }
+
+  encryptionInitialized = true;
+
+  return;
+}
 
     console.log(
       "Generating keypair..."
