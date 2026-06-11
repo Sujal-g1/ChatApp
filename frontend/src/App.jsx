@@ -1,4 +1,5 @@
 import React, { useContext } from 'react'
+import { useEffect } from "react";
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import Homepage from "./pages/Homepage"
@@ -9,6 +10,7 @@ import InstructionsPage from "./pages/InstructionsPage"
 import { Toaster } from "react-hot-toast"
 import { AuthContext } from '../context/AuthContext'
 import { ThemeProvider } from '../context/ThemeContext'
+import { testEncryption } from "./lib/testEncryption";
 
 const pageVariants = {
   initial: { opacity: 0, y: 16 },
@@ -24,9 +26,14 @@ const BgOrbs = () => (
   </div>
 )
 
+
 const AppRoutes = () => {
   const { authUser } = useContext(AuthContext)
   const location = useLocation()
+
+  useEffect(() => {
+  testEncryption();
+}, []);
 
   return (
     <AnimatePresence mode="wait">
@@ -56,6 +63,7 @@ const AppRoutes = () => {
             <InstructionsPage />
           </motion.div>
         } />
+        
       </Routes>
     </AnimatePresence>
   )

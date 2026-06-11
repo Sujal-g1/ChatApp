@@ -16,6 +16,20 @@ const messageSchema = new mongoose.Schema({
 text:{
     type:String
 },
+cipherText:{
+    type:String
+},
+nonce:{
+    type:String
+},
+senderPublicKey:{
+  type:String
+},
+messageType:{
+  type:String,
+  enum:["text","image","audio"],
+  default:"text"
+},
 image:{
     type:String
 },

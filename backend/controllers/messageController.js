@@ -208,7 +208,12 @@ export const markMessageAsSeen = async (req, res) => {
 // send msg to selected user
 export const sendMessage = async (req, res) => {
   try {
-    const { text, image, audio } = req.body;
+    const {  text,
+  cipherText,
+  nonce,
+  messageType,
+  image,
+  audio } = req.body;
     const receiverId = req.params.id;
     const senderId = req.user._id;
 
@@ -260,18 +265,26 @@ if (sender.blockedUsers.includes(receiverId)) {
   audioUrl = uploadResponse.secure_url;
 }
 
-if (!text && !imageUrl && !audioUrl) {
+if (!text && !imageUrl && !audioUrl && !cipherText) {
   return res.status(400).json({
     success: false,
     message: "Empty message"
   });
 }
 
+console.log("SENDER USER");
+console.log(sender.username);
+console.log(sender.publicKey);
+
     // 💬 create message
     const newMessage = await Message.create({
       senderId,
       receiverId,
       text,
+      cipherText,
+      nonce,
+      senderPublicKey:sender.publicKey,
+      messageType,
       image: imageUrl,
       audio: audioUrl,
     });

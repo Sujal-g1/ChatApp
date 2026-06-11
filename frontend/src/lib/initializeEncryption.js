@@ -1,44 +1,92 @@
 import { generateKeyPair } from "./crypto";
+import {
+  getPrivateKey,
+  savePrivateKey,
+  savePublicKey
+} from "./keyStorage";
 
-import { getPrivateKey, savePrivateKey } from "./keyStorage";
+let encryptionInitialized = false;
 
-export const initializeEncryption = async (axios)=>{
+export const initializeEncryption = async (axios) => {
 
-  try{
+  if (encryptionInitialized) {
+    console.log("Already initialized");
+    return;
+  }
+
+  try {
 
     const existingKey =
       await getPrivateKey();
 
-    if(existingKey){
+    console.log(
+      "PRIVATE KEY FROM INDEXEDDB:",
+      existingKey
+    );
+
+    if (existingKey) {
 
       console.log(
         "Private key exists"
       );
 
+      encryptionInitialized = true;
+
       return;
     }
 
+    console.log(
+      "Generating keypair..."
+    );
 
     const keyPair =
       generateKeyPair();
 
-    await axios.post(
-      "/api/keys/public-key",
-      {
-        publicKey:
-          keyPair.publicKey
-      }
+    console.log(
+      "GENERATED PUBLIC KEY:"
+    );
+
+    console.log(
+      keyPair.publicKey
+    );
+
+    const response =
+      await axios.post(
+        "/api/keys/public-key",
+        {
+          publicKey:
+            keyPair.publicKey
+        }
+      );
+
+    console.log(
+      "SAVE KEY RESPONSE:"
+    );
+
+    console.log(
+      response.data
     );
 
     await savePrivateKey(
       keyPair.privateKey
     );
 
+    await savePublicKey(
+      keyPair.publicKey
+    );
+
+    encryptionInitialized = true;
 
   }
   catch(error){
 
+    encryptionInitialized = false;
+
+    console.log(
+      "INITIALIZATION ERROR"
+    );
+
     console.log(error);
 
   }
-}
+};

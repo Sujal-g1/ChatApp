@@ -2,6 +2,9 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { AuthContext } from "./AuthContext";
 import toast from "react-hot-toast";
+import { getUserPublicKey } from "../src/lib/keyApi";
+import { encryptForUser } from "../src/lib/messageEncryption";
+import { decryptFromUser } from "../src/lib/messageEncryption";
 
 export const ChatContext = createContext();
 
@@ -16,43 +19,6 @@ export const ChatProvider = ({children})=>{
 
     const {socket, axios} = useContext(AuthContext);
 
-    // const updateUserLastMessage = (userId, lastMessageAt) => {
-    //   setUsers((prevUsers) => {
-    //     const updated = prevUsers.map((user) =>
-    //       String(user._id) === String(userId)
-    //         ? { ...user, lastMessageAt }
-    //         : user
-    //     );
-    
-    //     return updated.sort((a, b) => {
-    //       const lastA = a.lastMessageAt
-    //         ? new Date(a.lastMessageAt).getTime()
-    //         : 0;
-    
-    //       const lastB = b.lastMessageAt
-    //         ? new Date(b.lastMessageAt).getTime()
-    //         : 0;
-    
-    //       return lastB - lastA;
-    //     });
-    //   });
-    // };
-
-
-    //fn to get all users for sidebar
-    // const getUsers = async()=>{
-    //     try {
-    //     const { data } = await axios.get("/api/messages/users")
-    //     console.log("USERS API:", data);
-    //     if(data.success){
-    //         setUsers(data.users)
-    //         setUnseenMessages(data.unseenMessages)
-
-    //     }
-    //     } catch (error) {
-    //         toast.error(error.message)
-    //     }
-    // }
 
     const getUsers = async () => {
   try {
@@ -76,42 +42,130 @@ export const ChatProvider = ({children})=>{
   }
 };
 
-     
+
+
     // fn to get msgs for selected user
-    const getMessages = async (userId)=>{
-         try {
-          const { data } = await axios.get(`/api/messages/${userId}`)
-          if(data.success){
-            setMessages(data.messages)
-        } 
-         } catch (error) {
-            toast.error(error.message)
-         }
-    }
+    const getMessages = async (userId) => {
 
-    // fn to send msgs to selected usr
-    // const sendMessage = async (messageData)=>{
-    //      try {
-    //       console.log("🚀 SENDING:", messageData);
+  try {
 
-    //       const { data } = await axios.post(`/api/messages/send/${selectedUser._id}` , messageData)
-    //       if(data.success){
-    //         setMessages((prevMessages)=> [...prevMessages, data.newMessage])
-    //     }  
-    //     else{
-    //           toast.error(data.message)
-    //     }
-    //      } catch (error) {
-    //         toast.error(error.message)
-    //      }
-    // }
+    const { data } =
+      await axios.get(
+        `/api/messages/${userId}`
+      );
+
+    if (!data.success) return;
+
+    const decryptedMessages =
+      await Promise.all(
+
+        data.messages.map(
+          async (msg) => {
+
+            if (
+              msg.messageType === "text" &&
+              msg.cipherText
+            ) {
+
+              try {
+
+                const text =
+                  await decryptFromUser(
+                    msg.cipherText,
+                    msg.nonce,
+                    msg.senderPublicKey
+                  );
+
+                return {
+                  ...msg,
+                  text
+                };
+
+              } catch {
+
+                return {
+                  ...msg,
+                  text:
+                    "[Unable to decrypt]"
+                };
+
+              }
+
+            }
+
+            return msg;
+
+          }
+        )
+      );
+
+    setMessages(
+      decryptedMessages
+    );
+
+  } catch (error) {
+
+    toast.error(
+      error.message
+    );
+
+  }
+};
+
 
     const sendMessage = async (messageData) => {
   try {
 
+         let payload = { ...messageData };
+
+    if (
+      messageData.text &&
+      !messageData.image &&
+      !messageData.audio
+    ) {
+
+      console.log("SELECTED USER");
+      console.log(selectedUser);
+
+      const receiverPublicKey =
+        await getUserPublicKey(
+          axios,
+          selectedUser._id
+        );
+
+      console.log("RECEIVER PUBLIC KEY:");
+      console.log(receiverPublicKey);
+
+       if (!receiverPublicKey) {
+              toast.error( "User encryption key not found");
+            return;
+          }
+      console.log(receiverPublicKey.length);
+
+
+      const encrypted =
+        await encryptForUser(
+          messageData.text,
+          receiverPublicKey
+        );
+
+      payload = {
+        cipherText:
+          encrypted.cipherText,
+
+        nonce:
+          encrypted.nonce,
+
+        messageType:
+          "text"
+      };
+    }
+    console.log("PAYLOAD BEING SENT");
+    console.log(payload);
+
     const { data } = await axios.post(
       `/api/messages/send/${selectedUser._id}`,
-      messageData,
+      payload,
       {
         headers: {
           "Content-Type": "application/json"
@@ -121,26 +175,30 @@ export const ChatProvider = ({children})=>{
       }
     );
 
-    if (data.success) {
-      setMessages((prev) => [...prev, data.newMessage]);
-      setUsers(prev =>
-        prev.map(user =>
-          String(user._id) === String(selectedUser._id)
-            ? {
-                ...user,
-                lastMessageAt: data.newMessage.createdAt,
-                lastMessagePreview:
-                  data.newMessage.audio
-                    ? "🎤 Voice Message"
-                    : data.newMessage.image
-                    ? "📷 Photo"
-                    : data.newMessage.text
-              }
-            : user
-        )
-      );
 
-    } else {
+  
+    if (data.success) {
+
+  let messageToShow =
+    data.newMessage;
+
+  if (
+    messageToShow.messageType === "text"
+  ) {
+
+    messageToShow = {
+      ...messageToShow,
+      text: messageData.text
+    };
+
+  }
+
+  setMessages(prev => [
+    ...prev,
+    messageToShow
+  ]);
+} 
+    else {
       toast.error(data.message);
     }
 
@@ -162,7 +220,7 @@ export const ChatProvider = ({children})=>{
     const subscribeToMessages = () => {
         if (!socket) return;
 
-        const onNewMessage = (newMessage) => {
+        const onNewMessage = async (newMessage) => {
             const senderId = String(newMessage.senderId);
             setUsers(prev =>
               prev.map(user =>
@@ -183,6 +241,31 @@ export const ChatProvider = ({children})=>{
 
             if (selectedUser && senderId === String(selectedUser._id)) {
                 newMessage.seen = true;
+                if (
+  newMessage.messageType === "text" &&
+  newMessage.cipherText
+) {
+
+  try {
+
+    const text =
+      await decryptFromUser(
+        newMessage.cipherText,
+        newMessage.nonce,
+        newMessage.senderPublicKey
+      );
+
+    newMessage.text =
+      text;
+
+  }
+  catch {
+
+    newMessage.text =
+      "[Unable to decrypt]";
+
+  }
+}
                 setMessages((prevMessages) => [...prevMessages, newMessage]);
                 axios.put(`/api/messages/mark/${newMessage._id}`);
             } else {

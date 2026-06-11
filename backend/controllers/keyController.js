@@ -64,3 +64,34 @@ export const getPublicKey = async (req, res) => {
 
   }
 };
+
+// // returns a user's public key.
+// export const getUserPublicKey = async (req,res)=>{
+//   try{
+
+//     const user =
+//       await User.findById(
+//         req.params.id
+//       );
+
+//     if(!user){
+//       return res.status(404).json({
+//         success:false
+//       });
+//     }
+
+//     res.json({
+//       success:true,
+//       publicKey:user.publicKey
+//     });
+
+//   }
+//   catch(error){
+
+//     res.status(500).json({
+//       success:false,
+//       message:error.message
+//     });
+
+//   }
+// };

@@ -67,8 +67,7 @@ export const savePrivateKey = async (
   });
 };
 
-export const getPrivateKey =
-async ()=>{
+export const getPrivateKey =async ()=>{
 
   const db = await openDB();
 
@@ -85,6 +84,63 @@ async ()=>{
 
     const request =
       store.get("privateKey");
+
+    request.onsuccess = () =>
+      resolve(request.result);
+
+    request.onerror = () =>
+      reject(request.error);
+
+  });
+};
+
+export const savePublicKey = async (publicKey) => {
+
+  const db = await openDB();
+
+  return new Promise((resolve,reject)=>{
+
+    const tx =
+      db.transaction(
+        STORE_NAME,
+        "readwrite"
+      );
+
+    const store =
+      tx.objectStore(STORE_NAME);
+
+    const request =
+      store.put(
+        publicKey,
+        "publicKey"
+      );
+
+    request.onsuccess = () =>
+      resolve(true);
+
+    request.onerror = () =>
+      reject(request.error);
+
+  });
+};
+
+export const getPublicKey = async ()=> {
+
+  const db = await openDB();
+
+  return new Promise((resolve,reject)=>{
+
+    const tx =
+      db.transaction(
+        STORE_NAME,
+        "readonly"
+      );
+
+    const store =
+      tx.objectStore(STORE_NAME);
+
+    const request =
+      store.get("publicKey");
 
     request.onsuccess = () =>
       resolve(request.result);
