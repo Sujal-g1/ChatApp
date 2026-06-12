@@ -124,8 +124,8 @@ export const ChatProvider = ({children})=>{
       !messageData.audio
     ) {
 
-      console.log("SELECTED USER");
-      console.log(selectedUser);
+      // console.log("SELECTED USER");
+      // console.log(selectedUser);
 
       const receiverPublicKey =
         await getUserPublicKey(
@@ -133,14 +133,14 @@ export const ChatProvider = ({children})=>{
           selectedUser._id
         );
 
-      console.log("RECEIVER PUBLIC KEY:");
-      console.log(receiverPublicKey);
+      // console.log("RECEIVER PUBLIC KEY:");
+      // console.log(receiverPublicKey);
 
        if (!receiverPublicKey) {
               toast.error( "User encryption key not found");
             return;
           }
-      console.log(receiverPublicKey.length);
+      // console.log(receiverPublicKey.length);
 
 
       const encrypted =
@@ -160,8 +160,8 @@ export const ChatProvider = ({children})=>{
           "text"
       };
     }
-    console.log("PAYLOAD BEING SENT");
-    console.log(payload);
+    // console.log("PAYLOAD BEING SENT");
+    // console.log(payload);
 
     const { data } = await axios.post(
       `/api/messages/send/${selectedUser._id}`,
@@ -203,14 +203,14 @@ export const ChatProvider = ({children})=>{
     }
 
   } catch (error) {
-    console.log("❌ FULL ERROR:", error);
+    // console.log("❌ FULL ERROR:", error);
 
     if (error.response) {
-      console.log("❌ SERVER ERROR:", error.response.data);
+      // console.log("❌ SERVER ERROR:", error.response.data);
     } else if (error.request) {
-      console.log("❌ NO RESPONSE (network issue)");
+      // console.log("❌ NO RESPONSE (network issue)");
     } else {
-      console.log("❌ ERROR:", error.message);
+      // console.log("❌ ERROR:", error.message);
     }
 
     toast.error("Message failed to send");
@@ -257,10 +257,8 @@ export const ChatProvider = ({children})=>{
 
     newMessage.text =
       text;
-
   }
   catch {
-
     newMessage.text =
       "[Unable to decrypt]";
 

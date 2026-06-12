@@ -10,28 +10,22 @@ let encryptionInitialized = false;
 
 export const initializeEncryption = async (axios) => {
 
-  if (encryptionInitialized) {
-    console.log("Already initialized");
-    return;
-  }
+  // if (encryptionInitialized) {console.log("Already initialized");
+  //    return;
+  // }
 
   try {
 
     const existingKey = await getPrivateKey();
 
-    console.log(
-      "PRIVATE KEY FROM INDEXEDDB:",
-      existingKey
-    );
+    // console.log("PRIVATE KEY FROM INDEXEDDB:", existingKey );
 
    const existingPrivateKey =
   await getPrivateKey();
 
 if(existingPrivateKey){
 
-  console.log(
-    "Private key exists"
-  );
+  // console.log( "Private key exists");
 
   try{
 
@@ -48,9 +42,7 @@ if(existingPrivateKey){
       storedPublicKey
     ){
 
-      console.log(
-        "Re-uploading missing public key..."
-      );
+      // console.log( "Re-uploading missing public key..." ;
 
       await axios.post(
         "/api/keys/public-key",
@@ -60,17 +52,13 @@ if(existingPrivateKey){
         }
       );
 
-      console.log(
-        "Public key restored"
-      );
+      // console.log( "Public key restored");
     }
 
   }
   catch(error){
 
-    console.log(
-      "Public key recovery failed"
-    );
+    // console.log("Public key recovery failed");
 
     console.log(error);
   }
@@ -80,20 +68,14 @@ if(existingPrivateKey){
   return;
 }
 
-    console.log(
-      "Generating keypair..."
-    );
+    // console.log( "Generating keypair...");
 
     const keyPair =
       generateKeyPair();
 
-    console.log(
-      "GENERATED PUBLIC KEY:"
-    );
+    // console.log( "GENERATED PUBLIC KEY:");
 
-    console.log(
-      keyPair.publicKey
-    );
+    // console.log(keyPair.publicKey);
 
     const response =
       await axios.post(
@@ -104,21 +86,13 @@ if(existingPrivateKey){
         }
       );
 
-    console.log(
-      "SAVE KEY RESPONSE:"
-    );
+    // console.log("SAVE KEY RESPONSE:");
 
-    console.log(
-      response.data
-    );
+    // console.log(response.data);
 
-    await savePrivateKey(
-      keyPair.privateKey
-    );
+    await savePrivateKey( keyPair.privateKey );
 
-    await savePublicKey(
-      keyPair.publicKey
-    );
+    await savePublicKey( keyPair.publicKey );
 
     encryptionInitialized = true;
 
@@ -127,9 +101,7 @@ if(existingPrivateKey){
 
     encryptionInitialized = false;
 
-    console.log(
-      "INITIALIZATION ERROR"
-    );
+    // console.log("INITIALIZATION ERROR");
 
     console.log(error);
 

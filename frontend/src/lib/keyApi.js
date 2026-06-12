@@ -23,15 +23,15 @@ export const getUserPublicKey = async (
   userId
 ) => {
 
-  console.log("REQUESTING KEY FOR:");
-  console.log(userId);
+  // console.log("REQUESTING KEY FOR:");
+  // console.log(userId);
 
   const { data } = await axios.get(
     `/api/keys/${userId}`
   );
 
-  console.log("API RETURNED:");
-  console.log(data);
+  // console.log("API RETURNED:");
+  // console.log(data);
 
   if (!data.success) {
     throw new Error(

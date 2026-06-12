@@ -9,11 +9,11 @@ export const testEncryption = () => {
   const pairA = generateKeyPair();
   const pairB = generateKeyPair();
 
-  console.log("PAIR A");
-  console.log(pairA);
+  // console.log("PAIR A");
+  // console.log(pairA);
 
-  console.log("PAIR B");
-  console.log(pairB);
+  // console.log("PAIR B");
+  // console.log(pairB);
 
   const encrypted = encryptMessage(
     "hello",
@@ -21,8 +21,8 @@ export const testEncryption = () => {
     pairB.publicKey
   );
 
-  console.log("ENCRYPTED");
-  console.log(encrypted);
+  // console.log("ENCRYPTED");
+  // console.log(encrypted);
 
   const decrypted = decryptMessage(
     encrypted.cipherText,
@@ -31,6 +31,6 @@ export const testEncryption = () => {
     pairB.privateKey
   );
 
-  console.log("DECRYPTED");
-  console.log(decrypted);
+  // console.log("DECRYPTED");
+  // console.log(decrypted);
 };

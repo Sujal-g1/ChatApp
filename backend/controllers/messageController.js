@@ -207,6 +207,8 @@ export const markMessageAsSeen = async (req, res) => {
 
 // send msg to selected user
 export const sendMessage = async (req, res) => {
+    console.log("========== BODY RECEIVED ==========");
+  console.log(req.body);
   try {
     const {  text,
   cipherText,
