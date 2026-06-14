@@ -183,6 +183,21 @@ export const sendMessage = async (req, res) => {
     const receiverId = req.params.id;
     const senderId = req.user._id;
 
+    const expiryMap = {
+      "10s": 1000 * 10,
+      "1m": 1000 * 60,
+      "1h": 1000 * 60 * 60,
+      "24h": 1000 * 60 * 60 * 24,
+      "7d": 1000 * 60 * 60 * 24 * 7
+      };
+
+      const deleteMode = "24h";
+
+const expiresAt = new Date(
+  Date.now() +
+  expiryMap[deleteMode]
+);
+
     //  CHECK: Only friends can message
     const sender = await User.findById(senderId);
 
@@ -228,6 +243,8 @@ if (sender.blockedUsers.includes(receiverId)) {
     });
     
   audioUrl = uploadResponse.secure_url;
+
+
 }
 
 if (!text && !imageUrl && !audioUrl) {
@@ -243,7 +260,9 @@ if (!text && !imageUrl && !audioUrl) {
       receiverId,
       text,
       image: imageUrl,
-      audio: audioUrl
+      audio: audioUrl,
+      deleteMode,
+      expiresAt
     });
 
     // emit real-time message to receiver
