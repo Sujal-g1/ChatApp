@@ -560,26 +560,22 @@ useEffect(() => {
             Select a conversation to start messaging
           </p>
 
-           <motion.button
-    onClick={() => navigate('/ins')}
-    animate={{ y: [0, -8, 0] }}
-    transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-    style={{
-      marginTop: 55,
-      padding: '15px 20px',
-      borderRadius: 999,
-      border: '1px solid rgba(255,255,255,0.1)',
-      background: 'linear-gradient(135deg, var(--accent), var(--accent2))',
-      color: '#fff',
-      fontSize: 18,
-      fontWeight: 600,
-      cursor: 'pointer',
-      boxShadow: '0 6px 18px var(--glow)',
-      transition: 'all 0.25s ease'
-    }}
-  >
-   Start with Guide
-  </motion.button>
+         <motion.button
+  onClick={() => navigate('/ins')}
+  className="feature-card"
+  style={{ 
+    marginTop: '20px', 
+    position: "relative", 
+    overflow: "hidden",
+    height: '40px', // Adjust this value to your preferred height
+    padding: '5px 16px' // Optional: lowering vertical padding also reduces height
+  }}
+  initial={{ opacity: 0, y: 24 }}
+  animate={{ opacity: 1, y: 0 }}
+  whileHover={{ y: -4 }}
+>
+  Start with Guide
+</motion.button>
 
         </div>
 

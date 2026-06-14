@@ -17,20 +17,6 @@ export const ChatProvider = ({children})=>{
     const {socket, axios} = useContext(AuthContext);
 
 
-    //fn to get all users for sidebar
-    // const getUsers = async()=>{
-    //     try {
-    //     const { data } = await axios.get("/api/messages/users")
-    //     console.log("USERS API:", data);
-    //     if(data.success){
-    //         setUsers(data.users)
-    //         setUnseenMessages(data.unseenMessages)
-
-    //     }
-    //     } catch (error) {
-    //         toast.error(error.message)
-    //     }
-    // }
 
     const getUsers = async () => {
   try {
@@ -142,22 +128,56 @@ export const ChatProvider = ({children})=>{
         return () => socket.off("newMessage", onNewMessage);
     };
 
-    const subscribeToFriendEvents = () => {
-        if (!socket) return;
+    // ---------------------------------------
+   const subscribeToFriendEvents = () => {
+  if (!socket) return;
 
-        const onNewFriendRequest = () => getRequests();
-        const onFriendListUpdated = () => getUsers();
+  const onNewFriendRequest = (request) => {
 
-        socket.on("newFriendRequest", onNewFriendRequest);
-        socket.on("friendRequestCancelled", onNewFriendRequest);
-        socket.on("friendListUpdated", onFriendListUpdated);
+    setRequests(prev => {
 
-        return () => {
-            socket.off("newFriendRequest", onNewFriendRequest);
-            socket.off("friendRequestCancelled", onNewFriendRequest);
-            socket.off("friendListUpdated", onFriendListUpdated);
-        };
-    };
+      const exists = prev.some(
+        r => r._id === request._id
+      );
+
+      if (exists) return prev;
+
+      return [request, ...prev];
+    });
+  };
+
+  const onFriendRequestCancelled = ({ requestId }) => {
+
+    setRequests(prev =>
+      prev.filter(
+        req => req._id !== requestId
+      )
+    );
+  };
+
+  socket.on(
+    "newFriendRequest",
+    onNewFriendRequest
+  );
+
+  socket.on(
+    "friendRequestCancelled",
+    onFriendRequestCancelled
+  );
+
+  return () => {
+
+    socket.off(
+      "newFriendRequest",
+      onNewFriendRequest
+    );
+
+    socket.off(
+      "friendRequestCancelled",
+      onFriendRequestCancelled
+    );
+  };
+};
 
     // fn to get req
     const getRequests = async () => {
@@ -175,13 +195,49 @@ export const ChatProvider = ({children})=>{
     //fn to respond
     const respondRequest = async (requestId, action) => {
   try {
-    await axios.post("/api/friends/respond", { requestId, action });
-    getRequests(); // refresh
-    getUsers(); // update friends list
+
+    const request = requests.find(
+      r => r._id === requestId
+    );
+
+    await axios.post(
+      "/api/friends/respond",
+      { requestId, action }
+    );
+
+    setRequests(prev =>
+      prev.filter(
+        r => r._id !== requestId
+      )
+    );
+
+    if (
+      action === "accept" &&
+      request?.sender
+    ) {
+
+      setUsers(prev => {
+
+        const exists =
+          prev.some(
+            u =>
+              u._id ===
+              request.sender._id
+          );
+
+        if (exists) return prev;
+
+        return [
+          request.sender,
+          ...prev
+        ];
+      });
+    }
+
   } catch (error) {
     toast.error(error.message);
   }
-};
+}; 
 
 
     useEffect(() => {

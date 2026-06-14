@@ -17,6 +17,12 @@ import {
   Bell
 } from "lucide-react"
 
+  const fireflies = Array.from({ length: 12 }, (_, i) => ({
+    top: `${Math.random() * 100}%`,
+    delay: Math.random() * 10,
+    duration: 8 + Math.random() * 8,
+  }));
+
 // ─── Tab Config ─────────────────────────────────────────────
 const tabs = [
   { id: "how", label: "How to Use" },
@@ -76,6 +82,39 @@ const HowCard = ({ icon, title, text, step, index }) => (
     transition={{ duration: 0.4, delay: index * 0.08 }}
     whileHover={{ y: -4 }}
   >
+
+    {/* ─── 2.  FIREFLY ANIMATION LAYER ─────────────────────────── */}
+        {fireflies.map((firefly, index) => (
+          <motion.div
+            key={index}
+            animate={{
+              x: ["-50px", "350px"], // Changed from viewport width (vw) to explicit px values to match sidebar width
+              opacity: [0, 1, 1, 0],
+            }}
+            transition={{
+              duration: firefly.duration,
+              repeat: Infinity,
+              delay: firefly.delay,
+              ease: "linear",
+            }}
+            style={{
+              position: "absolute",
+              top: firefly.top,
+              left: 0,
+              width: 4,
+              height: 4,
+              borderRadius: "50%",
+              background: "white",
+              boxShadow: "0 0 10px rgba(255,255,255,0.8)",
+              pointerEvents: "none",
+              zIndex: 1, // Stays in background layer
+            }}
+          />
+        ))}
+        {/* ─── END OF ANIMATION LAYER ──────────────────────────────────────── */}
+     
+    
+
     {/* Step number watermark */}
     <span
       style={{
@@ -115,6 +154,36 @@ const PrivacyRow = ({ icon, title, desc, index }) => (
       borderRadius: 16,
     }}
   >
+    {/* ─── 2.  FIREFLY ANIMATION LAYER ─────────────────────────── */}
+        {fireflies.map((firefly, index) => (
+          <motion.div
+            key={index}
+            animate={{
+              x: ["-50px", "350px"], // Changed from viewport width (vw) to explicit px values to match sidebar width
+              opacity: [0, 1, 1, 0],
+            }}
+            transition={{
+              duration: firefly.duration,
+              repeat: Infinity,
+              delay: firefly.delay,
+              ease: "linear",
+            }}
+            style={{
+              position: "absolute",
+              top: firefly.top,
+              left: 0,
+              width: 4,
+              height: 4,
+              borderRadius: "50%",
+              background: "white",
+              boxShadow: "0 0 10px rgba(255,255,255,0.8)",
+              pointerEvents: "none",
+              zIndex: 1, // Stays in background layer
+            }}
+          />
+        ))}
+        {/* ─── END OF ANIMATION LAYER ──────────────────────────────────────── */}
+
     <div
       style={{
         width: 44,
@@ -152,6 +221,38 @@ const FeatureRow = ({ icon, title, desc, index }) => (
       borderRadius: 16,
     }}
   >
+
+{/* ─── 2.  FIREFLY ANIMATION LAYER ─────────────────────────── */}
+        {fireflies.map((firefly, index) => (
+          <motion.div
+            key={index}
+            animate={{
+              x: ["-50px", "350px"], // Changed from viewport width (vw) to explicit px values to match sidebar width
+              opacity: [0, 1, 1, 0],
+            }}
+            transition={{
+              duration: firefly.duration,
+              repeat: Infinity,
+              delay: firefly.delay,
+              ease: "linear",
+            }}
+            style={{
+              position: "absolute",
+              top: firefly.top,
+              left: 0,
+              width: 4,
+              height: 4,
+              borderRadius: "50%",
+              background: "white",
+              boxShadow: "0 0 10px rgba(255,255,255,0.8)",
+              pointerEvents: "none",
+              zIndex: 1, // Stays in background layer
+            }}
+          />
+        ))}
+        {/* ─── END OF ANIMATION LAYER ──────────────────────────────────────── */}
+    
+
     <div
       style={{
         width: 44,
@@ -201,6 +302,8 @@ const InstructionsPage = () => {
         position: "relative",
       }}
     >
+      
+
       {/* Background orbs */}
       <div className="bg-orbs">
         <div className="orb orb-1" />
@@ -255,7 +358,7 @@ const InstructionsPage = () => {
             transition={{ duration: 0.5, delay: 0.15 }}
             style={{ fontSize: "clamp(36px, 8vw, 56px)", marginBottom: 14 }}
           >
-            Welcome to Zinglee
+            Welcome to Zingleee
           </motion.h1>
 
           <motion.p
@@ -394,20 +497,16 @@ const InstructionsPage = () => {
           transition={{ duration: 0.4, delay: 0.45 }}
         >
           
-          <button 
+        <motion.button 
         onClick={() => navigate('/')}
-        style={{
-          marginTop: '20px',
-          padding: '12px 24px',
-          borderRadius: '50px',
-          background: 'var(--accent)',
-          color: 'white',
-          border: 'none',
-          cursor: 'pointer'
-        }}
+        className="feature-card"
+        style={{ position: "relative", overflow: "hidden" }}
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        whileHover={{ y: -4 }}
       >
         Go to Homepage
-      </button>
+      </motion.button>
 
         </motion.div>
 

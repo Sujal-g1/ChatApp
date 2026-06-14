@@ -170,7 +170,7 @@ Join using my ID: ${userId}
     }}
   >
     
-    {/* ─── 2. INSTALLED FIREFLY ANIMATION LAYER ─────────────────────────── */}
+    {/* ─── 2.  FIREFLY ANIMATION LAYER ─────────────────────────── */}
     {fireflies.map((firefly, index) => (
       <motion.div
         key={index}
@@ -644,9 +644,6 @@ Join using my ID: ${userId}
   <button
     onClick={async () => {
       await respondRequest(req._id, "reject");
-      await getUsers();
-      await getRequests();
-      await getSentRequests();
     }}
     style={{
       display: "flex",
