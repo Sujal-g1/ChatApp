@@ -59,6 +59,7 @@ const typingTimer = useRef()
 const localVideoRef = useRef(null);
 const remoteVideoRef = useRef(null);
 
+const remoteUserIdRef = useRef(null);
 const peerConnection = useRef(null);
 const localStream = useRef(null);
 
@@ -243,7 +244,11 @@ urls: "stun:stun.l.google.com:19302"
 
 peerConnection.current.ontrack = (event) => {
 
+console.log("REMOTE VIDEO RECEIVED");
+console.log(event.streams);
+
 setCallStatus("Connected");
+
 if (remoteVideoRef.current) {
 remoteVideoRef.current.srcObject = event.streams[0];
 }
@@ -251,16 +256,22 @@ remoteVideoRef.current.srcObject = event.streams[0];
 
 peerConnection.current.onicecandidate = (event) => {
 if (event.candidate) {
+
+console.log("SENDING ICE");
+
 socket.emit("ice-candidate", {
-to: selectedUser?._id,
+to: remoteUserIdRef.current,
 candidate: event.candidate
 });
 }
 };
+
+
 };
 
 // start vc
 const startCall = async () => {
+  remoteUserIdRef.current = selectedUser._id;
 try {
 
 // create only if missing
@@ -334,9 +345,21 @@ await peerConnection.current.setRemoteDescription(
 });
 
 socket.on("ice-candidate", async ({ candidate }) => {
+
+console.log("RECEIVED ICE");
+
 if (!peerConnection.current || !candidate) return;
-await peerConnection.current.addIceCandidate(candidate);
+
+try {
+await peerConnection.current.addIceCandidate(
+new RTCIceCandidate(candidate)
+);
+} catch (err) {
+console.log("ICE ERROR", err);
+}
+
 });
+
 socket.on("call-ended", () => {
 endCall();
 });
@@ -405,6 +428,7 @@ console.log("Switch camera error:", error);
 // switch camera  ends
 
 const acceptCall = async () => {
+remoteUserIdRef.current = incomingCall.from;
 setShowVideoCall(true);
 createPeerConnection();
 localStream.current =
