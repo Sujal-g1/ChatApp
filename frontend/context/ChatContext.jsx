@@ -53,22 +53,6 @@ export const ChatProvider = ({children})=>{
          }
     }
 
-    // fn to send msgs to selected usr
-    // const sendMessage = async (messageData)=>{
-    //      try {
-    //       console.log("🚀 SENDING:", messageData);
-
-    //       const { data } = await axios.post(`/api/messages/send/${selectedUser._id}` , messageData)
-    //       if(data.success){
-    //         setMessages((prevMessages)=> [...prevMessages, data.newMessage])
-    //     }  
-    //     else{
-    //           toast.error(data.message)
-    //     }
-    //      } catch (error) {
-    //         toast.error(error.message)
-    //      }
-    // }
 
     const sendMessage = async (messageData) => {
   try {
@@ -155,6 +139,28 @@ export const ChatProvider = ({children})=>{
     );
   };
 
+  const onFriendRemoved = ({ userId }) => {
+
+  setUsers(prev =>
+    prev.filter(
+      user => user._id !== userId
+    )
+  );
+
+  setRequests(prev =>
+    prev.filter(req =>
+      req.sender?._id !== userId
+    )
+  );
+
+  if (
+    selectedUser &&
+    selectedUser._id === userId
+  ) {
+    setSelectedUser(null);
+  }
+};
+
   socket.on(
     "newFriendRequest",
     onNewFriendRequest
@@ -164,6 +170,11 @@ export const ChatProvider = ({children})=>{
     "friendRequestCancelled",
     onFriendRequestCancelled
   );
+
+  socket.on(
+  "friendRemoved",
+  onFriendRemoved
+);
 
   return () => {
 
@@ -176,6 +187,11 @@ export const ChatProvider = ({children})=>{
       "friendRequestCancelled",
       onFriendRequestCancelled
     );
+
+    socket.off(
+  "friendRemoved",
+  onFriendRemoved
+);
   };
 };
 
@@ -249,20 +265,28 @@ export const ChatProvider = ({children})=>{
         };
     }, [socket, selectedUser]);
 
-    const value = {
-        messages,
-        users,
-        selectedUser,
-        getUsers,
-        getMessages,
-        sendMessage,
-        setSelectedUser,
-        unseenMessages,
-        setUnseenMessages,
-        requests,
-        getRequests,
-        respondRequest
-    }
+   const value = {
+    messages,
+
+    users,
+    setUsers,
+
+    selectedUser,
+    getUsers,
+    getMessages,
+    sendMessage,
+
+    setSelectedUser,
+
+    unseenMessages,
+    setUnseenMessages,
+
+    requests,
+    setRequests,
+
+    getRequests,
+    respondRequest
+}
 
     return (<ChatContext.Provider value={value}>
         {children}

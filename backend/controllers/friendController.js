@@ -191,6 +191,21 @@ export const removeFriend = async (req, res) => {
       $pull: { friends: userId }
     });
 
+    emitToUser(
+  targetUserId,
+  "friendRemoved",
+  {
+    userId: userId.toString()
+  }
+);
+
+emitToUser(
+  userId,
+  "friendRemoved",
+  {
+    userId: targetUserId.toString()
+  }
+);  
     // 🔥 ADD THIS (IMPORTANT)
     await FriendRequest.deleteMany({
       $or: [
@@ -328,10 +343,39 @@ export const respondToRequest = async (req, res) => {
     await request.save();
 
     if (action === "accept") {
-      emitToUser(request.sender, "friendRequestAccepted", { requestId: request._id });
-      emitToUser(request.receiver, "friendListUpdated");
-      emitToUser(request.sender, "friendListUpdated");
-    } else {
+
+  const senderUser =
+    await User.findById(
+      request.sender
+    ).select(
+      "fullName username profilePic zingleeId"
+    );
+
+  const receiverUser =
+    await User.findById(
+      request.receiver
+    ).select(
+      "fullName username profilePic zingleeId"
+    );
+
+  emitToUser(
+    request.sender,
+    "friendRequestAccepted",
+    {
+      requestId: request._id,
+      friend: receiverUser
+    }
+  );
+
+  emitToUser(
+    request.receiver,
+    "friendAdded",
+    {
+      friend: senderUser
+    }
+  );
+}
+    else {
       emitToUser(request.sender, "friendRequestRejected", { requestId: request._id });
     }
 

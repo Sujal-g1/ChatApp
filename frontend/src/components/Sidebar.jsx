@@ -11,7 +11,7 @@ import toast from "react-hot-toast";
 import {Signpost ,UserRound, BellRing,Settings,LogOut,Palette, Share2 } from 'lucide-react'; 
 
 const Sidebar = () => {
-  const { getUsers, users, selectedUser, setSelectedUser, unseenMessages, setUnseenMessages, getRequests, requests, respondRequest  } = useContext(ChatContext)
+  const { getUsers, users, setUsers, selectedUser, setSelectedUser, unseenMessages, setUnseenMessages, getRequests, requests, setRequests, respondRequest } = useContext(ChatContext)
   const { logout, onlineUsers, authUser, socket } = useContext(AuthContext)
   const { theme, setTheme, THEMES } = useTheme()
   const [searchInput, setSearchInput] = useState('')
@@ -104,25 +104,75 @@ const getSentRequests = async () => {
   getSentRequests();
 }, []);
 
-  useEffect(() => {
-    if (!socket) return;
 
-    const refreshSent = () => getSentRequests();
-    const refreshAll = () => {
-      getSentRequests();
-      getUsers();
-    };
+// friend req accepted, rejected etc
+ useEffect(() => {
 
-    socket.on("friendRequestAccepted", refreshAll);
-    socket.on("friendRequestRejected", refreshSent);
-    socket.on("friendListUpdated", refreshAll);
+  if (!socket) return;
 
-    return () => {
-      socket.off("friendRequestAccepted", refreshAll);
-      socket.off("friendRequestRejected", refreshSent);
-      socket.off("friendListUpdated", refreshAll);
-    };
-  }, [socket]);
+  const onAccepted = (data) => {
+    console.log("ACCEPTED EVENT");
+console.log(data);
+
+    setSentRequests(prev =>
+      prev.filter(
+        req =>
+          req._id !== data.requestId
+      )
+    );
+
+    setUsers(prev => {
+
+      const exists =
+        prev.some(
+          u =>
+            u._id ===
+            data.friend._id
+        );
+
+      if (exists) return prev;
+
+      return [
+        data.friend,
+        ...prev
+      ];
+    });
+  };
+
+  const onRejected = (data) => {
+
+    setSentRequests(prev =>
+      prev.filter(
+        req =>
+          req._id !== data.requestId
+      )
+    );
+  };
+
+  socket.on(
+    "friendRequestAccepted",
+    onAccepted
+  );
+
+  socket.on(
+    "friendRequestRejected",
+    onRejected
+  );
+
+  return () => {
+
+    socket.off(
+      "friendRequestAccepted",
+      onAccepted
+    );
+
+    socket.off(
+      "friendRequestRejected",
+      onRejected
+    );
+  };
+
+}, [socket]);
 
 
 // share profile ----------------------
