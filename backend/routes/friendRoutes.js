@@ -1,5 +1,5 @@
 import express from "express";
-import { sendFriendRequest , respondToRequest , blockUser,unblockUser ,removeFriend, cancelRequest, getPendingRequests, getSentRequests  } from "../controllers/friendController.js";
+import { sendFriendRequest, respondToRequest, blockUser, unblockUser, removeFriend, cancelRequest, getPendingRequests, getSentRequests, getBlockedUsers } from "../controllers/friendController.js";
 import { protectRoute } from "../middleware/auth.js";
 
 const router = express.Router();
@@ -12,5 +12,6 @@ router.post("/remove", protectRoute, removeFriend);
 router.post("/cancel", protectRoute, cancelRequest);
 router.get("/pending", protectRoute, getPendingRequests);
 router.get("/sent-req", protectRoute, getSentRequests);
+router.get("/blocked", protectRoute, getBlockedUsers);
 
 export default router;

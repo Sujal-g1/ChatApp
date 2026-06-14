@@ -98,9 +98,16 @@ if (existingRequest) {
 
 // block user
 export const blockUser = async (req, res) => {
+
   try {
     const userId = req.user._id;
     const { targetUserId } = req.body;
+
+      console.log("BLOCKING");
+console.log({
+  blocker: userId.toString(),
+  target: targetUserId
+});
 
     if (userId.toString() === targetUserId) {
       return res.status(400).json({
@@ -131,6 +138,22 @@ await FriendRequest.deleteMany({
   ]
 });
 
+    emitToUser(
+  targetUserId,
+  "userBlocked",
+  {
+    userId: userId.toString()
+  }
+);
+
+emitToUser(
+  userId,
+  "userBlocked",
+  {
+    userId: targetUserId.toString()
+  }
+);
+
     res.json({
       success: true,
       message: "User blocked successfully",
@@ -145,6 +168,32 @@ await FriendRequest.deleteMany({
   }
 };
 
+export const getBlockedUsers = async (req, res) => {
+  try {
+
+    const user = await User.findById(
+      req.user._id
+    ).populate(
+      "blockedUsers",
+      "fullName username profilePic zingleeId"
+    );
+
+    res.json({
+      success: true,
+      users: user.blockedUsers
+    });
+
+  } catch (error) {
+
+    console.log(error.message);
+
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 // unblock user
 export const unblockUser = async (req, res) => {
   try {
@@ -154,6 +203,14 @@ export const unblockUser = async (req, res) => {
     await User.findByIdAndUpdate(userId, {
       $pull: { blockedUsers: targetUserId }
     });
+
+    emitToUser(
+  userId,
+  "userUnblocked",
+  {
+    userId: targetUserId
+  }
+);
 
     res.json({
       success: true,

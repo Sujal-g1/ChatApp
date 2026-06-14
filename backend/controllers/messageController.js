@@ -7,18 +7,93 @@ import { emitToUser } from "../server.js";
 // get all users except logged user
 export const getUserForSidebar = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id)
-      .populate("friends", "fullName username bio profilePic zingleeId status");
+    const myId = req.user._id;
+
+    const user =
+      await User.findById(myId).populate(
+        "friends",
+        "fullName username bio profilePic zingleeId status"
+      );
+
+      const unseenMessages = {};
+
+      const unseen = await Message.aggregate([
+  {
+    $match: {
+      receiverId: myId,
+      seen: false
+    }
+  },
+  {
+    $group: {
+      _id: "$senderId",
+      count: { $sum: 1 }
+    }
+  }
+      ]);
+
+unseen.forEach(item => {
+  unseenMessages[item._id.toString()] =
+    item.count;
+});
+
+      
+    const usersWithMeta =
+      await Promise.all(
+
+        user.friends.map(
+          async (friend) => {
+
+            const lastMessage =
+              await Message.findOne({
+                $or: [
+                  {
+                    senderId: myId,
+                    receiverId: friend._id
+                  },
+                  {
+                    senderId: friend._id,
+                    receiverId: myId
+                  }
+                ]
+              })
+              .sort({
+                createdAt: -1
+              });
+
+            return {
+              ...friend.toObject(),
+
+              lastMessageAt:
+                lastMessage?.createdAt ||
+                null,
+
+              lastMessagePreview:
+                lastMessage?.text ||
+                (lastMessage?.image
+                  ? "📷 Image"
+                  : lastMessage?.audio
+                  ? "🎤 Audio"
+                  : "")
+            };
+          }
+        )
+      );
 
     res.json({
-      success: true,
-      users: user.friends,
-      unseenMessages: {}
-    });
+  success: true,
+  users: usersWithMeta,
+  unseenMessages
+});
 
   } catch (error) {
+
     console.log(error.message);
-    res.json({ success: false, message: error.message });
+
+    res.json({
+      success: false,
+      message: error.message
+    });
   }
 };
 
@@ -38,7 +113,47 @@ export const getMessages = async(req, res)=>{
             ]
         })
 
-        await Message.updateMany({senderId:selectedUserId , receiverId:myId},{seen:true});
+        const unseenMessages =
+  await Message.find({
+    senderId: selectedUserId,
+    receiverId: myId,
+    seen: false
+  });
+
+await Message.updateMany(
+  {
+    senderId: selectedUserId,
+    receiverId: myId,
+    seen: false
+  },
+  {
+    seen: true
+  }
+);
+
+    console.log(
+  "EMITTING MESSAGE SEEN",
+  selectedUserId,
+  unseenMessages.length
+);
+
+    unseenMessages.forEach(msg => {
+
+      console.log(
+  "SEEN EVENT",
+  msg._id.toString()
+);
+
+  emitToUser(
+    selectedUserId,
+    "messageSeen",
+    {
+      messageId:
+        msg._id
+    }
+  );
+
+});
 
         res.json({success:true , messages})
     }

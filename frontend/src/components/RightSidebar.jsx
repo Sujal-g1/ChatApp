@@ -30,9 +30,6 @@ const handleRemoveFriend = async () => {
 
     toast.success("Friend removed");
 
-    // refresh state
-    await getUsers?.();
-    setSelectedUser(null);
 
   } catch (err) {
     toast.error(err.response?.data?.message || err.message);
@@ -52,8 +49,6 @@ const handleBlockUser = async () => {
 
     toast.success("User blocked");
 
-    await getUsers?.();
-    setSelectedUser(null);
 
   } catch (err) {
     toast.error(err.response?.data?.message || err.message);

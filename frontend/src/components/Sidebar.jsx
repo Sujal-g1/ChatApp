@@ -11,7 +11,8 @@ import toast from "react-hot-toast";
 import {Signpost ,UserRound, BellRing,Settings,LogOut,Palette, Share2 } from 'lucide-react'; 
 
 const Sidebar = () => {
-  const { getUsers, users, setUsers, selectedUser, setSelectedUser, unseenMessages, setUnseenMessages, getRequests, requests, setRequests, respondRequest } = useContext(ChatContext)
+  const { getUsers, users, setUsers, selectedUser, setSelectedUser, unseenMessages, setUnseenMessages, getRequests, requests, setRequests, respondRequest, blockedUsers,
+  setBlockedUsers, getBlockedUsers } = useContext(ChatContext)
   const { logout, onlineUsers, authUser, socket } = useContext(AuthContext)
   const { theme, setTheme, THEMES } = useTheme()
   const [searchInput, setSearchInput] = useState('')
@@ -21,6 +22,7 @@ const Sidebar = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [sentRequests, setSentRequests] = useState([]);
   const [requestTab, setRequestTab] = useState("incoming");
+  const [friendTab, setFriendTab] = useState("friends");
 
   const sentMap = new Set(sentRequests.map(r => r.receiver._id));
 const friendMap = new Set(users.map(u => u._id));
@@ -98,10 +100,11 @@ const getSentRequests = async () => {
   }
 };
 
-  useEffect(() => {
+useEffect(() => {
   getUsers();
   getRequests();
   getSentRequests();
+  getBlockedUsers();
 }, []);
 
 
@@ -111,8 +114,6 @@ const getSentRequests = async () => {
   if (!socket) return;
 
   const onAccepted = (data) => {
-    console.log("ACCEPTED EVENT");
-console.log(data);
 
     setSentRequests(prev =>
       prev.filter(
@@ -496,7 +497,42 @@ Join using my ID: ${userId}
       <>
         {/* 👥 FRIENDS TAB */}
         {activeTab === "friends" && (
-          filteredUsers.length === 0 ? (
+          <>
+          <div
+  style={{
+    display: "flex",
+    gap: 8,
+    marginBottom: 10
+  }}
+>
+  {["friends", "blocked"].map(tab => (
+    <button
+      key={tab}
+      onClick={() =>
+        setFriendTab(tab)
+      }
+      style={{
+        flex: 1,
+        padding: "6px",
+        borderRadius: 8,
+        background:
+          friendTab === tab
+            ? "var(--accent)"
+            : "rgba(255,255,255,0.05)",
+
+        color: "white",
+        fontSize: 12,
+        cursor: "pointer"
+      }}
+    >
+      {tab}
+    </button>
+  ))}
+    </div>
+
+        {/* friends  */}
+        {friendTab === "friends" && (
+        filteredUsers.length === 0 ? (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               style={{ textAlign: 'center', padding: '40px 20px', color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>
               No friends yet
@@ -516,8 +552,7 @@ Join using my ID: ${userId}
                 }}
               >
                 <>
-  <img
-    src={user?.profilePic || assets.avatar_icon}
+  <img src={user?.profilePic || assets.avatar_icon}
     alt=""
     style={{
       width: 42,
@@ -605,12 +640,96 @@ Join using my ID: ${userId}
     </div>
   </div>
 </>
-
               </motion.div>
             ))
-
-            
           )
+        )}
+
+
+        {/* blocked */}
+        {friendTab === "blocked" && (
+        blockedUsers.length === 0 ? (
+
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              style={{ textAlign: 'center', padding: '40px 20px', color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>
+              No Blocked users
+          </motion.div>
+        ) : (
+
+    blockedUsers.map(user => (
+      <div
+        key={user._id}
+        className="user-item"
+        style={{
+          justifyContent:
+            "space-between"
+        }}
+      >
+
+        <div>
+          <p>{user.fullName}</p>
+
+          <p
+            style={{
+              fontSize: 12,
+              opacity: 0.6
+            }}
+          >
+            {user.zingleeId}
+          </p>
+        </div>
+
+        <button
+          onClick={async () => {
+
+            try {
+
+              await axios.post(
+                "/api/friends/unblock",
+                {
+                  targetUserId:
+                    user._id
+                }
+              );
+
+              setBlockedUsers(
+                prev =>
+                  prev.filter(
+                    u =>
+                      u._id !==
+                      user._id
+                  )
+              );
+
+              toast.success(
+                "User unblocked"
+              );
+
+            } catch (error) {
+
+              toast.error(
+                error.response?.data?.message ||
+                error.message
+              );
+            }
+          }}
+          style={{
+            background: "rgba(34,197,94,0.1)",
+             border: "1px solid rgba(34,197,94,0.3)",
+             color: "#22c55e",
+             padding: "4px 10px",
+             borderRadius: 6,
+             cursor: "pointer"
+          }}
+        >
+          Unblock
+        </button>
+
+      </div>
+
+    )) ) )}
+
+     </>
         )}
 
 
@@ -642,9 +761,10 @@ Join using my ID: ${userId}
     {/* 🔹 INCOMING */}
     {requestTab === "incoming" && (
       requests.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: 20 }}>
-          No incoming requests
-        </div>
+       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              style={{ textAlign: 'center', padding: '40px 20px', color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>
+              No incoming requests yet
+            </motion.div>
       ) : (
         requests.map((req) => (
           <div key={req._id} className="user-item" style={{ justifyContent: "space-between" }}>
@@ -660,9 +780,7 @@ Join using my ID: ${userId}
   <button
     onClick={async () => {
       await respondRequest(req._id, "accept");
-      await getUsers();
-      await getRequests();
-      await getSentRequests();
+  
     }}
     style={{
       display: "flex",
@@ -745,8 +863,9 @@ Join using my ID: ${userId}
             <button
               onClick={async () => {
                 await axios.post("/api/friends/cancel", { requestId: req._id });
-                await getSentRequests();
-                await getRequests();
+                setSentRequests(prev =>
+                 prev.filter(r => r._id !== req._id)
+                    );
                 toast.success("Request cancelled");
               }}
               style={{

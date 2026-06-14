@@ -12,10 +12,10 @@ export const ChatProvider = ({children})=>{
     const [selectedUser , setSelectedUser] = useState(null);
     const [unseenMessages , setUnseenMessages] = useState({});
     const [requests, setRequests] = useState([]);
+    const [blockedUsers, setBlockedUsers] = useState([]);
     // key value-> userid and no. of msgs
 
     const {socket, axios} = useContext(AuthContext);
-
 
 
     const getUsers = async () => {
@@ -69,24 +69,67 @@ export const ChatProvider = ({children})=>{
       }
     );
 
-    if (data.success) {
-      setMessages((prev) => [...prev, data.newMessage]);
-    } else {
+
+   if (data.success) {
+
+  setMessages(prev => [
+    ...prev,
+    data.newMessage
+  ]);
+
+  const preview =
+    data.newMessage.text ||
+    (data.newMessage.image
+      ? "📷 Image"
+      : data.newMessage.audio
+      ? "🎤 Audio"
+      : "");
+
+  setUsers(prev => {
+
+    const updated = prev.map(user => {
+
+        if ( user._id !==selectedUser._id) return user;
+        return {
+          ...user,
+          lastMessagePreview:
+            preview,
+
+          lastMessageAt:
+            data.newMessage.createdAt
+        };
+      });
+
+    updated.sort(
+      (a, b) =>
+        new Date(
+          b.lastMessageAt || 0
+        ) -
+        new Date(
+          a.lastMessageAt || 0
+        )
+    );
+
+    return [...updated];
+  });
+}
+    else {
       toast.error(data.message);
     }
 
   } catch (error) {
-    console.log("❌ FULL ERROR:", error);
-
     if (error.response) {
-      console.log("❌ SERVER ERROR:", error.response.data);
+      console.log("SERVER ERROR:", error.response.data);
     } else if (error.request) {
-      console.log("❌ NO RESPONSE (network issue)");
+      console.log("NO RESPONSE (network issue)");
     } else {
-      console.log("❌ ERROR:", error.message);
+      console.log("ERROR:", error.message);
     }
 
-    toast.error("Message failed to send");
+   toast.error(
+  error.response?.data?.message ||
+  "Message failed to send"
+);
   }
 };
 
@@ -106,6 +149,36 @@ export const ChatProvider = ({children})=>{
                     [senderId]: (prev[senderId] || 0) + 1,
                 }));
             }
+
+            const preview =
+  newMessage.text ||
+  (newMessage.image
+    ? "📷 Image"
+    : newMessage.audio
+    ? "🎤 Audio"
+    : "");
+
+setUsers(prev => {
+  const updated = prev.map(user => {
+
+    if (user._id !== senderId)
+      return user;
+
+    return {
+      ...user,
+      lastMessagePreview: preview,
+      lastMessageAt: newMessage.createdAt
+    };
+  });
+
+  updated.sort(
+    (a, b) =>
+      new Date(b.lastMessageAt || 0) -
+      new Date(a.lastMessageAt || 0)
+  );
+
+  return [...updated];
+});
         };
 
         socket.on("newMessage", onNewMessage);
@@ -158,6 +231,33 @@ export const ChatProvider = ({children})=>{
     selectedUser._id === userId
   ) {
     setSelectedUser(null);
+    setMessages([]);
+  }
+};
+
+    const onUserBlocked = ({ userId }) => {
+
+      // console.log("BLOCK EVENT RECEIVED",userId);
+
+  setUsers(prev =>
+    prev.filter(
+      user =>
+        user._id !== userId
+    )
+  );
+
+  setRequests(prev =>
+    prev.filter(req =>
+      req.sender?._id !== userId
+    )
+  );
+
+  if (
+    selectedUser &&
+    selectedUser._id === userId
+  ) {
+    setSelectedUser(null);
+    setMessages([]);
   }
 };
 
@@ -176,6 +276,11 @@ export const ChatProvider = ({children})=>{
   onFriendRemoved
 );
 
+socket.on(
+  "userBlocked",
+  onUserBlocked
+);
+
   return () => {
 
     socket.off(
@@ -192,6 +297,11 @@ export const ChatProvider = ({children})=>{
   "friendRemoved",
   onFriendRemoved
 );
+
+    socket.off(
+  "userBlocked",
+  onUserBlocked
+);
   };
 };
 
@@ -207,6 +317,28 @@ export const ChatProvider = ({children})=>{
   }
 };
 
+// get blocked users
+const getBlockedUsers = async () => {
+
+  try {
+
+    const { data } =
+      await axios.get(
+        "/api/friends/blocked"
+      );
+
+    if (data.success) {
+      setBlockedUsers(
+        data.users || []
+      );
+    }
+
+  } catch (error) {
+    toast.error(
+      error.message
+    );
+  }
+};
 
     //fn to respond
     const respondRequest = async (requestId, action) => {
@@ -285,7 +417,11 @@ export const ChatProvider = ({children})=>{
     setRequests,
 
     getRequests,
-    respondRequest
+    respondRequest,
+
+    blockedUsers,
+    setBlockedUsers,
+    getBlockedUsers,
 }
 
     return (<ChatContext.Provider value={value}>
