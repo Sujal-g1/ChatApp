@@ -523,7 +523,6 @@ setIsCameraOff(!videoTrack.enabled);
 
 
 // video call end
-
   useEffect(() => {
     if (selectedUser) getMessages(selectedUser._id)
   }, [selectedUser])
@@ -747,7 +746,10 @@ useEffect(() => {
       }}>
         <AnimatePresence initial={false}>
           {messages.map((msg, idx) => {
-            const isMine = msg.senderId?.toString() === authUser?._id
+            const senderId = msg.senderId?._id || msg.senderId;
+            
+            const isMine = senderId === authUser?._id;
+            
             return (
               <motion.div
                 key={msg._id || idx}

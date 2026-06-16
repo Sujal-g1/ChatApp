@@ -56,7 +56,8 @@ deleteMode: {
 
 audio: {
   type: String
-}
+},
+
 }, {timestamps:true});
 
 messageSchema.index(

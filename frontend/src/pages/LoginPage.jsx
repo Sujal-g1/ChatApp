@@ -21,6 +21,7 @@ const LoginPage = () => {
   const { login } = useContext(AuthContext)
   const { theme, setTheme, THEMES } = useTheme()
 
+
   const onSubmitHandler = (e) => {
     e.preventDefault()
     if (currentState === "Sign up" && !isDataSubmitted) {
@@ -30,10 +31,17 @@ const LoginPage = () => {
     login(currentState === "Sign up" ? "signup" : "login", { fullName, email, password, bio, username })
   }
 
+
   const switchState = (state) => {
     setCurrentState(state)
     setIsDataSubmitted(false)
   }
+
+    const fireflies = Array.from({ length: 12 }, (_, i) => ({
+    top: `${Math.random() * 100}%`,
+    delay: Math.random() * 10,
+    duration: 8 + Math.random() * 10,
+  }));
 
   return (
     <div style={{
@@ -41,12 +49,44 @@ const LoginPage = () => {
       alignItems: 'center', justifyContent: 'center',
       padding: 24,
     }}>
+
+      {/* --- ELEGANT HORIZONTAL FIREFLIES --- */}
+       {fireflies.map((firefly, index) => (
+        <motion.div
+          key={index}
+          animate={{
+            x: ["-10vw", "110vw"],
+            opacity: [0, 1, 1, 0],
+          }}
+          transition={{
+            duration: firefly.duration,
+            repeat: Infinity,
+            delay: firefly.delay,
+            ease: "linear",
+          }}
+          style={{
+            position: "absolute",
+            top: firefly.top,
+            left: 0,
+            width: 4,
+            height: 4,
+            borderRadius: "50%",
+            background: "white",
+            boxShadow: "0 0 10px rgba(255,255,255,0.8)",
+            pointerEvents: "none",
+            zIndex: 1,
+          }}
+        />
+      ))}
+        {/* --- END OF ANIMATION LAYER --- */}
+
       <motion.div
         initial={{ opacity: 0, y: 28, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
         style={{ width: '100%', maxWidth: 420 }}
       >
+        
         <div style={{
           background: 'rgba(255,255,255,0.05)',
           backdropFilter: 'blur(40px)',
@@ -56,6 +96,8 @@ const LoginPage = () => {
           padding: '36px 32px',
           boxShadow: '0 30px 60px rgba(0,0,0,0.45), 0 0 0 1px var(--border-color)',
         }}>
+
+          
 
           {/* ── Logo + brand ── */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 28 }}>

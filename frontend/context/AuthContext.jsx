@@ -44,16 +44,40 @@ export const AuthProvider = ({children}) => {
       data = res.data;
     }
 
-    if (data.success) {
-      setAuthUser(data.userData);
-      connectSocket(data.userData);
-      axios.defaults.headers.common["Authorization"] = `Bearer ${data.token}`;
-      setToken(data.token);
-      localStorage.setItem("token", data.token);
-      toast.success(data.message);
-    } else {
-      toast.error(data.message);
-    }
+   if (data.success) {
+
+  if (data.privateKey) {
+
+    localStorage.setItem(
+      "privateKey",
+      data.privateKey
+    );
+
+    console.log(
+      "PRIVATE KEY SAVED"
+    );
+  }
+
+  setAuthUser(data.userData);
+
+  connectSocket(
+    data.userData
+  );
+
+  axios.defaults.headers.common["Authorization"] =
+    `Bearer ${data.token}`;
+
+  setToken(data.token);
+
+  localStorage.setItem(
+    "token",
+    data.token
+  );
+
+  toast.success(
+    data.message
+  );
+}
   } catch (error) {
     toast.error(error.message);
   }
@@ -63,6 +87,7 @@ export const AuthProvider = ({children}) => {
     //  logout fn to handle user logout and socket disconnection
     const logout = async() => {
         localStorage.removeItem("token");
+        localStorage.removeItem("privateKey");
         setToken(null)
         setAuthUser(null)
         setOnlineUsers([])
@@ -133,6 +158,8 @@ useEffect(() => {
   return () => axios.interceptors.request.eject(interceptor);
 }, []);
 
+    const getPrivateKey = () => localStorage.getItem( "privateKey" );
+
     const value = {
         axios,
         authUser,
@@ -140,7 +167,8 @@ useEffect(() => {
         socket,
         login,
         logout,
-        updateProfile
+        updateProfile,
+        getPrivateKey
     }
     return (  
         <AuthContext.Provider value={value} >

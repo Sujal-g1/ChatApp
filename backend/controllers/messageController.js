@@ -98,7 +98,6 @@ unseen.forEach(item => {
 };
 
 
-
 // get all messages for selected users
 export const getMessages = async(req, res)=>{
     try{
@@ -106,19 +105,26 @@ export const getMessages = async(req, res)=>{
         const myId = req.user._id;
 
 
-        const messages = await Message.find({
-            $or:[
-                 {senderId :myId , receiverId:selectedUserId},
-                 {senderId:selectedUserId,receiverId:myId}
-            ]
-        })
+        const messages = await Message.find({ $or:[
+       {
+      senderId: myId,
+      receiverId: selectedUserId
+     },
+      {
+      senderId: selectedUserId,
+      receiverId: myId
+     }
+     ]
+      }).populate(
+       "senderId",
+        "publicKey" )
+        
+        .populate(
+         "receiverId",
+        "publicKey"
+          )
 
-        const unseenMessages =
-  await Message.find({
-    senderId: selectedUserId,
-    receiverId: myId,
-    seen: false
-  });
+    const unseenMessages =  await Message.find({ senderId: selectedUserId, receiverId: myId,  seen: false });
 
 await Message.updateMany(
   {
@@ -179,7 +185,7 @@ export const  markMessageAsSeen = async(req, res)=>{
 // send msg to selected user
 export const sendMessage = async (req, res) => {
   try {
-    const { text, image, audio } = req.body;
+    const { text, image, audio, cipherText, nonce } = req.body;
     const receiverId = req.params.id;
     const senderId = req.user._id;
 
@@ -193,10 +199,8 @@ export const sendMessage = async (req, res) => {
 
       const deleteMode = "24h";
 
-const expiresAt = new Date(
-  Date.now() +
-  expiryMap[deleteMode]
-);
+    const expiresAt = new Date(
+        Date.now() + expiryMap[deleteMode] );
 
     //  CHECK: Only friends can message
     const sender = await User.findById(senderId);
@@ -247,18 +251,23 @@ if (sender.blockedUsers.includes(receiverId)) {
 
 }
 
-if (!text && !imageUrl && !audioUrl) {
+if (!text && !cipherText && !imageUrl && !audioUrl) {
   return res.status(400).json({
     success: false,
     message: "Empty message"
   });
 }
-
+  console.log({
+  cipherText,
+  nonce
+});
     // 💬 create message
     const newMessage = await Message.create({
       senderId,
       receiverId,
-      text,
+      text: null,
+      cipherText,
+      nonce,
       image: imageUrl,
       audio: audioUrl,
       deleteMode,
@@ -266,7 +275,21 @@ if (!text && !imageUrl && !audioUrl) {
     });
 
     // emit real-time message to receiver
-    emitToUser(receiverId, "newMessage", newMessage.toObject());
+   // populate sender public key
+  const populatedMessage =
+  await Message.findById(
+    newMessage._id
+  ).populate(
+    "senderId",
+    "publicKey"
+  );
+
+// emit real-time message to receiver
+  emitToUser(
+  receiverId,
+  "newMessage",
+  populatedMessage
+);  
 
     res.json({
       success: true,

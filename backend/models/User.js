@@ -79,6 +79,11 @@ blockedUsers: [
   }
 ],
 
+publicKey: {
+  type: String,
+  default: ""
+},
+
 }, {timestamps:true})
 
 // Indexes (IMPORTANT)

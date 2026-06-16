@@ -1,5 +1,5 @@
 import express from "express"
-import { checkAuth, login, signup, updateProfile, firebaseLogin, searchUsers } from "../controllers/userController.js";
+import { checkAuth, login, signup, updateProfile, firebaseLogin, searchUsers, getPublicKey } from "../controllers/userController.js";
 import { protectRoute } from "../middleware/auth.js";
 
 const userRouter = express.Router();
@@ -16,6 +16,7 @@ userRouter.put("/update-profile" , protectRoute , updateProfile);
 userRouter.get("/check" , protectRoute , checkAuth);
 userRouter.get("/search", protectRoute, searchUsers);
 
+userRouter.get("/public-key/:userId", protectRoute, getPublicKey );
 
 
 export default userRouter;

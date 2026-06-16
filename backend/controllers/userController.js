@@ -1,4 +1,5 @@
 import { generateToken } from "../config/utils.js";
+import { generateKeyPair } from "../utils/crypto.js";
 import User from "../models/User.js";
 import bcrypt from "bcryptjs"
 import cloudinary from "../config/cloudinary.js";
@@ -44,6 +45,8 @@ export const signup = async (req, res) => {
 
     const zingleeId = await generateZingleeId(cleanUsername);
 
+    const { publicKey, privateKey } = generateKeyPair();
+
     const newUser = await User.create({
       fullName,
       email: cleanEmail,
@@ -51,6 +54,7 @@ export const signup = async (req, res) => {
       bio,
       username: cleanUsername,
       zingleeId,
+      publicKey
     });
 
     const token = generateToken(newUser._id);
@@ -59,6 +63,7 @@ export const signup = async (req, res) => {
       success: true,
       userData: newUser,
       token,
+      privateKey,
       message: "Account created successfully",
     });
 
@@ -201,36 +206,11 @@ export const searchUsers = async (req, res) => {
 };
 
 
-
-
 // check auth
 export const checkAuth = ( req , res)=>{
     res.json({success:true , user:req.user});
 }
 
-// to update user profile details
-// export const updateProfile = async(req , res)=>{
-//     try{
-//         const  { profilePic , bio , fullName} = req.body; 
-//         const userId = req.user._id;
-//         let updatedUser;
-
-//         if(!profilePic){
-//         updatedUser =  await User.findByIdAndUpdate(userId , {bio, fullName} , {new:true })
-//         }
-//         else{
-//             const upload = await cloudinary.uploader.upload(profilePic);
-
-//             updatedUser = await User.findByIdAndUpdate(userId , {profilePic : upload.secure_url , bio , fullName} , {new:true})
-//         }
-
-//         res.json({success:true , user:updatedUser})
-//     } 
-//     catch(error){
-//         console.log(error.message)
-//         res.json({success:false , message:error.message})
-//     }
-// }
 
 export const updateProfile = async (req, res) => {
   try {
@@ -275,5 +255,36 @@ export const updateProfile = async (req, res) => {
   } catch (error) {
     console.log(error.message);
     res.json({ success: false, message: error.message });
+  }
+};
+
+//getPublicKey
+export const getPublicKey = async (req, res) => {
+  try {
+
+    const user =
+      await User.findById(
+        req.params.userId
+      ).select("publicKey");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    res.json({
+      success: true,
+      publicKey:
+        user.publicKey
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
 };

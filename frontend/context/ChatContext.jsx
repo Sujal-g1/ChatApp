@@ -1,5 +1,6 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
+import { encryptMessage, decryptMessage } from "../src/lib/crypto";
 import { AuthContext } from "./AuthContext";
 import toast from "react-hot-toast";
 
@@ -40,42 +41,126 @@ export const ChatProvider = ({children})=>{
   }
 };
 
-     
     // fn to get msgs for selected user
-    const getMessages = async (userId)=>{
-         try {
-          const { data } = await axios.get(`/api/messages/${userId}`)
-          if(data.success){
-            setMessages(data.messages)
-        } 
-         } catch (error) {
-            toast.error(error.message)
-         }
-    }
+   const getMessages = async (userId)=>{
+  try {
+    const { data } =
+      await axios.get(
+        `/api/messages/${userId}`
+      );
+
+    console.log(
+      "MESSAGES FROM SERVER",
+      data.messages
+    );
+
+    if (data.success) {
+
+  const privateKey = localStorage.getItem( "privateKey" );
+
+  const decryptedMessages =
+    data.messages.map(msg => {
+      if (
+        msg.cipherText &&
+        msg.nonce &&
+        msg.senderId?.publicKey
+      ) {
+
+    const decryptedText = decryptMessage(
+            msg.cipherText,
+            msg.nonce,
+            msg.senderId.publicKey,
+            privateKey
+          );
+
+        console.log("DECRYPTED:", decryptedText );
+
+        return {
+          ...msg,
+          text: decryptedText
+        };
+      }
+
+      return msg;
+    });
+
+  setMessages(
+    decryptedMessages
+  );
+}
+
+  } catch (error) {
+    toast.error(error.message);
+  }
+}
+
+
+    // helper to get public keys
+    const getUserPublicKey = async (userId) => {
+     const { data } =
+    await axios.get(
+      `/api/auth/public-key/${userId}`
+    );
+
+  return data.publicKey;
+    };
 
 
     const sendMessage = async (messageData) => {
   try {
 
-    const { data } = await axios.post(
-      `/api/messages/send/${selectedUser._id}`,
-      messageData,
-      {
-        headers: {
-          "Content-Type": "application/json"
-        },
-        maxContentLength: Infinity,
-        maxBodyLength: Infinity
-      }
-    );
+    const publicKey = await getUserPublicKey( selectedUser._id );
+
+console.log(
+  "RECEIVER PUBLIC KEY",
+  publicKey
+);
+
+    const receiverPublicKey = await getUserPublicKey( selectedUser._id );
+
+    const senderPrivateKey = localStorage.getItem( "privateKey" );
+
+    console.log( "PRIVATE KEY:", senderPrivateKey );
+
+    console.log( "PRIVATE KEY LENGTH:", senderPrivateKey?.length );
+
+const encrypted =
+  encryptMessage(
+    messageData.text,
+    senderPrivateKey,
+    receiverPublicKey
+  );
+
+console.log( "ENCRYPTED", encrypted );
+
+    const payload = {
+  ...messageData,
+
+  text: undefined,
+
+  cipherText:
+    encrypted.cipherText,
+
+  nonce:
+    encrypted.nonce
+};
+
+const { data } =
+  await axios.post(
+    `/api/messages/send/${selectedUser._id}`,
+    payload
+  );
 
 
    if (data.success) {
 
-  setMessages(prev => [
-    ...prev,
-    data.newMessage
-  ]);
+setMessages(prev => [
+  ...prev,
+  {
+    ...data.newMessage,
+    text: messageData.text
+  }
+]);
 
   const preview =
     data.newMessage.text ||
@@ -136,11 +221,32 @@ export const ChatProvider = ({children})=>{
     const subscribeToMessages = () => {
         if (!socket) return;
 
-        const onNewMessage = (newMessage) => {
-            const senderId = String(newMessage.senderId);
+        const onNewMessage = async (newMessage) => {
 
-            if (selectedUser && senderId === String(selectedUser._id)) {
+          console.log( "REALTIME MESSAGE", newMessage );
+
+          console.log( "SELECTED USER", selectedUser?._id );
+
+       const senderId = String( newMessage.senderId?._id || newMessage.senderId );
+
+       console.log( "SENDER ID", senderId );
+
+        if (selectedUser && senderId === String(selectedUser._id)) {
                 newMessage.seen = true;
+
+            if ( newMessage.cipherText && newMessage.nonce ) {
+            const privateKey = localStorage.getItem( "privateKey" );
+
+          const senderPublicKey = newMessage.senderId.publicKey;
+
+           const decryptedText = decryptMessage( newMessage.cipherText,
+                                                newMessage.nonce,
+                                                senderPublicKey,
+                                                privateKey );
+
+          newMessage.text = decryptedText;
+}
+
                 setMessages((prevMessages) => [...prevMessages, newMessage]);
                 axios.put(`/api/messages/mark/${newMessage._id}`);
             } else {
@@ -422,6 +528,8 @@ const getBlockedUsers = async () => {
     blockedUsers,
     setBlockedUsers,
     getBlockedUsers,
+
+     getUserPublicKey
 }
 
     return (<ChatContext.Provider value={value}>
