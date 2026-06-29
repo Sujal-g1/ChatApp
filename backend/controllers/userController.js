@@ -118,6 +118,8 @@ export const firebaseLogin = async (req, res) => {
 
     let user = await User.findOne({ email });
 
+     let privateKey = null;
+
     // create user if not exists
    if (!user) {
   const baseUsername = email.split("@")[0].toLowerCase();
@@ -132,6 +134,10 @@ export const firebaseLogin = async (req, res) => {
   }
 
   const zingleeId = await generateZingleeId(username);
+  
+  const keys = generateKeyPair();
+
+  privateKey = keys.privateKey;
 
   user = await User.create({
     email,
@@ -140,7 +146,8 @@ export const firebaseLogin = async (req, res) => {
     googleId: uid,
     bio: "",
     username,
-    zingleeId
+    zingleeId,
+    publicKey: keys.publicKey
   });
 }
 
@@ -150,6 +157,7 @@ export const firebaseLogin = async (req, res) => {
       success: true,
       userData: user,
       token: jwtToken,
+      privateKey,
       message: "Google login success",
     });
 
@@ -262,10 +270,7 @@ export const updateProfile = async (req, res) => {
 export const getPublicKey = async (req, res) => {
   try {
 
-    const user =
-      await User.findById(
-        req.params.userId
-      ).select("publicKey");
+    const user = await User.findById(req.params.userId).select("publicKey");
 
     if (!user) {
       return res.status(404).json({
@@ -274,10 +279,17 @@ export const getPublicKey = async (req, res) => {
       });
     }
 
+     // Public key missing
+    if (!user.publicKey) {
+      return res.status(400).json({
+        success: false,
+        message: "User has no public key"
+      });
+    }
+
     res.json({
       success: true,
-      publicKey:
-        user.publicKey
+      publicKey: user.publicKey
     });
 
   } catch (error) {

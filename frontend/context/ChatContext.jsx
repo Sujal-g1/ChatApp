@@ -49,10 +49,7 @@ export const ChatProvider = ({children})=>{
         `/api/messages/${userId}`
       );
 
-    console.log(
-      "MESSAGES FROM SERVER",
-      data.messages
-    );
+    // console.log("MESSAGES FROM SERVER", data.messages );
 
     if (data.success) {
 
@@ -73,7 +70,7 @@ export const ChatProvider = ({children})=>{
             privateKey
           );
 
-        console.log("DECRYPTED:", decryptedText );
+        // console.log("DECRYPTED:", decryptedText );
 
         return {
           ...msg,
@@ -109,20 +106,15 @@ export const ChatProvider = ({children})=>{
     const sendMessage = async (messageData) => {
   try {
 
-    const publicKey = await getUserPublicKey( selectedUser._id );
+   const receiverPublicKey = await getUserPublicKey(selectedUser._id);
 
-console.log(
-  "RECEIVER PUBLIC KEY",
-  publicKey
-);
-
-    const receiverPublicKey = await getUserPublicKey( selectedUser._id );
+    // console.log("RECEIVER PUBLIC KEY",receiverPublicKey);
 
     const senderPrivateKey = localStorage.getItem( "privateKey" );
 
-    console.log( "PRIVATE KEY:", senderPrivateKey );
+    // console.log( "PRIVATE KEY:", senderPrivateKey );
 
-    console.log( "PRIVATE KEY LENGTH:", senderPrivateKey?.length );
+    // console.log( "PRIVATE KEY LENGTH:", senderPrivateKey?.length );
 
 const encrypted =
   encryptMessage(
@@ -131,7 +123,7 @@ const encrypted =
     receiverPublicKey
   );
 
-console.log( "ENCRYPTED", encrypted );
+// console.log( "ENCRYPTED", encrypted );
 
     const payload = {
   ...messageData,
@@ -223,13 +215,13 @@ setMessages(prev => [
 
         const onNewMessage = async (newMessage) => {
 
-          console.log( "REALTIME MESSAGE", newMessage );
+          // console.log( "MESSAGE", newMessage );
 
-          console.log( "SELECTED USER", selectedUser?._id );
+          // console.log( "SELECTED USER", selectedUser?._id );
 
        const senderId = String( newMessage.senderId?._id || newMessage.senderId );
 
-       console.log( "SENDER ID", senderId );
+      //  console.log( "SENDER ID", senderId );
 
         if (selectedUser && senderId === String(selectedUser._id)) {
                 newMessage.seen = true;

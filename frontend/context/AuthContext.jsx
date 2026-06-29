@@ -37,7 +37,7 @@ export const AuthProvider = ({children}) => {
     let data;
 
     if (state === "google") {
-      // ✅ already have backend response
+      //  already have backend response
       data = credentials;
     } else {
       const res = await axios.post(`/api/auth/${state}`, credentials);
@@ -73,6 +73,18 @@ export const AuthProvider = ({children}) => {
     "token",
     data.token
   );
+
+    // Manual login does not return a private key.
+    // Make sure this device still has one.
+    if (!data.privateKey) {
+
+    const storedPrivateKey = localStorage.getItem("privateKey");
+
+    if (!storedPrivateKey) {
+      toast.error( "Encryption key not found on this device. Old encrypted messages cannot be decrypted.");
+  }
+
+    }
 
   toast.success(
     data.message
