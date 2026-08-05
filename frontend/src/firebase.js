@@ -16,7 +16,7 @@ export const auth = getAuth(app);
 // Set persistence to LOCAL to avoid IndexedDB issues
 setPersistence(auth, browserLocalPersistence)
   .then(() => {
-    console.log("Firebase persistence set to LOCAL");
+    // console.log("Firebase persistence set to LOCAL");
   })
   .catch((error) => {
     console.error("Error setting persistence:", error);

@@ -90,11 +90,31 @@ const userSchema = new mongoose.Schema(
       },
     ],
 
-    // End-to-End Encryption
+    // E2E Encryption
     publicKey: {
       type: String,
       default: "",
     },
+
+    encryptedPrivateKey: {
+    type: String,
+    default: "",
+},
+
+encryptionIV: {
+    type: String,
+    default: "",
+},
+
+encryptionAuthTag: {
+    type: String,
+    default: "",
+},
+
+keyVersion: {
+    type: Number,
+    default: 1,
+},
   },
   {
     timestamps: true,

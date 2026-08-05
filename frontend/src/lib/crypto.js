@@ -1,6 +1,8 @@
 import nacl from "tweetnacl";
 import util from "tweetnacl-util";
 
+export const ENCRYPTION_VERSION = 1;
+
 export const encryptMessage = (
   message,
   senderPrivateKey,
@@ -8,39 +10,21 @@ export const encryptMessage = (
 ) => {
 
   const nonce =
-    nacl.randomBytes(
-      nacl.box.nonceLength
-    );
+    nacl.randomBytes( nacl.box.nonceLength );
 
   const encrypted =
-    nacl.box(
-
-      util.decodeUTF8(
-        message
-      ),
-
-      nonce,
-
-      util.decodeBase64(
-        receiverPublicKey
-      ),
-
-      util.decodeBase64(
-        senderPrivateKey
-      )
+    nacl.box( util.decodeUTF8( message ),
+    nonce,
+    util.decodeBase64( receiverPublicKey ),
+    util.decodeBase64( senderPrivateKey )
     );
 
   return {
-
     cipherText:
-      util.encodeBase64(
-        encrypted
-      ),
+      util.encodeBase64(encrypted),
 
     nonce:
-      util.encodeBase64(
-        nonce
-      )
+      util.encodeBase64( nonce )
   };
 };
 
@@ -72,8 +56,20 @@ export const decryptMessage = (
       )
     );
 
-  if (!decrypted)
+    if (!decrypted) {
+    console.log("DECRYPT FAILED");
+
+    console.log({
+        cipherText,
+        nonce,
+        senderPublicKey,
+        receiverPrivateKey
+    });
+
     return null;
+}
+
+    // if (!decrypted) {throw new Error("Failed to decrypt message"); }
 
   return util.encodeUTF8(
     decrypted

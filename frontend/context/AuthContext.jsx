@@ -3,12 +3,13 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 import axios from "axios"
 import toast from "react-hot-toast"
 import {io} from "socket.io-client"
+import { savePrivateKey, getPrivateKey as getStoredPrivateKey, removePrivateKey,} from "../src/lib/keyStorage";
+import { clearEncryptionCache } from "../src/lib/encryptionService";
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
 axios.defaults.baseURL = backendUrl;
 
 export const AuthContext = createContext();
- 
 
 export const AuthProvider = ({children}) => {
 
@@ -31,13 +32,30 @@ export const AuthProvider = ({children}) => {
     axios.defaults.headers.common.Authorization = `Bearer ${token}`;
 
     try {
+      // console.log("1. Before API");
         const { data } = await axios.get("/api/auth/check");
-         console.log("CHECK AUTH RESPONSE:", data);
+        // console.log("2. After API");
+
+        //  console.log("CHECK AUTH RESPONSE:", data);
+
+          await new Promise(resolve => setTimeout(resolve, 4000));
+          // console.log("3. After 10 seconds");
 
         if (data.success) {
-            setAuthUser(data.user);
-            connectSocket(data.user);
-        }
+        const storedKey = await getStoredPrivateKey();
+
+        if (!storedKey && data.privateKey) {
+        await savePrivateKey(
+            data.privateKey
+        );
+    }
+
+    setAuthUser(data.user);
+
+    connectSocket(data.user);
+}
+
+        // console.log("4. Before loading false");
     } catch (err) {
         console.log(err);
 
@@ -46,9 +64,11 @@ export const AuthProvider = ({children}) => {
 
         setAuthUser(null);
     } finally {
+      // console.log("5. Finally");
         setLoading(false);
     }
 };
+
     // login fn to handle user auth and socket connection
    const login = async (state, credentials) => {
   try {
@@ -65,11 +85,7 @@ export const AuthProvider = ({children}) => {
    if (data.success) {
 
   if (data.privateKey) {
-
-    localStorage.setItem(
-      "privateKey",
-      data.privateKey
-    );
+    savePrivateKey(data.privateKey);
 
     console.log(
       "PRIVATE KEY SAVED"
@@ -93,7 +109,7 @@ export const AuthProvider = ({children}) => {
     // Make sure this device still has one.
     if (!data.privateKey) {
 
-    const storedPrivateKey = localStorage.getItem("privateKey");
+    const storedPrivateKey = getStoredPrivateKey();
 
     if (!storedPrivateKey) {
       toast.error( "Encryption key not found on this device. Old encrypted messages cannot be decrypted.");
@@ -112,18 +128,26 @@ export const AuthProvider = ({children}) => {
     
 
     //  logout fn to handle user logout and socket disconnection
-    const logout = async() => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("privateKey");
-        setToken(null)
-        setAuthUser(null)
-        setOnlineUsers([])
-         delete axios.defaults.headers.common["Authorization"];
-         toast.success("Logged out Successfully")
-         socketRef.current?.disconnect();
-         socketRef.current = null;
-         setSocket(null);
-    }
+  const logout = async () => {
+
+    localStorage.removeItem("token");
+
+    await removePrivateKey();
+
+    clearEncryptionCache();
+
+    setToken(null);
+    setAuthUser(null);
+    setOnlineUsers([]);
+
+    delete axios.defaults.headers.common["Authorization"];
+
+    socketRef.current?.disconnect();
+    socketRef.current = null;
+    setSocket(null);
+
+    toast.success("Logged out Successfully");
+};
 
 
     // update profile fn to handle user profile updates
@@ -139,7 +163,6 @@ export const AuthProvider = ({children}) => {
             toast.error(error.response?.data?.message || error.message)
          }
     }
-
 
     // connect socket fn to handle socket connection and online users updates
     const connectSocket = (userData) => {
@@ -164,8 +187,8 @@ export const AuthProvider = ({children}) => {
 
 
      useEffect(() => {
-  checkAuth();
-}, []);
+    checkAuth();
+    }, []);
 
 
 useEffect(() => {
@@ -182,7 +205,7 @@ useEffect(() => {
   return () => axios.interceptors.request.eject(interceptor);
 }, []);
 
-    const getPrivateKey = () => localStorage.getItem( "privateKey" );
+  const getPrivateKey = () => getStoredPrivateKey();
 
    const value = {
     axios,
@@ -201,6 +224,7 @@ useEffect(() => {
         </AuthContext.Provider>
     )
 } 
+
 
 
 

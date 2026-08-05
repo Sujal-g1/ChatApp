@@ -1,13 +1,10 @@
 import { generateToken } from "../config/utils.js";
-import { generateKeyPair } from "../utils/crypto.js";
-
+import { createUserKeys, getUserPrivateKey } from "../utils/keyManager.js";
+import { sanitizeUser } from "../utils/sanitizeUser.js";
 import User from "../models/User.js";
-
 import bcrypt from "bcryptjs";
-
 import cloudinary from "../config/cloudinary.js";
 import admin from "../config/firebaseAdmin.js";
-
 import { generateZingleeId } from "../utils/generateZingleeId.js";
 
 
@@ -56,7 +53,7 @@ export const signup = async (req, res) => {
     const zingleeId = await generateZingleeId(cleanUsername);
 
     // Generate E2EE key pair
-    const { publicKey, privateKey } = generateKeyPair();
+    const keys = createUserKeys();
 
     // Create user
     const newUser = await User.create({
@@ -66,17 +63,29 @@ export const signup = async (req, res) => {
       bio,
       username: cleanUsername,
       zingleeId,
-      publicKey,
-    });
+      publicKey: keys.publicKey,
+
+     encryptedPrivateKey:
+        keys.encryptedPrivateKey,
+
+      encryptionIV:
+        keys.encryptionIV,
+
+      encryptionAuthTag:
+        keys.encryptionAuthTag,
+
+      keyVersion:
+        keys.keyVersion,
+    }); 
 
     // Generate JWT
     const token = generateToken(newUser._id);
 
     res.json({
       success: true,
-      userData: newUser,
+      userData: sanitizeUser(newUser),
       token,
-      privateKey, // Sent only once to the client
+      privateKey: keys.privateKey, 
       message: "Account created successfully",
     });
   } catch (error) {
@@ -94,11 +103,11 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Normalize email
     const cleanEmail = email.toLowerCase().trim();
 
-    // Find user
-    const userData = await User.findOne({ email: cleanEmail });
+    const userData = await User.findOne({
+      email: cleanEmail,
+    });
 
     if (!userData) {
       return res.json({
@@ -107,11 +116,11 @@ export const login = async (req, res) => {
       });
     }
 
-    // Verify password
-    const isPasswordCorrect = await bcrypt.compare(
-      password,
-      userData.password
-    );
+    const isPasswordCorrect =
+      await bcrypt.compare(
+        password,
+        userData.password
+      );
 
     if (!isPasswordCorrect) {
       return res.json({
@@ -120,17 +129,28 @@ export const login = async (req, res) => {
       });
     }
 
-    // Generate JWT
+    // NEW
+    const privateKey = getUserPrivateKey(userData);
+
     const token = generateToken(userData._id);
+
+//     const privateKey = decryptPrivateKey({
+//     encryptedPrivateKey: userData.encryptedPrivateKey,
+//     encryptionIV: userData.encryptionIV,
+//     encryptionAuthTag: userData.encryptionAuthTag,
+// });
 
     res.json({
       success: true,
-      userData,
+      userData: sanitizeUser(userData),
       token,
+      privateKey,
       message: "Login Successful",
     });
+
   } catch (error) {
-    console.log(error.message);
+
+    console.log(error);
 
     res.json({
       success: false,
@@ -138,6 +158,7 @@ export const login = async (req, res) => {
     });
   }
 };
+
 
 // Firebase / Google Login
 export const firebaseLogin = async (req, res) => {
@@ -168,8 +189,9 @@ export const firebaseLogin = async (req, res) => {
       const zingleeId = await generateZingleeId(username);
 
       // Generate E2EE key pair
-      const keys = generateKeyPair();
-      privateKey = keys.privateKey;
+    const keys = createUserKeys();
+
+    privateKey = keys.privateKey;
 
       user = await User.create({
         email,
@@ -180,16 +202,34 @@ export const firebaseLogin = async (req, res) => {
         username,
         zingleeId,
         publicKey: keys.publicKey,
+        encryptedPrivateKey: keys.encryptedPrivateKey,
+        encryptionIV: keys.encryptionIV,
+        encryptionAuthTag: keys.encryptionAuthTag,
+        keyVersion: keys.keyVersion,
       });
     }
 
     const jwtToken = generateToken(user._id);
 
+//     let decryptedPrivateKey = privateKey;
+
+//     if (!decryptedPrivateKey) {
+//     decryptedPrivateKey = decryptPrivateKey({
+//         encryptedPrivateKey: user.encryptedPrivateKey,
+//         encryptionIV: user.encryptionIV,
+//         encryptionAuthTag: user.encryptionAuthTag,
+//     });
+// }
+
+if (!privateKey) {
+    privateKey = getUserPrivateKey(user);
+}
+
     res.json({
       success: true,
-      userData: user,
+      userData: sanitizeUser(user),
       token: jwtToken,
-      privateKey, // Will be null for existing users
+      privateKey,
       message: "Google login success",
     });
   } catch (error) {
@@ -258,7 +298,7 @@ export const updateProfile = async (req, res) => {
 
     res.json({
       success: true,
-      user: updatedUser,
+      user: sanitizeUser(updatedUser),
     });
   } catch (error) {
     console.log(error.message);
@@ -317,10 +357,19 @@ export const searchUsers = async (req, res) => {
 
 // Check Auth
 export const checkAuth = (req, res) => {
-  res.json({
-    success: true,
-    user: req.user,
-  });
+    // const privateKey = decryptPrivateKey({
+    //     encryptedPrivateKey: req.user.encryptedPrivateKey,
+    //     encryptionIV: req.user.encryptionIV,
+    //     encryptionAuthTag: req.user.encryptionAuthTag,
+    // });
+
+    const privateKey = getUserPrivateKey(req.user);
+
+    res.json({
+        success: true,
+        user: sanitizeUser(req.user),
+        privateKey,
+    });
 };
 
 

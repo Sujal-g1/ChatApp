@@ -44,6 +44,10 @@ const messageSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    encryptionVersion: {
+    type: Number,
+    default: 1,
+    },
 
     // Self-destruct messages
     deleteMode: {

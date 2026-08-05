@@ -6,6 +6,7 @@ import LoginPage from "./pages/LoginPage"
 import ProfilePage from "./pages/ProfilePage"
 import LandingPage from "./pages/LandingPage"
 import InstructionsPage from "./pages/InstructionsPage"
+import LoadingScreen from "./pages/LoadingScreen";
 import { Toaster } from "react-hot-toast"
 import { AuthContext } from '../context/AuthContext'
 import { ThemeProvider } from '../context/ThemeContext'
@@ -42,23 +43,14 @@ const WelcomeRoute = () => {
 
 const AppRoutes = () => {
   const { authUser , loading} = useContext(AuthContext)
+//   console.log("APP ROUTES:", {
+//   loading,
+//   authUser,
+// });
   const location = useLocation()
 
-  if (loading) {
-    return (
-        <div
-            style={{
-                height: "100vh",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                color: "white",
-                fontSize: 22,
-            }}
-        >
-            Loading...
-        </div>
-    );
+if (loading) {
+    return <LoadingScreen />;
 }
 
 

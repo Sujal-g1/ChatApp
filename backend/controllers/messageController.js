@@ -188,7 +188,7 @@ export const markMessageAsSeen = async (req, res) => {
 // Send Message
 export const sendMessage = async (req, res) => {
   try {
-    const { text, image, audio, cipherText, nonce } = req.body;
+    const { text, image, audio, cipherText, nonce, encryptionVersion, } = req.body;
 
     const receiverId = req.params.id;
     const senderId = req.user._id;
@@ -269,18 +269,22 @@ export const sendMessage = async (req, res) => {
       });
     }
 
-    console.log({
-      cipherText,
-      nonce,
-    });
+    // Validate encrypted text payload
+    if (cipherText && !nonce) {
+  return res.status(400).json({
+    success: false,
+    message: "Invalid encrypted message",
+  });
+  }
 
     // Create message
     const newMessage = await Message.create({
       senderId,
       receiverId,
-      text: null,
+      text: cipherText ? null : text,
       cipherText,
       nonce,
+      encryptionVersion: encryptionVersion || 1,
       image: imageUrl,
       audio: audioUrl,
       deleteMode,
@@ -290,7 +294,7 @@ export const sendMessage = async (req, res) => {
     // Populate sender public key
     const populatedMessage = await Message.findById(
       newMessage._id
-    ).populate("senderId", "publicKey");
+    ).populate("senderId", "publicKey").populate("receiverId", "publicKey");
 
     // Emit real-time message
     emitToUser(
