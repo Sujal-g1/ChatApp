@@ -1,3 +1,4 @@
+
 import express from "express"
 import { protectRoute } from "../middleware/auth.js";
 import { getMessages, getUserForSidebar, markMessageAsSeen, sendMessage } from "../controllers/messageController.js";
@@ -11,3 +12,4 @@ messageRouter.post("/send/:id", protectRoute, sendMessage);
 
 
 export default messageRouter;
+

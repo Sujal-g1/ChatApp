@@ -1,95 +1,110 @@
-import mongoose from "mongoose"
+import mongoose from "mongoose";
 
-const userSchema = new mongoose.Schema({
-  email:{
-    type:String,
-    required:true,
-    unique:true,
-    lowercase:true,
-    trim:true
-  },
-
-  username: {
-    type: String,
-    required: true,
-    unique: true,
-    lowercase: true,
-    trim: true
-  },
-
-  zingleeId: {
-    type: String,
-    unique: true
-  },
-
-  fullName:{
-    type:String,
-    required:true,
-    trim:true
-  },
-
-  password:{
-    type:String,
-    minlength:6
-  },
-
-  profilePic:{
-    type:String,
-    default:""
-  },
-
-  bio:{
-    type:String,
-    maxlength:150
-  },
-
-  googleId: {
-    type: String 
-  },
-
-  isVerified: { 
-    type: Boolean, 
-    default: false 
-  },
-
-  lastSeen: { 
-    type: Date 
-  },
-
-  status: {
-    type: String,
-    enum: ["online", "offline"],
-    default: "offline"
-  },
-
-  allowFriendRequests: {
-    type: Boolean,
-    default: true
-  },
-  friends: [
+const userSchema = new mongoose.Schema(
   {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User"
-  }
-],
-blockedUsers: [
-  {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User"
-  }
-],
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
 
-publicKey: {
+    username: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+
+    zingleeId: {
+      type: String,
+      unique: true,
+    },
+
+    fullName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    password: {
   type: String,
-  default: ""
+  validate: {
+    validator(value) {
+      if (this.googleId) return true;
+      return value && value.length >= 6;
+    },
+    message: "Password must be at least 6 characters.",
+  },
 },
 
-}, {timestamps:true})
+    profilePic: {
+      type: String,
+      default: "",
+    },
 
-// Indexes (IMPORTANT)
-userSchema.index({ username: 1 })
-userSchema.index({ zingleeId: 1 })
+    bio: {
+      type: String,
+      maxlength: 150,
+      default: "",
+    },
 
-const User = mongoose.model("User" , userSchema)
+    googleId: {
+      type: String,
+      default: "",
+    },
 
-export default User
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+
+    lastSeen: {
+      type: Date,
+    },
+
+    status: {
+      type: String,
+      enum: ["online", "offline"],
+      default: "offline",
+    },
+
+    allowFriendRequests: {
+      type: Boolean,
+      default: true,
+    },
+
+    friends: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+
+    blockedUsers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+
+    // End-to-End Encryption
+    publicKey: {
+      type: String,
+      default: "",
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Indexes
+// userSchema.index({ username: 1 });
+// userSchema.index({ zingleeId: 1 });
+
+const User = mongoose.model("User", userSchema);
+
+export default User;

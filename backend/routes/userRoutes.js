@@ -1,3 +1,4 @@
+
 import express from "express"
 import { checkAuth, login, signup, updateProfile, firebaseLogin, searchUsers, getPublicKey } from "../controllers/userController.js";
 import { protectRoute } from "../middleware/auth.js";
@@ -10,7 +11,6 @@ userRouter.post("/login" , login);
 userRouter.post("/firebase-login", firebaseLogin);
 
 
-
 //protected routes
 userRouter.put("/update-profile" , protectRoute , updateProfile);
 userRouter.get("/check" , protectRoute , checkAuth);
@@ -20,3 +20,5 @@ userRouter.get("/public-key/:userId", protectRoute, getPublicKey );
 
 
 export default userRouter;
+
+

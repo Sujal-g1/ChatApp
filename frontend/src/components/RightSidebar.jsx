@@ -113,9 +113,49 @@ const handleBlockUser = async () => {
 
 
 {/* Zinglee ID */}
-<p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 8 }}>
+{/* <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 8 }}>
+  {selectedUser.zingleeId}
+</p> */}
+
+{/* Zingleee ID */}
+<p
+  style={{
+    fontSize: 11,
+    color: "rgba(255,255,255,0.35)",
+    marginBottom: 14,
+    fontFamily: "monospace",
+    letterSpacing: "0.5px",
+  }}
+>
   {selectedUser.zingleeId}
 </p>
+
+{/* Bio */}
+<div
+  style={{
+    padding: "14px 16px",
+    background: "rgba(255,255,255,0.04)",
+    border: "1px solid rgba(255,255,255,0.06)",
+    borderRadius: 14,
+    textAlign: "left",
+    backdropFilter: "blur(10px)",
+  }}
+>
+
+
+  <p
+    style={{
+      margin: 0,
+      fontSize: 13,
+      lineHeight: 1.6,
+      color: "rgba(255,255,255,0.75)",
+      whiteSpace: "pre-wrap",
+      wordBreak: "break-word",
+    }}
+  >
+    {selectedUser.bio?.trim() || "No bio added yet."}
+  </p>
+</div>
 
 
         {/* Quick actions */}

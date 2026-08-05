@@ -1,8 +1,8 @@
-
-import express from "express"
+import express from "express";
 import "dotenv/config";
-import cors from "cors"; 
-import http from "http"
+import cors from "cors";
+import http from "http";
+
 import { connectDB } from "./config/db.js";
 import userRouter from "./routes/userRoutes.js";
 import friendRouter from "./routes/friendRoutes.js";
@@ -10,119 +10,166 @@ import messageRouter from "./routes/messageRoutes.js";
 import { Server } from "socket.io";
 
 const app = express();
-const server = http.createServer(app)
+const server = http.createServer(app);
 
-// initialize socket.io server
-export const io = new Server(server , {
-    cors:{origin:"*"}
-})
+// Initialize Socket.IO server
+export const io = new Server(server, {
+  cors: {
+    origin: "*",
+  },
+});
 
-// store online users { userId: socketId }
-export const userSocketMap = {}
+// Store online users { userId: socketId }
+export const userSocketMap = {};
 
 export const emitToUser = (userId, event, data) => {
-    const id = userId?.toString();
-    const socketId = userSocketMap[id];
-    if (socketId) {
-        io.to(socketId).emit(event, data);
+  const id = userId?.toString();
+  const socketId = userSocketMap[id];
+
+  if (socketId) {
+    io.to(socketId).emit(event, data);
+  }
+};
+
+// Socket.IO connection handler
+io.on("connection", (socket) => {
+  const userId = socket.handshake.query.userId;
+
+  console.log("User Connected:", userId);
+
+  if (userId) {
+    userSocketMap[userId] = socket.id;
+    socket.join(userId.toString());
+  }
+
+  // Emit online users
+  io.emit("getOnlineUsers", Object.keys(userSocketMap));
+
+  // ===========================
+  // Typing Indicators
+  // ===========================
+
+  socket.on("typing", ({ to }) => {
+    const receiverSocketId = userSocketMap[to];
+
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("userTyping", {
+        from: userId,
+      });
     }
-}
- 
-//  socket.io connection handler
-io.on("connection" , (socket)=>{
-    const userId = socket.handshake.query.userId;
+  });
 
-    if (userId) {
-        userSocketMap[userId] = socket.id;
-        socket.join(userId.toString());
+  socket.on("stopTyping", ({ to }) => {
+    const receiverSocketId = userSocketMap[to];
+
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("userStopTyping", {
+        from: userId,
+      });
     }
+  });
 
-    // emit online users to all connected clients
-    io.emit("getOnlineUsers" , Object.keys(userSocketMap));
+  // ===========================
+  // Video Call
+  // ===========================
 
-    // video call starts --
+  // Caller sends offer
+  socket.on("call-user", ({ to, offer, callerInfo }) => {
+    const receiverSocketId = userSocketMap[to];
 
-    // Caller sends offer 
- socket.on("call-user", ({ to, offer, callerInfo }) => {
-
-const receiverSocketId = userSocketMap[to];
-
-if (receiverSocketId) {
-    io.to(receiverSocketId).emit("incoming-call", {
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("incoming-call", {
         from: userId,
         offer,
-        callerInfo
-    });
-} else {
-    console.error("receiver not found");
-}
+        callerInfo,
+      });
+    } else {
+      console.error("Receiver not found");
+    }
+  });
+
+  // Receiver sends answer
+  socket.on("answer-call", ({ to, answer }) => {
+    const callerSocketId = userSocketMap[to];
+
+    if (callerSocketId) {
+      io.to(callerSocketId).emit("call-answered", {
+        answer,
+      });
+    }
+  });
+
+  // Reject call
+  socket.on("reject-call", ({ to }) => {
+    const callerSocketId = userSocketMap[to];
+
+    if (callerSocketId) {
+      io.to(callerSocketId).emit("call-rejected");
+    }
+  });
+
+  // ICE Candidate exchange
+  socket.on("ice-candidate", ({ to, candidate }) => {
+    const targetSocketId = userSocketMap[to];
+
+    if (targetSocketId) {
+      io.to(targetSocketId).emit("ice-candidate", {
+        candidate,
+      });
+    }
+  });
+
+  // End call
+  socket.on("end-call", ({ to }) => {
+    const targetSocketId = userSocketMap[to];
+
+    if (targetSocketId) {
+      io.to(targetSocketId).emit("call-ended");
+    }
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User Disconnected:", userId);
+
+    delete userSocketMap[userId];
+
+    io.emit("getOnlineUsers", Object.keys(userSocketMap));
+  });
 });
 
+// ===========================
+// Middlewares
+// ===========================
 
-    // Receiver sends answer 
-    socket.on("answer-call", ({ to, answer }) => { 
-        const callerSocketId = userSocketMap[to]; 
-        if (callerSocketId) {
-             io.to(callerSocketId).emit("call-answered", { answer
-              }); 
-            }
-         });
-
-    // Reject call 
-    socket.on("reject-call", ({ to }) => {
-         const callerSocketId = userSocketMap[to]; 
-         if (callerSocketId) { 
-            io.to(callerSocketId).emit("call-rejected"); 
-        }
-     });
-
-
-     // ICE candidate exchange 
-     socket.on("ice-candidate", ({ to, candidate }) => {
-         const targetSocketId = userSocketMap[to];
-          if (targetSocketId) { 
-            io.to(targetSocketId).emit("ice-candidate", { candidate });
-         }
-         }); 
-     
-     // End call 
-     socket.on("end-call", ({ to }) => { 
-        const targetSocketId = userSocketMap[to];
-         if (targetSocketId) {
-             io.to(targetSocketId).emit("call-ended"); 
-            }
-         });
-
-       // video call  ends--
-
-
-    socket.on("disconnect" , ()=>{
-        console.log("User DisConnected" , userId);
-        delete userSocketMap[userId];
-        io.emit("getOnlineUsers" , Object.keys(userSocketMap))
-    })
-
-})
-
-
-//middlewares 
-app.use(express.json({limit:"4mb" }));
+app.use(express.json({ limit: "4mb" }));
 app.use(cors());
 
+// ===========================
+// Health Check
+// ===========================
 
 app.get("/", (req, res) => {
-  res.send("Zinglee Backend is running 🚀");
+  res.send("Zingleee Backend is running 🚀");
 });
 
-app.use("/api/status" ,(req , res)=>res.send("Server is running"));
-//routes setup
-app.use("/api/auth" , userRouter);
+app.use("/api/status", (req, res) => res.send("Server is running"));
+
+// ===========================
+// Routes
+// ===========================
+
+app.use("/api/auth", userRouter);
 app.use("/api/friends", friendRouter);
-app.use("/api/messages" , messageRouter);
+app.use("/api/messages", messageRouter);
 
+// ===========================
+// Connect DB & Start Server
+// ===========================
 
-// connecting to db
 await connectDB();
 
-const PORT = process.env.PORT || 5002;
-server.listen(PORT ,()=>console.log("Server is running on PORT:" + PORT))
+const PORT = process.env.PORT || 5004;
+
+server.listen(PORT, () => {
+  console.log(`Server is running on PORT: ${PORT}`);
+});

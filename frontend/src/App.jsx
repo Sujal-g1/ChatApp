@@ -1,4 +1,4 @@
-import React, { useContext } from 'react'
+import React, { useEffect, useContext } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import Homepage from "./pages/Homepage"
@@ -9,6 +9,7 @@ import InstructionsPage from "./pages/InstructionsPage"
 import { Toaster } from "react-hot-toast"
 import { AuthContext } from '../context/AuthContext'
 import { ThemeProvider } from '../context/ThemeContext'
+import { useNavigate } from "react-router-dom"
 
 const pageVariants = {
   initial: { opacity: 0, y: 16 },
@@ -24,9 +25,42 @@ const BgOrbs = () => (
   </div>
 )
 
+const WelcomeRoute = () => {
+  const { authUser } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      navigate(authUser ? "/" : "/login");
+    }, 4000);
+
+    return () => clearTimeout(timer);
+  }, [authUser, navigate]);
+
+  return <LandingPage />;
+};
+
 const AppRoutes = () => {
-  const { authUser } = useContext(AuthContext)
+  const { authUser , loading} = useContext(AuthContext)
   const location = useLocation()
+
+  if (loading) {
+    return (
+        <div
+            style={{
+                height: "100vh",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                color: "white",
+                fontSize: 22,
+            }}
+        >
+            Loading...
+        </div>
+    );
+}
+
 
   return (
     <AnimatePresence mode="wait">
@@ -46,11 +80,17 @@ const AppRoutes = () => {
             {authUser ? <ProfilePage /> : <Navigate to="/login" />}
           </motion.div>
         } />
-        <Route path="/welcome" element={
-          <motion.div {...pageVariants} style={{ minHeight: '100vh' }}>
-            <LandingPage />
-          </motion.div>
-        } />
+
+
+        <Route
+  path="/welcome"
+  element={
+    <motion.div {...pageVariants}>
+      <WelcomeRoute />
+    </motion.div>
+  }
+/>
+       
         <Route path="/ins" element={
           <motion.div {...pageVariants} style={{ minHeight: '100vh' }}>
             <InstructionsPage />

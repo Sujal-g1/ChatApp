@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useNavigate } from 'react-router-dom';
@@ -302,8 +303,6 @@ const InstructionsPage = () => {
         position: "relative",
       }}
     >
-      
-
       {/* Background orbs */}
       <div className="bg-orbs">
         <div className="orb orb-1" />
@@ -496,7 +495,6 @@ const InstructionsPage = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.45 }}
         >
-          
         <motion.button 
         onClick={() => navigate('/')}
         className="feature-card"
@@ -507,12 +505,12 @@ const InstructionsPage = () => {
       >
         Go to Homepage
       </motion.button>
-
         </motion.div>
-
-      </motion.div>
-    </div>
-  )
-}
+        </motion.div>
+        </div>
+  )}
+  
+         
 
 export default InstructionsPage
+

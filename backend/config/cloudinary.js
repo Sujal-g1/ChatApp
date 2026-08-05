@@ -1,3 +1,4 @@
+
 import { v2 as cloudinary } from "cloudinary"
 
 cloudinary.config({
@@ -7,3 +8,6 @@ cloudinary.config({
 })  
 
 export default cloudinary;
+
+
+

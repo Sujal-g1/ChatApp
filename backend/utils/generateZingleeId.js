@@ -1,26 +1,35 @@
-import User from "../models/User.js"
+import User from "../models/User.js";
 
 export const generateZingleeId = async (username) => {
-  let isUnique = false
-  let zingleeId
-  let attempts = 0
+  // Normalize username
+  const base = username
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "")
+    .slice(0, 8);
+
+  let zingleeId;
+  let isUnique = false;
+  let attempts = 0;
 
   while (!isUnique && attempts < 5) {
-    const randomTag = Math.floor(1000 + Math.random() * 9000) // 4-digit
-    zingleeId = `${username}#${randomTag}`
+    const randomTag = Math.floor(1000 + Math.random() * 9000);
 
-    const existing = await User.findOne({ zingleeId })
+    zingleeId = `${base}#${randomTag}`;
+
+    const existing = await User.findOne({
+      zingleeId,
+    });
 
     if (!existing) {
-      isUnique = true
+      isUnique = true;
     }
 
-    attempts++
+    attempts++;
   }
 
   if (!isUnique) {
-    throw new Error("Failed to generate unique Zingleee ID")
+    throw new Error("Failed to generate unique Zingleee ID");
   }
 
-  return zingleeId
-}
+  return zingleeId;
+};

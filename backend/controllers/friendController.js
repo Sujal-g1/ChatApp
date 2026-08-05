@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import FriendRequest from "../models/FriendRequest.js";
 import User from "../models/User.js";
+
 import { emitToUser } from "../server.js";
 
 const populateRequest = (id) =>
@@ -8,11 +9,12 @@ const populateRequest = (id) =>
     .populate("receiver", "username profilePic zingleeId fullName");
 
 
-// send req
+// Send friend request
 export const sendFriendRequest = async (req, res) => {
   try {
     const senderId = req.user._id;
     const { receiverId } = req.body;
+
 
     //  cannot send to yourself
     if (senderId.toString() === receiverId) {
@@ -285,11 +287,38 @@ emitToUser(
   }
 };
 
-//cancel request
-export const cancelRequest = async (req, res) => {
+// Get pending friend requests
+export const getPendingRequests = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { requestId } = req.body;
+
+    const requests = await FriendRequest.find({
+      receiver: userId,
+      status: "pending",
+    }).populate(
+      "sender",
+      "fullName username profilePic zingleeId"
+    );
+
+    return res.json({
+      success: true,
+      requests,
+    });
+  } catch (error) {
+    console.log(error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// Respond to friend request
+export const respondToRequest = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { requestId, action } = req.body;
 
     const request = await FriendRequest.findById(requestId);
 
@@ -300,8 +329,7 @@ export const cancelRequest = async (req, res) => {
       });
     }
 
-    // only sender can cancel
-    if (request.sender.toString() !== userId.toString()) {
+    if (request.receiver.toString() !== userId.toString()) {
       return res.status(403).json({
         success: false,
         message: "Not authorized",
@@ -313,69 +341,6 @@ export const cancelRequest = async (req, res) => {
         success: false,
         message: "Request already handled",
       });
-    }
-
-    request.status = "rejected";
-    await request.save();
-
-    emitToUser(request.receiver, "friendRequestCancelled", { requestId: request._id });
-
-    res.json({
-      success: true,
-      message: "Request cancelled",
-    });
-
-  } catch (error) {
-    console.log(error.message);
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-
-// cancel pending request
-export const getPendingRequests = async (req, res) => {
-  try {
-    const userId = req.user._id;
-
-    const requests = await FriendRequest.find({
-      receiver: userId,
-      status: "pending"
-    }).populate("sender", "username profilePic zingleeId");
-
-    res.json({
-      success: true,
-      requests
-    });
-
-  } catch (error) {
-    console.log(error.message);
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-// req response
-export const respondToRequest = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const { requestId, action } = req.body;
-
-    const request = await FriendRequest.findById(requestId);
-    if (!request) {
-      return res.status(404).json({ success: false, message: "Request not found" });
-    }
-
-    if (request.receiver.toString() !== userId.toString()) {
-      return res.status(403).json({ success: false, message: "Not authorized" });
-    }
-
-    if (request.status !== "pending") {
-      return res.status(400).json({ success: false, message: "Request already handled" });
     }
 
     if (action === "accept") {
@@ -394,77 +359,122 @@ export const respondToRequest = async (req, res) => {
     } else if (action === "reject") {
       request.status = "rejected";
     } else {
-      return res.status(400).json({ success: false, message: "Invalid action" });
+      return res.status(400).json({
+        success: false,
+        message: "Invalid action",
+      });
     }
 
     await request.save();
 
     if (action === "accept") {
+      const senderUser = await User.findById(request.sender).select(
+        "fullName username profilePic zingleeId"
+      );
 
-  const senderUser =
-    await User.findById(
-      request.sender
-    ).select(
-      "fullName username profilePic zingleeId"
-    );
+      const receiverUser = await User.findById(request.receiver).select(
+        "fullName username profilePic zingleeId"
+      );
 
-  const receiverUser =
-    await User.findById(
-      request.receiver
-    ).select(
-      "fullName username profilePic zingleeId"
-    );
+      emitToUser(request.sender, "friendRequestAccepted", {
+        requestId: request._id,
+        friend: receiverUser,
+      });
 
-  emitToUser(
-    request.sender,
-    "friendRequestAccepted",
-    {
-      requestId: request._id,
-      friend: receiverUser
-    }
-  );
-
-  emitToUser(
-    request.receiver,
-    "friendAdded",
-    {
-      friend: senderUser
-    }
-  );
-}
-    else {
-      emitToUser(request.sender, "friendRequestRejected", { requestId: request._id });
+      emitToUser(request.receiver, "friendAdded", {
+        friend: senderUser,
+      });
+    } else {
+      emitToUser(request.sender, "friendRequestRejected", {
+        requestId: request._id,
+      });
     }
 
-    res.json({
+    return res.json({
       success: true,
       message: `Request ${action}ed`,
     });
-
   } catch (error) {
     console.log(error.message);
-    res.status(500).json({ success: false, message: error.message });
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
-//who i send req
+// Get sent friend requests
 export const getSentRequests = async (req, res) => {
   try {
     const userId = req.user._id;
 
     const requests = await FriendRequest.find({
       sender: userId,
-      status: "pending"
-    }).populate("receiver", "username profilePic zingleeId");
+      status: "pending",
+    }).populate(
+      "receiver",
+      "username profilePic zingleeId"
+    );
 
-    res.json({
+    return res.json({
       success: true,
-      requests
+      requests,
     });
-
   } catch (error) {
     console.log(error.message);
-    res.status(500).json({
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// Cancel pending request
+export const cancelRequest = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { requestId } = req.body;
+
+    const request = await FriendRequest.findById(requestId);
+
+    if (!request) {
+      return res.status(404).json({
+        success: false,
+        message: "Request not found",
+      });
+    }
+
+    if (request.sender.toString() !== userId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized",
+      });
+    }
+
+    if (request.status !== "pending") {
+      return res.status(400).json({
+        success: false,
+        message: "Request already handled",
+      });
+    }
+
+    request.status = "rejected";
+    await request.save();
+
+    emitToUser(request.receiver, "friendRequestCancelled", {
+      requestId: request._id,
+    });
+
+    return res.json({
+      success: true,
+      message: "Request cancelled",
+    });
+  } catch (error) {
+    console.log(error.message);
+
+    return res.status(500).json({
       success: false,
       message: error.message,
     });

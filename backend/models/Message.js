@@ -1,49 +1,40 @@
+import mongoose from "mongoose";
 
-import mongoose from "mongoose"
+const messageSchema = new mongoose.Schema(
+  {
+    senderId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
 
-const messageSchema = new mongoose.Schema({
+    receiverId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
 
-    senderId:{ type:mongoose.Schema.Types.ObjectId,
-                required:true,
-                ref:"User" 
-            },
+    text: {
+      type: String,
+      default: null,
+    },
 
-    receiverId:{
-    type:mongoose.Schema.Types.ObjectId,
-    required:true,
-    ref:"User"
-},
+    image: {
+      type: String,
+      default: null,
+    },
 
-text:{
-    type:String
-},
+    audio: {
+      type: String,
+      default: null,
+    },
 
-image:{
-    type:String
-},
+    seen: {
+      type: Boolean,
+      default: false,
+    },
 
-seen:{
-    type:Boolean,
-    default:false
-},
-
-expiresAt: {
-  type: Date,
-  required: true,
-},
-
-deleteMode: {
-  type: String,
-  enum: [
-    "10s",
-    "1m",
-    "1h",
-    "24h",
-    "7d"
-  ],
-  default: "24h"
-},
-
+    // End-to-End Encryption
     cipherText: {
       type: String,
       default: null,
@@ -54,24 +45,36 @@ deleteMode: {
       default: null,
     },
 
-audio: {
-  type: String
-},
+    // Self-destruct messages
+    deleteMode: {
+      type: String,
+      enum: ["10s", "1m", "1h", "24h", "7d"],
+      default: "24h",
+    },
 
-}, {timestamps:true});
+    expiresAt: {
+      type: Date,
+      required: true,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
 
+// TTL index for auto-deleting expired messages
 messageSchema.index(
   { expiresAt: 1 },
   { expireAfterSeconds: 0 }
 );
 
+// Chat query optimization
 messageSchema.index({
   senderId: 1,
   receiverId: 1,
-  createdAt: -1
+  createdAt: -1,
 });
 
-
-const Message = mongoose.model("Message" , messageSchema);
+const Message = mongoose.model("Message", messageSchema);
 
 export default Message;

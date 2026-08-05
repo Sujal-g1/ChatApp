@@ -1,4 +1,5 @@
 
+
 import { createContext, useContext, useEffect, useState } from "react";
 import { encryptMessage, decryptMessage } from "../src/lib/crypto";
 import { AuthContext } from "./AuthContext";
@@ -27,7 +28,6 @@ export const ChatProvider = ({children})=>{
   setUsers(data.users || []);
   setUnseenMessages(data.unseenMessages || {});
 
-  // 🔥 FIX: refresh selectedUser reference
   if (selectedUser) {
     const updatedUser = data.users.find(u => u._id === selectedUser._id);
     if (updatedUser) {
@@ -69,8 +69,15 @@ export const ChatProvider = ({children})=>{
             msg.senderId.publicKey,
             privateKey
           );
+          
+    console.log("DECRYPTED:", decryptedText );
+    console.log({
+  id: msg._id,
+  decryptedText,
+  senderPublicKey: msg.senderId.publicKey,
+  privateKey
+});
 
-        // console.log("DECRYPTED:", decryptedText );
 
         return {
           ...msg,
@@ -528,3 +535,6 @@ const getBlockedUsers = async () => {
         {children}
     </ChatContext.Provider>)
 }
+
+export const useChat = () => useContext(ChatContext)
+

@@ -1,4 +1,5 @@
-import { createContext, useEffect, useRef, useState } from "react";
+
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import axios from "axios"
 import toast from "react-hot-toast"
 import {io} from "socket.io-client"
@@ -16,21 +17,38 @@ export const AuthProvider = ({children}) => {
     const [onlineUsers, setOnlineUsers] = useState([]);
     const [socket, setSocket] = useState(null);
     const socketRef = useRef(null);
+    const [loading, setLoading] = useState(true);
 
     // check is user is authenticated and if so ,set the user data and connect the socket
-     const checkAuth = async() => {
-        try {
-            const {data} = await axios.get("/api/auth/check");
-            if (data.success){
-                setAuthUser(data.user)
-                connectSocket(data.user )
-            }
-            
-        } catch (error) {
-            toast.error(error.message)
-        }
+    const checkAuth = async () => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+        setLoading(false);
+        return;
     }
 
+    axios.defaults.headers.common.Authorization = `Bearer ${token}`;
+
+    try {
+        const { data } = await axios.get("/api/auth/check");
+         console.log("CHECK AUTH RESPONSE:", data);
+
+        if (data.success) {
+            setAuthUser(data.user);
+            connectSocket(data.user);
+        }
+    } catch (err) {
+        console.log(err);
+
+        localStorage.removeItem("token");
+        delete axios.defaults.headers.common.Authorization;
+
+        setAuthUser(null);
+    } finally {
+        setLoading(false);
+    }
+};
     // login fn to handle user auth and socket connection
    const login = async (state, credentials) => {
   try {
@@ -58,21 +76,18 @@ export const AuthProvider = ({children}) => {
     );
   }
 
-  setAuthUser(data.userData);
-
-  connectSocket(
-    data.userData
-  );
-
-  axios.defaults.headers.common["Authorization"] =
+      axios.defaults.headers.common["Authorization"] =
     `Bearer ${data.token}`;
 
   setToken(data.token);
 
-  localStorage.setItem(
-    "token",
-    data.token
-  );
+  localStorage.setItem("token", data.token);
+
+  setAuthUser(data.userData);
+
+  connectSocket(data.userData);
+
+
 
     // Manual login does not return a private key.
     // Make sure this device still has one.
@@ -91,7 +106,7 @@ export const AuthProvider = ({children}) => {
   );
 }
   } catch (error) {
-    toast.error(error.message);
+   toast.error(error.response?.data?.message || error.message)
   }
 };
     
@@ -121,7 +136,7 @@ export const AuthProvider = ({children}) => {
             }
 
          } catch (error) {
-            toast.error(error.message)
+            toast.error(error.response?.data?.message || error.message)
          }
     }
 
@@ -148,12 +163,9 @@ export const AuthProvider = ({children}) => {
     };
 
 
-    useEffect(() => {
-  if (token) {
-    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-    checkAuth();
-  }
-}, [token]);
+     useEffect(() => {
+  checkAuth();
+}, []);
 
 
 useEffect(() => {
@@ -172,19 +184,25 @@ useEffect(() => {
 
     const getPrivateKey = () => localStorage.getItem( "privateKey" );
 
-    const value = {
-        axios,
-        authUser,
-        onlineUsers,
-        socket,
-        login,
-        logout,
-        updateProfile,
-        getPrivateKey
-    }
+   const value = {
+    axios,
+    authUser,
+    loading,
+    onlineUsers,
+    socket,
+    login,
+    logout,
+    updateProfile,
+    getPrivateKey
+}
     return (  
         <AuthContext.Provider value={value} >
             {children}
         </AuthContext.Provider>
     )
 } 
+
+
+
+export const useAuth = () => useContext(AuthContext)
+

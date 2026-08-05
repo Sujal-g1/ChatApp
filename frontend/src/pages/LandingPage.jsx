@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useContext } from "react";
+import { AuthContext } from "../../context/AuthContext";
 
 export const ZingleeeLogo = ({ size = 64 }) => (
   <svg width={size} height={size} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -27,13 +29,17 @@ const LandingPage = () => {
   const navigate = useNavigate()
   const [phase, setPhase] = useState('logo')
 
-  useEffect(() => {
-    const t1 = setTimeout(() => setPhase('name'),    600)
-    const t2 = setTimeout(() => setPhase('tagline'), 1300)
-    const t3 = setTimeout(() => setPhase('done'),    2400)
-    const t4 = setTimeout(() => navigate('/login'),  3000)
-    return () => [t1, t2, t3, t4].forEach(clearTimeout)
-  }, [navigate])
+
+useEffect(() => {
+  const t1 = setTimeout(() => setPhase("name"), 800);
+  const t2 = setTimeout(() => setPhase("tagline"), 1400);
+  const t3 = setTimeout(() => setPhase("done"), 2800);
+  // const t4 = setTimeout(() => navigate("/login"), 3000);
+
+  return () => {
+    [t1, t2, t3].forEach(clearTimeout);
+  };
+}, []);
 
   return (
     <div style={{
