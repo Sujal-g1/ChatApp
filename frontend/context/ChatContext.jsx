@@ -45,7 +45,7 @@ export const ChatProvider = ({children})=>{
     const getMessages = async (userId) => {
   try {
     const { data } = await axios.get(`/api/messages/${userId}`);
-    console.log("RAW MESSAGES", data.messages);
+    // console.log("RAW MESSAGES", data.messages);
 
     if (!data.success) {
       toast.error(data.message);

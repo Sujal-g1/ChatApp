@@ -61,7 +61,7 @@ export const decryptIncomingMessage = async (message, myUserId) => {
     if (!message.cipherText) {
         return message;
     }
-    console.log("MESSAGE", message);
+    // console.log("MESSAGE", message);
 
     const version = message.encryptionVersion || 1;
 
@@ -72,10 +72,10 @@ export const decryptIncomingMessage = async (message, myUserId) => {
         ? message.receiverId.publicKey
         : message.senderId.publicKey;
 
-    console.log("senderPublicKey",
-    message.senderPublicKey,
-    message.senderId?.publicKey
-    )
+    // console.log("senderPublicKey",
+    // message.senderPublicKey,
+    // message.senderId?.publicKey
+    // )
 
     let text = null;
 
@@ -83,19 +83,19 @@ export const decryptIncomingMessage = async (message, myUserId) => {
 
         case 1:
 
-          text = decryptMessage(
+    text = decryptMessage(
     message.cipherText,
     message.nonce,
     otherPublicKey,
     myPrivateKey
 );
-        console.log("nonce", message.nonce);
+        // console.log("nonce", message.nonce);
 
-console.log("cipher", message.cipherText);
+// console.log("cipher", message.cipherText);
 
-console.log("myPrivateKey", myPrivateKey);
+// console.log("myPrivateKey", myPrivateKey);
 
-console.log("DECRYPTED", text);
+// console.log("DECRYPTED", text);
 
             break;
 

@@ -193,7 +193,7 @@ export const sendMessage = async (req, res) => {
     const receiverId = req.params.id;
     const senderId = req.user._id;
 
-    // Self-destruct settings
+    // Self-destruct settings ---------------
     const expiryMap = {
       "10s": 1000 * 10,
       "1m": 1000 * 60,
