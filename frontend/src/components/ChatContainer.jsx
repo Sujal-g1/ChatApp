@@ -576,9 +576,17 @@ useEffect(() => {
         
         </motion.div>
         <div style={{ textAlign: 'center' }}>
-          <h2 style={{ fontFamily: 'Syne, sans-serif', fontSize: 22, fontWeight: 700, marginBottom: 8 }}>
-           Zingleee
-          </h2>
+         <span style={{ 
+        fontFamily: 'Syne, sans-serif', 
+        fontWeight: 800, 
+        fontSize: 45, // Reduced from 20
+        letterSpacing: '-0.02em',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis' // Gracefully cuts text if there's no room
+      }}>
+        Zingle<span style={{ color: 'var(--accent)' }}>ee</span>
+      </span>
           <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>
             Select a conversation to start messaging
           </p>
@@ -591,7 +599,7 @@ useEffect(() => {
     position: "relative", 
     overflow: "hidden",
     height: '40px', // Adjust this value to your preferred height
-    padding: '5px 16px' // Optional: lowering vertical padding also reduces height
+    padding: '8px 16px' // Optional: lowering vertical padding also reduces height
   }}
   initial={{ opacity: 0, y: 24 }}
   animate={{ opacity: 1, y: 0 }}

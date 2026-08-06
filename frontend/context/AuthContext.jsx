@@ -87,9 +87,9 @@ export const AuthProvider = ({children}) => {
   if (data.privateKey) {
     savePrivateKey(data.privateKey);
 
-    console.log(
-      "PRIVATE KEY SAVED"
-    );
+    // console.log(
+    //   "PRIVATE KEY SAVED"
+    // );
   }
 
       axios.defaults.headers.common["Authorization"] =

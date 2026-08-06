@@ -1,0 +1,40 @@
+import { createContext, useEffect, useState } from "react";
+
+export const NetworkContext = createContext();
+
+export const NetworkProvider = ({ children }) => {
+
+    const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+    useEffect(() => {
+
+        const goOnline = () => {
+            setIsOnline(true);
+        };
+
+        const goOffline = () => {
+            setIsOnline(false);
+        };
+
+        window.addEventListener("online", goOnline);
+        window.addEventListener("offline", goOffline);
+
+        return () => {
+            window.removeEventListener("online", goOnline);
+            window.removeEventListener("offline", goOffline);
+        };
+
+    }, []);
+
+    return (
+
+        <NetworkContext.Provider
+            value={{
+                isOnline
+            }}
+        >
+            {children}
+        </NetworkContext.Provider>
+
+    );
+};

@@ -79,7 +79,7 @@ const LoadingScreen = () => {
               height: 10,
               borderRadius: "50%",
               background:
-                "linear-gradient(135deg,var(--accent),var(--accent2))",
+              "linear-gradient(135deg,var(--accent),var(--accent2))",
               boxShadow: "0 0 12px var(--glow)",
             }}
           />

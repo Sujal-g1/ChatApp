@@ -8,7 +8,7 @@ import { ZingleeeLogo } from '../pages/LandingPage'
 import assets from '../assets/assets'
 import axios from "axios";
 import toast from "react-hot-toast";
-import {Signpost ,UserRound, BellRing,Settings,LogOut,Palette, Share2 } from 'lucide-react'; 
+import {Signpost ,UserRound, BellRing,Settings,LogOut,Palette, Share2, Pen } from 'lucide-react'; 
 
 const Sidebar = () => {
   const { getUsers, users, setUsers, selectedUser, setSelectedUser, unseenMessages, setUnseenMessages, getRequests, requests, setRequests, respondRequest, blockedUsers,
@@ -913,13 +913,13 @@ Join using my ID: ${userId}
           style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border-color)', cursor: 'pointer' }}
         />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <p style={{ fontSize: 15, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {authUser?.fullName}
           </p>
           <p style={{ fontSize: 11, color: '#4ade80' }}>● Active</p>
         </div>
         <button className="icon-btn" onClick={() => navigate('/profile')} title="Edit profile" style={{ fontSize: 15 }}>
-          ✏️
+          <Pen size={18}/>
         </button>
       </div>
     </motion.div>

@@ -6,11 +6,15 @@ import LoginPage from "./pages/LoginPage"
 import ProfilePage from "./pages/ProfilePage"
 import LandingPage from "./pages/LandingPage"
 import InstructionsPage from "./pages/InstructionsPage"
+import OfflineScreen from "./pages/OfflineScreen";
 import LoadingScreen from "./pages/LoadingScreen";
 import { Toaster } from "react-hot-toast"
 import { AuthContext } from '../context/AuthContext'
+import { NetworkContext } from '../context/NetworkContext'
 import { ThemeProvider } from '../context/ThemeContext'
 import { useNavigate } from "react-router-dom"
+
+
 
 const pageVariants = {
   initial: { opacity: 0, y: 16 },
@@ -33,7 +37,7 @@ const WelcomeRoute = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       navigate(authUser ? "/" : "/login");
-    }, 4000);
+    }, 2000);
 
     return () => clearTimeout(timer);
   }, [authUser, navigate]);
@@ -43,15 +47,18 @@ const WelcomeRoute = () => {
 
 const AppRoutes = () => {
   const { authUser , loading} = useContext(AuthContext)
-//   console.log("APP ROUTES:", {
-//   loading,
-//   authUser,
-// });
+  const { isOnline } = useContext(NetworkContext);
+
   const location = useLocation()
 
 if (loading) {
     return <LoadingScreen />;
 }
+
+if (!isOnline) {
+    return <OfflineScreen />;
+}
+
 
 
   return (
