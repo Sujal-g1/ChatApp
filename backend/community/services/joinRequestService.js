@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Community from "../models/Community.js";
 import CommunityMember from "../models/CommunityMember.js";
 import CommunityJoinRequest from "../models/CommunityJoinRequest.js";
@@ -96,4 +97,113 @@ export const getMyRequest = async (
 
   });
 
+};
+
+// get all pending requests for a community, used by owner/admin to approve/reject requests
+export const getPendingRequests = async (communityId) => {
+
+  return await CommunityJoinRequest
+    .find({
+      communityId,
+      status: "pending",
+    })
+    .populate(
+      "userId",
+      "fullName username profilePic"
+    )
+    .sort({
+      createdAt: 1,
+    });
+
+};
+
+// approve req
+export const approveJoinRequest = async (requestId) => {
+
+  const session = await mongoose.startSession();
+
+  session.startTransaction();
+
+  try {
+
+    const request = await CommunityJoinRequest.findById(requestId).session(session);
+
+    if (!request) {
+      throw new Error("Join request not found.");
+    }
+
+    if (request.status !== "pending") {
+      throw new Error("Request already processed.");
+    }
+
+    // Check if already a member
+    const existingMember = await CommunityMember.findOne({
+      communityId: request.communityId,
+      userId: request.userId,
+    }).session(session);
+
+    if (existingMember) {
+      throw new Error("User is already a member.");
+    }
+
+    // Create member
+    await CommunityMember.create(
+      [{
+        communityId: request.communityId,
+        userId: request.userId,
+        role: "member",
+      }],
+      { session }
+    );
+
+    // Update request
+    request.status = "approved";
+    await request.save({ session });
+
+    // Increase member count
+    await Community.findByIdAndUpdate(
+      request.communityId,
+      {
+        $inc: {
+          memberCount: 1,
+        },
+      },
+      { session }
+    );
+
+    await session.commitTransaction();
+
+    return request;
+
+  } catch (error) {
+
+    await session.abortTransaction();
+    throw error;
+
+  } finally {
+
+    session.endSession();
+
+  }
+
+};
+
+
+export const rejectJoinRequest = async (requestId) => {
+
+  const request = await CommunityJoinRequest.findById(requestId);
+
+  if (!request) {
+    throw new Error("Join request not found.");
+  }
+
+  if (request.status !== "pending") {
+    throw new Error("Request already processed.");
+  }
+
+  request.status = "rejected";
+
+  await request.save();
+
+  return request;
 };

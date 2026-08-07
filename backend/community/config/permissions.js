@@ -5,7 +5,7 @@ export const COMMUNITY_PERMISSIONS = {
     "community:update",
     "community:delete",
 
-    "community:transfer",
+    "community:transferOwnership",
 
     "member:approve",
     "member:reject",

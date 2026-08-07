@@ -1,5 +1,9 @@
 import express from "express";
 import { protectRoute } from "../../middleware/auth.js";
+import { getPendingRequests } from "../controllers/joinRequestController.js";
+import { approveJoinRequest } from "../controllers/joinRequestController.js";
+import { rejectJoinRequest, } from "../controllers/joinRequestController.js";
+
 
 import {
   requestToJoin,
@@ -34,6 +38,30 @@ joinRequestRouter.get(
   "/:id/request",
   protectRoute,
   getMyJoinRequest
+);
+
+// get all pending requests for a community, used by owner/admin to approve/reject requests
+router.get(
+  "/:id/requests",
+  protectRoute,
+  communityPermission(["community:approve"]),
+  getPendingRequests
+);
+
+router.patch(
+  "/request/:requestId/approve",
+  protectRoute,
+  communityPermission(["member:approve"]),
+  approveJoinRequest
+);
+
+router.patch(
+  "/request/:requestId/reject",
+  protectRoute,
+  communityPermission([
+    "member:reject",
+  ]),
+  rejectJoinRequest
 );
 
 export default joinRequestRouter;

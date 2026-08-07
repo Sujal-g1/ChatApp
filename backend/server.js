@@ -9,6 +9,7 @@ import friendRouter from "./routes/friendRoutes.js";
 import messageRouter from "./routes/messageRoutes.js";
 import communityRouter from "./community/routes/communityRoutes.js";
 import joinRequestRouter from "./community/routes/joinRequestRoutes.js";
+import communityMemberRouter from "./community/routes/communityMemberRoutes.js";
 import { Server } from "socket.io";
 
 const app = express();
@@ -165,6 +166,8 @@ app.use("/api/friends", friendRouter);
 app.use("/api/messages", messageRouter);
 app.use("/api/community", communityRouter);
 app.use("/api/community", joinRequestRouter);
+app.use( "/api/community", communityMemberRouter );
+
 
 // ===========================
 // Connect DB & Start Server

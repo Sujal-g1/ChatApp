@@ -116,3 +116,77 @@ export const getMyJoinRequest = async (req, res) => {
   }
 
 };
+
+// get pending requests for a community
+export const getPendingRequests = async (
+  req,
+  res
+) => {
+
+  try {
+
+    const requests =
+      await joinRequestService.getPendingRequests(
+        req.params.id
+      );
+
+    return res.json({
+      success: true,
+      requests,
+    });
+
+  } catch (error) {
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+
+  }
+
+};
+
+export const approveJoinRequest = async (req, res) => {
+
+  try {
+
+    const request =
+      await joinRequestService.approveJoinRequest(
+        req.params.requestId
+      );
+
+    return res.json({
+      success: true,
+      message: "User approved successfully.",
+      request,
+    });
+
+  } catch (error) {
+
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+
+  }
+
+};
+
+export const rejectJoinRequest = async (requestId) => {
+
+  const request = await CommunityJoinRequest.findById(requestId);
+
+  if (!request) {
+    throw new Error("Join request not found.");
+  }
+
+  if (request.status !== "pending") {
+    throw new Error("Request already processed.");
+  }
+
+  request.status = "rejected";
+
+  await request.save();
+
+  return request;
+};
