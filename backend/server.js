@@ -7,6 +7,8 @@ import { connectDB } from "./config/db.js";
 import userRouter from "./routes/userRoutes.js";
 import friendRouter from "./routes/friendRoutes.js";
 import messageRouter from "./routes/messageRoutes.js";
+import communityRouter from "./community/routes/communityRoutes.js";
+import joinRequestRouter from "./community/routes/joinRequestRoutes.js";
 import { Server } from "socket.io";
 
 const app = express();
@@ -161,6 +163,8 @@ app.use("/api/status", (req, res) => res.send("Server is running"));
 app.use("/api/auth", userRouter);
 app.use("/api/friends", friendRouter);
 app.use("/api/messages", messageRouter);
+app.use("/api/community", communityRouter);
+app.use("/api/community", joinRequestRouter);
 
 // ===========================
 // Connect DB & Start Server

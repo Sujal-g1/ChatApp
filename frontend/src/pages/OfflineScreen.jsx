@@ -13,8 +13,8 @@ export default function OfflineScreen(){
       left: Math.random() * 100,
       delay: Math.random() * 12,
       duration: 20 + Math.random() * 15,
-      size: 2 + Math.random() * 5,
-      opacity: 0.2 + Math.random() * 0.6,
+      size: 0.5 + Math.random() * 2.5,   
+    opacity: 0.01 + Math.random() * 0.5,
     })),
   []
 );
@@ -45,29 +45,7 @@ export default function OfflineScreen(){
         }}
       />
 
-      {/* Aurora 1 */}
-{/* <motion.div
-  animate={{
-    scale: [1, 1.15, 1],
-    rotate: [0, 8, -6, 0],
-  }}
-  transition={{
-    duration: 18,
-    repeat: Infinity,
-    ease: "easeInOut",
-  }}
-  style={{
-    position: "absolute",
-    width: 700,
-    height: 700,
-    borderRadius: "50%",
-    background:
-      "radial-gradient(circle, rgba(124,106,247,.22), transparent 70%)",
-    filter: "blur(80px)",
-  }}
-/> */}
-
-{/* Aurora 2 */}
+{/* Aurora 2
 <motion.div
   animate={{
     x: [-80, 70, -80],
@@ -87,7 +65,7 @@ export default function OfflineScreen(){
       "radial-gradient(circle, rgba(0,255,255,.12), transparent 70%)",
     filter: "blur(90px)",
   }}
-/>
+/> */}
 
      {/* Floating particles across whole screen */}
       {particles.map((particle, i) => (
@@ -136,7 +114,6 @@ export default function OfflineScreen(){
     }}
   />
 ))}
-
 
 
       {/* Radar */}
@@ -218,7 +195,7 @@ transition={{
       <h1 style={{
         color:"#fff",
         fontFamily:"Syne",
-        fontSize:44,
+        fontSize:32,
         fontWeight:800,
         margin:0
       }}>
@@ -234,9 +211,9 @@ transition={{
         fontSize:14,
         padding: "25px 0",
       }}>
-        Your encrypted conversations remain completely safe.
+       currently offline !
         <br/>
-        Re-establishing a secure connection…
+        Check your internet connection…
       </p>
 
             {/* Loading Dots */}
@@ -289,13 +266,12 @@ transition={{
         onClick={()=>window.location.reload()}
         style={{
           marginTop:42,
-          border:"none",
           borderRadius:999,
           padding:"14px 34px",
           color:"#fff",
           fontWeight:700,
           cursor:"pointer",
-          background:"linear-gradient(135deg,var(--accent),var(--accent2))",
+          border:"1px solid linear-gradient(135deg,var(--accent),var(--accent2))",
           boxShadow:"0 0 24px var(--glow)"
         }}
       >

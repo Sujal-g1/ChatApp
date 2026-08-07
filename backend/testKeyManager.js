@@ -9,7 +9,7 @@ import {
 
 console.log("\n========== KEY MANAGER TEST ==========\n");
 
-const keys = createUserKeys();
+//  const keys = createUserKeys();
 
 console.log("✓ Public Key Generated");
 console.log(keys.publicKey);
