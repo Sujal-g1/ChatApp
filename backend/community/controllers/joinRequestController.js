@@ -1,5 +1,5 @@
 import * as joinRequestService from "../services/joinRequestService.js";
-import CommunityJoinRequest from "../models/communityJoinRequest.js";
+import CommunityJoinRequest from "../models/CommunityJoinRequest.js";
 
 /**
  * Request to Join Community
