@@ -5,6 +5,7 @@ import { communityPermission, } from "../middleware/communityPermission.js";
 import { leaveCommunity, } from "../controllers/communityMemberController.js";
 import { removeMember, } from "../controllers/communityMemberController.js";
 import { transferOwnership, } from "../controllers/communityMemberController.js";
+import { updateMemberRole, } from "../controllers/communityMemberController.js";
 
 const router = express.Router();
 
@@ -30,9 +31,7 @@ protectRoute,
 communityPermission([
 "member:promoteModerator"
 ]),
-
 updateMemberRole
-
 );
 
 

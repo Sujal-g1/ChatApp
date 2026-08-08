@@ -3,13 +3,8 @@ import { protectRoute } from "../../middleware/auth.js";
 import { getPendingRequests } from "../controllers/joinRequestController.js";
 import { approveJoinRequest } from "../controllers/joinRequestController.js";
 import { rejectJoinRequest, } from "../controllers/joinRequestController.js";
-
-
-import {
-  requestToJoin,
-  cancelJoinRequest,
-  getMyJoinRequest,
-} from "../controllers/joinRequestController.js";
+import { requestToJoin, cancelJoinRequest, getMyJoinRequest, } from "../controllers/joinRequestController.js";
+import { communityPermission, } from "../middleware/communityPermission.js";
 
 const joinRequestRouter = express.Router();
 
@@ -41,21 +36,21 @@ joinRequestRouter.get(
 );
 
 // get all pending requests for a community, used by owner/admin to approve/reject requests
-router.get(
+joinRequestRouter.get(
   "/:id/requests",
   protectRoute,
   communityPermission(["community:approve"]),
   getPendingRequests
 );
 
-router.patch(
+joinRequestRouter.patch(
   "/request/:requestId/approve",
   protectRoute,
   communityPermission(["member:approve"]),
   approveJoinRequest
 );
 
-router.patch(
+joinRequestRouter.patch(
   "/request/:requestId/reject",
   protectRoute,
   communityPermission([
