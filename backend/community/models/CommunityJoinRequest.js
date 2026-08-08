@@ -62,16 +62,8 @@ const communityJoinRequestSchema = new mongoose.Schema(
   }
 );
 
-// A user can only have ONE active request per community
-communityJoinRequestSchema.index(
-  {
-    communityId: 1,
-    userId: 1,
-  },
-  {
-    unique: true,
-  }
-);
+// A user can only have ONE active request per community -> dropped
+
 
 // Faster admin queries
 communityJoinRequestSchema.index({
@@ -79,9 +71,11 @@ communityJoinRequestSchema.index({
   status: 1,
 });
 
-const CommunityJoinRequest = mongoose.model(
-  "CommunityJoinRequest",
-  communityJoinRequestSchema
-);
+const CommunityJoinRequest =
+  mongoose.models.CommunityJoinRequest ||
+  mongoose.model(
+    "CommunityJoinRequest",
+    communityJoinRequestSchema
+  );
 
 export default CommunityJoinRequest;

@@ -191,7 +191,8 @@ export const approveJoinRequest = async (requestId) => {
 
 export const rejectJoinRequest = async (requestId) => {
 
-  const request = await CommunityJoinRequest.findById(requestId);
+  const request =
+    await CommunityJoinRequest.findById(requestId);
 
   if (!request) {
     throw new Error("Join request not found.");

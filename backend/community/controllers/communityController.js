@@ -148,7 +148,6 @@ export const updateCommunity = async (req, res) => {
 
 //   }
 // };
-
 export const deleteCommunity = async (req, res) => {
   try {
 
@@ -205,6 +204,40 @@ export const discoverCommunities = async (req, res) => {
       success: true,
 
       ...result,
+
+    });
+
+  } catch (error) {
+
+    return res.status(500).json({
+
+      success: false,
+
+      message: error.message,
+
+    });
+
+  }
+
+};
+
+export const getCommunityStats = async (
+  req,
+  res
+) => {
+
+  try {
+
+    const stats =
+      await communityService.getCommunityStats(
+        req.params.id
+      );
+
+    return res.json({
+
+      success: true,
+
+      stats,
 
     });
 

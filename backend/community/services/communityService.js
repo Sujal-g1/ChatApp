@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Community from "../models/Community.js";
 import CommunityMember from "../models/CommunityMember.js";
+import CommunityJoinRequest from "../models/CommunityJoinRequest.js";
 import { generateSlug } from "../utils/generateSlug.js";
 
 
@@ -212,5 +213,63 @@ export const deleteCommunity = async (
   return await Community.findByIdAndDelete(
     communityId
   );
+
+};
+
+// community stats
+export const getCommunityStats = async (communityId) => {
+
+  const community = await Community.findById(
+    communityId
+  ).select(
+    "name memberCount onlineCount activityScore"
+  );
+
+  if (!community) {
+    throw new Error("Community not found.");
+  }
+
+  const [
+    pendingRequests,
+    adminCount,
+    moderatorCount,
+  ] = await Promise.all([
+
+    CommunityJoinRequest.countDocuments({
+      communityId,
+      status: "pending",
+    }),
+
+    CommunityMember.countDocuments({
+      communityId,
+      role: "admin",
+    }),
+
+    CommunityMember.countDocuments({
+      communityId,
+      role: "moderator",
+    }),
+
+  ]);
+
+  return {
+
+    communityId: community._id,
+
+    name: community.name,
+
+    memberCount: community.memberCount,
+
+    onlineCount: community.onlineCount,
+
+    pendingRequests,
+
+    adminCount,
+
+    moderatorCount,
+
+    activityScore: community.activityScore,
+
+  };
 
 };

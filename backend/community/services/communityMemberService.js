@@ -333,3 +333,43 @@ export const transferOwnership = async (
   }
 
 };
+
+// Search Members
+export const searchCommunityMembers = async (
+  communityId,
+  search
+) => {
+
+  if (!search || !search.trim()) {
+    return [];
+  }
+
+  const users = await CommunityMember.find({
+    communityId,
+  })
+    .populate({
+      path: "userId",
+      select: "fullName username profilePic",
+      match: {
+        $or: [
+          {
+            fullName: {
+              $regex: search.trim(),
+              $options: "i",
+            },
+          },
+          {
+            username: {
+              $regex: search.trim(),
+              $options: "i",
+            },
+          },
+        ],
+      },
+    });
+
+  // populate().match() can leave userId as null
+  return users.filter(
+    (member) => member.userId !== null
+  );
+};

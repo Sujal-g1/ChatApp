@@ -175,3 +175,34 @@ export const transferOwnership = async (
   }
 
 };
+
+export const searchCommunityMembers = async (
+  req,
+  res
+) => {
+
+  try {
+
+    const { q } = req.query;
+
+    const members =
+      await communityMemberService.searchCommunityMembers(
+        req.params.id,
+        q
+      );
+
+    return res.json({
+      success: true,
+      members,
+    });
+
+  } catch (error) {
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+
+  }
+
+};

@@ -39,7 +39,7 @@ joinRequestRouter.get(
 joinRequestRouter.get(
   "/:id/requests",
   protectRoute,
-  communityPermission(["community:approve"]),
+  communityPermission(["member:approve"]),
   getPendingRequests
 );
 

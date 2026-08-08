@@ -3,7 +3,7 @@ import express from "express";
 import { protectRoute } from "../../middleware/auth.js";
 import { communityPermission } from "../middleware/communityPermission.js";
 import { validateCommunity } from "../validators/communityValidator.js";
-
+import { getCommunityStats, } from "../controllers/communityController.js";
 import {
   createCommunity,
   getCommunities,
@@ -15,14 +15,14 @@ import {
 
 const communityRouter = express.Router();
 
-/**
- * Create Community
- */
+// validate community before creating
 communityRouter.post(
-  "/",
-  protectRoute,
-  createCommunity
+"/",
+protectRoute,
+validateCommunity,
+createCommunity
 );
+
 
 /**
  * Get All Communities
@@ -69,12 +69,13 @@ communityRouter.delete(
   deleteCommunity
 );
 
-// validate community before creating
-communityRouter.post(
-"/",
-protectRoute,
-validateCommunity,
-createCommunity
+communityRouter.get(
+  "/:id/stats",
+  protectRoute,
+  communityPermission([
+    "member:kick",
+  ]),
+  getCommunityStats
 );
 
 export default communityRouter;

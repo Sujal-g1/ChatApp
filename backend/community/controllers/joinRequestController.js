@@ -1,4 +1,5 @@
 import * as joinRequestService from "../services/joinRequestService.js";
+import CommunityJoinRequest from "../models/communityJoinRequest.js";
 
 /**
  * Request to Join Community
@@ -172,21 +173,28 @@ export const approveJoinRequest = async (req, res) => {
 
 };
 
-export const rejectJoinRequest = async (requestId) => {
+export const rejectJoinRequest = async (req, res) => {
 
-  const request = await CommunityJoinRequest.findById(requestId);
+  try {
 
-  if (!request) {
-    throw new Error("Join request not found.");
+    const request =
+      await joinRequestService.rejectJoinRequest(
+        req.params.requestId
+      );
+
+    return res.json({
+      success: true,
+      message: "Join request rejected successfully.",
+      request,
+    });
+
+  } catch (error) {
+
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+
   }
 
-  if (request.status !== "pending") {
-    throw new Error("Request already processed.");
-  }
-
-  request.status = "rejected";
-
-  await request.save();
-
-  return request;
 };
