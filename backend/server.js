@@ -10,6 +10,7 @@ import messageRouter from "./routes/messageRoutes.js";
 import communityRouter from "./community/routes/communityRoutes.js";
 import joinRequestRouter from "./community/routes/joinRequestRoutes.js";
 import communityMemberRouter from "./community/routes/communityMemberRoutes.js";
+import communityMessageRouter from "./community/routes/communityMessageRoutes.js";
 import { Server } from "socket.io";
 
 const app = express();
@@ -38,7 +39,7 @@ export const emitToUser = (userId, event, data) => {
 io.on("connection", (socket) => {
   const userId = socket.handshake.query.userId;
 
-  console.log("User Connected:", userId);
+  // console.log("User Connected:", userId);
 
   if (userId) {
     userSocketMap[userId] = socket.id;
@@ -131,6 +132,77 @@ io.on("connection", (socket) => {
     }
   });
 
+  // ===========================
+// Community Chat
+// ===========================
+
+socket.on("community:join", async ({ communityId }) => {
+  try {
+    if (!communityId || !userId) {
+      return;
+    }
+
+    const CommunityMember =
+      (await import("./community/models/CommunityMember.js"))
+        .default;
+
+    const member =
+      await CommunityMember.findOne({
+        communityId,
+        userId,
+        status: "active",
+      });
+
+    if (!member) {
+      socket.emit("community:error", {
+        message:
+          "You are not an active member of this community.",
+      });
+
+      return;
+    }
+
+    const room = `community:${communityId}`;
+
+    socket.join(room);
+
+    console.log(
+      `User ${userId} joined community room: ${room}`
+    );
+
+    socket.emit("community:joined", {
+      communityId,
+    });
+  } catch (error) {
+    console.error(
+      "Community join error:",
+      error.message
+    );
+
+    socket.emit("community:error", {
+      message: "Failed to join community.",
+    });
+  }
+});
+
+socket.on(
+  "community:leave",
+  ({ communityId }) => {
+    if (!communityId) {
+      return;
+    }
+
+    const room = `community:${communityId}`;
+
+    socket.leave(room);
+
+    console.log(
+      `User ${userId} left community room: ${room}`
+    );
+  }
+);
+
+
   socket.on("disconnect", () => {
     console.log("User Disconnected:", userId);
 
@@ -164,6 +236,7 @@ app.use("/api/status", (req, res) => res.send("Server is running"));
 app.use("/api/auth", userRouter);
 app.use("/api/friends", friendRouter);
 app.use("/api/messages", messageRouter);
+app.use( "/api/community", communityMessageRouter );
 app.use("/api/community", communityRouter);
 app.use("/api/community", joinRequestRouter);
 app.use( "/api/community", communityMemberRouter );

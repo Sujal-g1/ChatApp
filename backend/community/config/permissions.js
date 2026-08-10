@@ -20,6 +20,10 @@ export const COMMUNITY_PERMISSIONS = {
     "member:promoteModerator",
     "member:removeModerator",
 
+    "message:delete",
+    "message:moderate",
+
+
   ],
 
   admin: [
@@ -34,6 +38,9 @@ export const COMMUNITY_PERMISSIONS = {
     "member:promoteModerator",
     "member:removeModerator",
 
+     "message:delete",
+    "message:moderate",
+
   ],
 
   moderator: [
@@ -41,6 +48,9 @@ export const COMMUNITY_PERMISSIONS = {
     "member:kick",
     "member:ban",
     "member:mute",
+
+    "message:delete",
+    "message:moderate", 
 
   ],
 

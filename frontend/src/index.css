@@ -852,3 +852,41 @@ body {
   .landing-nav { padding: 12px 20px; }
   :root { --blur: 12px; }
 }
+
+
+/* ---------- voice page */
+/* Base Desktop Styling */
+.voice-controls {
+  grid-template-columns: auto minmax(200px, 1fr) auto;
+}
+
+/* Mobile Responsive Adjustments */
+@media (max-width: 700px) {
+  .voice-controls {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  /* Reorder elements for intuitive mobile UX (Email -> Button -> Anon text) */
+  .voice-email-wrapper {
+    order: 1;
+    width: 100%;
+  }
+
+  .voice-controls > button {
+    order: 2;
+    width: 100%;
+    min-height: 48px !important;
+  }
+
+  .voice-anonymous {
+    order: 3;
+    min-height: auto !important;
+    padding-top: 0 !important;
+    justify-content: center; /* Center anonymous note under button */
+  }
+
+  .voice-email-box {
+    height: 44px !important;
+  }
+}
