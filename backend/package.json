@@ -17,6 +17,7 @@
     "firebase-admin": "^13.8.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.3.3",
+    "resend": "^6.19.0",
     "socket.io": "^4.8.3",
     "tweetnacl": "^1.0.3",
     "tweetnacl-util": "^0.15.1"

@@ -11,6 +11,8 @@ import communityRouter from "./community/routes/communityRoutes.js";
 import joinRequestRouter from "./community/routes/joinRequestRoutes.js";
 import communityMemberRouter from "./community/routes/communityMemberRoutes.js";
 import communityMessageRouter from "./community/routes/communityMessageRoutes.js";
+import feedbackRoutes from "./routes/feedbackRoutes.js";
+
 import { Server } from "socket.io";
 
 const app = express();
@@ -240,6 +242,7 @@ app.use( "/api/community", communityMessageRouter );
 app.use("/api/community", communityRouter);
 app.use("/api/community", joinRequestRouter);
 app.use( "/api/community", communityMemberRouter );
+app.use("/api/feedback", feedbackRoutes);
 
 
 // ===========================
