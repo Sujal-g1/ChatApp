@@ -31,9 +31,9 @@ const LandingPage = () => {
 
 
 useEffect(() => {
-  const t1 = setTimeout(() => setPhase("name"), 600);
-  const t2 = setTimeout(() => setPhase("tagline"), 1000);
-  const t3 = setTimeout(() => setPhase("done"), 2000);
+  const t1 = setTimeout(() => setPhase("name"), 800);
+  const t2 = setTimeout(() => setPhase("tagline"), 1200);
+  const t3 = setTimeout(() => setPhase("done"), 2200);
   // const t4 = setTimeout(() => navigate("/login"), 3000);
 
   return () => {

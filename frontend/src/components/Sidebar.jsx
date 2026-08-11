@@ -8,7 +8,7 @@ import { ZingleeeLogo } from '../pages/LandingPage'
 import assets from '../assets/assets'
 import axios from "axios";
 import toast from "react-hot-toast";
-import {Signpost ,UserRound, BellRing,Settings,LogOut,Palette, Share2, Pen } from 'lucide-react'; 
+import {Signpost ,UserRound, BellRing,Settings,LogOut,Palette, Share2, Pen, Megaphone } from 'lucide-react'; 
 
 const Sidebar = () => {
   const { getUsers, users, setUsers, selectedUser, setSelectedUser, unseenMessages, setUnseenMessages, getRequests, requests, setRequests, respondRequest, blockedUsers,
@@ -302,7 +302,7 @@ Join using my ID: ${userId}
       >
         ⋮
       </button>
-          <AnimatePresence>
+      <AnimatePresence>
               {menuOpen && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9, y: -8 }}
@@ -320,6 +320,7 @@ Join using my ID: ${userId}
                   {[
                     { icon: <UserRound />, label: 'Edit Profile', action: () => { navigate('/profile'); setMenuOpen(false) } },
                     { icon:<Palette />, label: 'Themes', action: () => { setShowThemes(!showThemes); setMenuOpen(false) } },
+                    { icon: <Megaphone />, label: 'Zingleee voice', action: () => { navigate('/voice'); setMenuOpen(false);},danger: false,},   
                     { icon: <BellRing />, label: 'Notifications', action: () => setMenuOpen(false) },
                     { icon: <Settings />, label: 'Settings', action: () => setMenuOpen(false) },
                     {icon: <Share2 />,label: 'Invite Friends',action: () => handleShareInvite(),danger: false,},
@@ -345,7 +346,7 @@ Join using my ID: ${userId}
                   ))}
                 </motion.div>
               )}
-            </AnimatePresence>
+    </AnimatePresence>
           </div>
         </div>
 

@@ -592,21 +592,21 @@ useEffect(() => {
           </p>
 
          <motion.button
-  onClick={() => navigate('/ins')}
-  className="feature-card"
-  style={{ 
-    marginTop: '20px', 
-    position: "relative", 
-    overflow: "hidden",
-    height: '40px', // Adjust this value to your preferred height
-    padding: '8px 16px' // Optional: lowering vertical padding also reduces height
-  }}
-  initial={{ opacity: 0, y: 24 }}
-  animate={{ opacity: 1, y: 0 }}
-  whileHover={{ y: -4 }}
->
-  Start with Guide
-</motion.button>
+          onClick={() => navigate('/ins')}
+          className="feature-card"
+          style={{ 
+            marginTop: '20px', 
+            position: "relative", 
+            overflow: "hidden",
+            height: '40px', // Adjust this value to your preferred height
+            padding: '8px 16px' // Optional: lowering vertical padding also reduces height
+          }}
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          whileHover={{ y: -4 }}
+        >
+          Start with Guide
+        </motion.button>
 
         </div>
 

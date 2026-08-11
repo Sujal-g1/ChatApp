@@ -1,5 +1,4 @@
 import express from "express";
-
 import {
   sendFriendRequest,
   respondToRequest,
@@ -11,7 +10,6 @@ import {
   getSentRequests,
   getBlockedUsers,
 } from "../controllers/friendController.js";
-
 import { protectRoute } from "../middleware/auth.js";
 
 const router = express.Router();

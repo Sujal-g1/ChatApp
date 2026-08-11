@@ -1,6 +1,8 @@
 
 import React, { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import axios from "axios";
+import toast from "react-hot-toast";
 import {
   ArrowDown,
   ArrowLeft,
@@ -25,7 +27,9 @@ const VoicePage = () => {
   const [message, setMessage] = useState("");
   const [anonymous, setAnonymous] = useState(false);
   const [sent, setSent] = useState(false);
-    const [email, setEmail] = useState("");
+  const [email, setEmail] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
   const particles = useMemo(
     () =>
       Array.from({ length: 55 }, () => ({
@@ -52,30 +56,53 @@ const VoicePage = () => {
     });
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    if (!message.trim()) return;
+  if (!message.trim() || !email.trim()) {
+    return;
+  }
 
-    /*
-      Backend integration will be added later.
+  if (submitting) {
+    return;
+  }
 
-      Example payload:
+  setSubmitting(true);
 
+  try {
+    const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+    const response = await axios.post(
+      `${backendUrl}/api/feedback`,
       {
-        message,
-        anonymous
+        message: message.trim(),
+        email: email.trim(),
+        anonymous,
       }
-    */
+    );
 
-    console.log({
-      message,
-      anonymous,
-    });
+    if (response.data?.success) {
+      setSent(true);
+      setMessage("");
+      setEmail("");
 
-    setSent(true);
-    setMessage("");
-  };
+      toast.success("Your feedback has been received.");
+    }
+  } catch (error) {
+    console.error(
+      "Feedback submission failed:",
+      error
+    );
+
+    const errorMessage =
+      error.response?.data?.message ||
+      "Unable to send your feedback. Please try again.";
+
+    toast.error(errorMessage);
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   const handleHome = () => {
     navigate("/");
@@ -711,21 +738,43 @@ const VoicePage = () => {
 
             <div
               style={{
-                marginTop: 35,
-                color: "rgba(255,255,255,.46)",
-                fontSize: 15,
-                lineHeight: 1.95,
-              }}
+              marginTop: 35,
+              color: "rgba(255,255,255,.46)",
+              fontSize: 15,
+              lineHeight: 1.95,
+              display: "flex",
+              flexDirection: "column",
+              gap: 24,
+            }}
             >
-              <p>This is placeholder content for now.</p>
+              <p>
+                Zingleee started with a simple idea: communication should feel personal, natural, and under your control. I didn't want to build just another messaging app where you talk to people one-on-one and that's where the experience ends. I wanted to build something that also gives people a place to find others, share interests, and actually feel like they belong somewhere. </p>
+
+               <p>That's where communities became the heart of Zingleee.</p> 
 
               <p>
-                Eventually, this section will contain my actual
-                perspective — why Zingleee exists, what I think
-                communication should feel like, why certain
-                decisions were made, and what I'm hoping this
-                project can become.
+                 A community shouldn't just be a group chat with a different name. It should be a space built around something people genuinely care about — technology, AI, gaming, finance, music, education, or even something very specific that a small group of people connects over. People should be able to discover communities, join conversations, meet like-minded people, and eventually build something together.
               </p>
+
+               <p>
+                 I want Zingleee to sit somewhere between private communication and larger social communities. You can have a personal conversation with a friend, jump into a community you're interested in, participate in discussions, and build relationships with people you may never have met otherwise — all within the same platform.
+
+               </p>
+                
+                <p>
+                  That's also why communities in Zingleee aren't completely open spaces where anyone can simply walk in. They have their own identity, visibility, membership, roles, permissions, moderation, and eventually their own culture. The idea is to give community owners and members enough control to make a community actually feel like their space.
+                </p>
+               
+               <p>
+                 Privacy and control are just as important to me as connection. I want people to have a say in who can communicate with them, which communities they belong to, and how their conversations are handled. The goal isn't to maximize noise or engagement at any cost. It's to make communication feel intentional.
+               </p>
+
+               <p>
+                 Zingleee is still a work in progress, and that's something I actually like about it. I'm building it, learning from it, breaking things, fixing them, and slowly turning an idea into something real.
+
+                My vision is for Zingleee to become more than a chat application — a place where people can talk privately, discover communities, find their people, build meaningful connections, and create spaces of their own.
+
+               </p>
 
               <p>
                 I don't want this page to pretend that Zingleee
@@ -872,7 +921,6 @@ const VoicePage = () => {
         {/* ===================================================
             YOUR VOICE
         =================================================== */}
-
 
         <section
         id="your-voice"
@@ -1192,9 +1240,10 @@ const VoicePage = () => {
                 <motion.button
                 type="submit"
                 disabled={
-                    !message.trim() ||
-                    !email.trim()
-                }
+                !message.trim() ||
+                !email.trim() ||
+                submitting
+              }
                 whileHover={{
                     scale:
                     message.trim() &&
@@ -1239,7 +1288,7 @@ const VoicePage = () => {
                     flexShrink: 0,
                 }}
                 >
-                Send your voice
+              {submitting ? "Sending..." : "Send your voice"}
 
                 <Send size={15} />
                 </motion.button>

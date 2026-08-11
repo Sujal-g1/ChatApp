@@ -10,6 +10,7 @@ import OfflineScreen from "./pages/OfflineScreen";
 import LoadingScreen from "./pages/LoadingScreen";
 import NotFoundPage from "./pages/NotFoundPage";
 import VoicePage from "./pages/VoicePage";
+import ProtectedRoute from "./components/ProtectedRoute";
 import { Toaster } from "react-hot-toast"
 import { AuthContext } from '../context/AuthContext'
 import { NetworkContext } from '../context/NetworkContext'
@@ -76,17 +77,20 @@ if (!isOnline) {
             {!authUser ? <LoginPage /> : <Navigate to="/" />}
           </motion.div>
         } />
-        <Route
-          path="/voice"
-          element={
+
+       <Route
+        path="/voice"
+        element={
+          <ProtectedRoute>
             <motion.div
               {...pageVariants}
               style={{ minHeight: "100vh" }}
             >
               <VoicePage />
             </motion.div>
-          }
-        />
+          </ProtectedRoute>
+        }
+      />
 
         <Route path="/profile" element={
           <motion.div {...pageVariants} style={{ minHeight: '100vh' }}>
@@ -97,14 +101,27 @@ if (!isOnline) {
         <Route path="/welcome"  element={
             <motion.div {...pageVariants}>
                          <WelcomeRoute />
-                               </motion.div> 
+           </motion.div> 
           }/>
        
+
         <Route path="/ins" element={
-          <motion.div {...pageVariants} style={{ minHeight: '100vh' }}>
-            <InstructionsPage />
-          </motion.div>
-        } />
+          <ProtectedRoute>
+            <motion.div {...pageVariants} style={{ minHeight: '100vh' }}>
+                  <InstructionsPage />
+            </motion.div>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+      path="*"
+      element={
+        <motion.div {...pageVariants} style={{ minHeight: "100vh" }}>
+          <NotFoundPage />
+        </motion.div>
+      }
+    />
 
         <Route path="*"
             element={

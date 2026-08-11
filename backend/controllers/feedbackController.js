@@ -5,19 +5,26 @@ import { createFeedback } from "../services/feedbackService.js";
  */
 export const submitFeedback = async (req, res) => {
   try {
+    /*
+     * protectRoute has already verified the JWT
+     * and attached the actual User document to req.user.
+     *
+     * We NEVER accept userId from req.body.
+     */
+    const userId = req.user?._id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required.",
+      });
+    }
+
     const {
       message,
       email,
       anonymous = false,
     } = req.body;
-
-    /*
-     * If your authentication middleware attaches
-     * the logged-in user to req.user, we can use it.
-     *
-     * For visitors, this will simply be null.
-     */
-    const userId = req.user?.id || null;
 
     const feedback = await createFeedback({
       message,

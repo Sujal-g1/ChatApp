@@ -20,8 +20,12 @@ export const createFeedback = async ({
   message,
   email,
   anonymous = false,
-  userId = null,
+  userId 
 }) => {
+
+  if (!userId) {
+  throw new Error("Authenticated user is required.");
+}
   /*
    * ---------------------------------------------------------
    * 1. NORMALIZE INPUT
@@ -87,7 +91,7 @@ export const createFeedback = async ({
     message: cleanMessage,
     email: cleanEmail,
     anonymous: Boolean(anonymous),
-    userId: userId || null,
+    userId,
 
     status: "received",
 

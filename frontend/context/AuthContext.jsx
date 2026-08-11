@@ -38,7 +38,7 @@ export const AuthProvider = ({children}) => {
 
         //  console.log("CHECK AUTH RESPONSE:", data);
 
-       await new Promise(resolve => setTimeout(resolve, 4000));
+       await new Promise(resolve => setTimeout(resolve, 2000));
 
           // console.log("3. After 10 seconds");
 
