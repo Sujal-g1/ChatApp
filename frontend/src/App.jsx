@@ -9,6 +9,7 @@ import InstructionsPage from "./pages/InstructionsPage"
 import OfflineScreen from "./pages/OfflineScreen";
 import LoadingScreen from "./pages/LoadingScreen";
 import NotFoundPage from "./pages/NotFoundPage";
+import EmailVerificationPage from "./pages/EmailVerificationPage";
 import VoicePage from "./pages/VoicePage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { Toaster } from "react-hot-toast"
@@ -77,6 +78,11 @@ if (!isOnline) {
             {!authUser ? <LoginPage /> : <Navigate to="/" />}
           </motion.div>
         } />
+
+      <Route
+        path="/verify-email"
+        element={<EmailVerificationPage />}
+      />
 
        <Route
         path="/voice"

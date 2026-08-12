@@ -76,8 +76,14 @@ export const AuthProvider = ({children}) => {
     let data;
 
     if (state === "google") {
-      //  already have backend response
       data = credentials;
+    } else if (state === "firebase-email") {
+      const res = await axios.post(
+        "/api/auth/firebase-login",
+        credentials
+      );
+
+      data = res.data;
     } else {
       const res = await axios.post(`/api/auth/${state}`, credentials);
       data = res.data;

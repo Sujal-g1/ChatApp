@@ -1,334 +1,810 @@
-import React, { useContext, useState } from 'react'
-import { motion ,  AnimatePresence } from 'framer-motion'
-import { Mail, Lock, User, FileText, ArrowRight, ArrowLeft } from 'lucide-react'
-import { AuthContext } from '../../context/AuthContext'
-import { useTheme } from '../../context/ThemeContext'
-import { ZingleeeLogo } from './LandingPage'
-import { signInWithPopup } from "firebase/auth";
+import React, { useContext, useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import toast from "react-hot-toast";
+import crypto from "crypto";
+import { AuthContext } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
+import { ZingleeeLogo } from "./LandingPage";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  sendEmailVerification,
+  signInWithPopup,
+  signOut
+} from "firebase/auth";
 import { auth, provider } from "../firebase";
 import axios from "axios";
+import AuthForm from "./LoginLogics/AuthForm";
+import GoogleLoginButton from "./LoginLogics/GoogleLoginButton";
+import ThemePicker from "./LoginLogics/ThemePicker";
+import VerificationPanel from "./LoginLogics/VerificationPanel";
+import Fireflies from "./LoginLogics/Fireflies";
+
 
 const LoginPage = () => {
-  const [currentState, setCurrentState] = useState("Sign up")
-  const [fullName, setFullName]         = useState("")
-  const [email, setEmail]               = useState("")
-  const [password, setPassword]         = useState("")
-  const [username, setUsername]         = useState("");
-  const [bio, setBio]                   = useState("")
-  const [isDataSubmitted, setIsDataSubmitted] = useState(false)
-  const [showPwd, setShowPwd]           = useState(false)
 
-  const { login } = useContext(AuthContext)
-  const { theme, setTheme, THEMES } = useTheme()
+  const [currentState, setCurrentState] = useState("Sign up");
+
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
+  const [bio, setBio] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [isDataSubmitted, setIsDataSubmitted] = useState(false);
+  const [showPwd, setShowPwd] = useState(false);
+
+  // Email verification screen
+  const [verificationSent, setVerificationSent] = useState(false);
 
 
-  const onSubmitHandler = (e) => {
-    e.preventDefault()
-    if (currentState === "Sign up" && !isDataSubmitted) {
-      setIsDataSubmitted(true)
-      return
+  const { login } = useContext(AuthContext);
+
+  const {
+    theme,
+    setTheme,
+    THEMES,
+  } = useTheme();
+
+
+  // EMAIL AUTHENTICATION
+  const handleEmailAuth = async () => {
+
+    try {
+      const cleanEmail = email.trim().toLowerCase();
+
+      // SIGN UP
+      if (currentState === "Sign up") {
+  try {
+    // Try creating a completely new Firebase account
+    const result = await createUserWithEmailAndPassword(
+      auth,
+      cleanEmail,
+      password
+    );
+
+    // Send verification email
+      const actionCodeSettings = {
+      url: `${window.location.origin}/verify-email`,
+      handleCodeInApp: false,
+    };
+
+    await sendEmailVerification(
+      result.user,
+      actionCodeSettings
+    );
+
+    setVerificationSent(true);
+
+    toast.success("Verification email sent.");
+
+    return;
+
+  } catch (error) {
+
+    // Firebase account already exists.
+    // This can happen if the user previously
+    // started signup but never verified their email.
+    if (error.code === "auth/email-already-in-use") {
+
+      try {
+        // Try to recover the existing Firebase account
+        const result = await signInWithEmailAndPassword(
+          auth,
+          cleanEmail,
+          password
+        );
+
+        await result.user.reload();
+
+        // Existing Firebase account is still unverified
+        if (!result.user.emailVerified) {
+
+          setVerificationSent(true);
+
+          toast.success(
+            "Your previous signup is still pending. Please verify your email."
+          );
+
+          return;
+        }
+
+        // Firebase account is already verified.
+        // Send it to our backend.
+        const firebaseToken =
+          await result.user.getIdToken(true);
+
+        await login("firebase-email", {
+          token: firebaseToken,
+          provider: "email",
+          fullName,
+          username,
+          bio,
+        });
+
+        return;
+
+      } catch (loginError) {
+
+        if (
+          loginError.code === "auth/invalid-credential"
+        ) {
+          toast.error(
+            "An account with this email already exists. Please use the correct password or switch to Login."
+          );
+
+          return;
+        }
+
+        toast.error(
+          "Unable to recover this account. Please try again."
+        );
+
+        return;
+      }
     }
-    login(currentState === "Sign up" ? "signup" : "login", { fullName, email, password, bio, username })
+
+    // Any other Firebase signup error
+    throw error;
+  }
+}
+
+    // LOGIN
+      const result =
+        await signInWithEmailAndPassword(
+          auth,
+          cleanEmail,
+          password
+        );
+
+      // Refresh Firebase user
+      await result.user.reload();
+
+      // User must verify email
+      if (!result.user.emailVerified) {
+
+        toast.error(
+          "Please verify your email before signing in."
+        );
+
+        return;
+      }
+
+
+      // Get fresh Firebase token
+      const firebaseToken = await result.user.getIdToken(true);
+
+
+      // Send Firebase token to backend
+      await login(
+        "firebase-email",
+        {
+          token: firebaseToken,
+        }
+      );
+
+    } catch (error) {
+
+      // console.error(
+      //   "Firebase email auth error:",
+      //   error
+      // );
+
+      switch (error.code) {
+
+        case "auth/email-already-in-use":
+
+          toast.error(
+            "An account with this email already exists."
+          );
+
+          break;
+
+
+        case "auth/invalid-email":
+          toast.error(
+            "Please enter a valid email address."
+          );
+
+          break;
+
+
+        case "auth/weak-password":
+
+          toast.error(
+            "Password is too weak."
+          );
+
+          break;
+
+
+        case "auth/invalid-credential":
+
+          toast.error(
+            "Invalid email or password."
+          );
+
+          break;
+
+
+        case "auth/network-request-failed":
+
+          toast.error(
+            "Network error. Please check your internet connection."
+          );
+
+          break;
+
+
+        default:
+
+          toast.error(
+            "Authentication failed. Please try again."
+          );
+
+          break;
+      }
+    }
+  };
+
+const handleGoogleLogin = async () => {
+  try {
+    const result = await signInWithPopup(
+      auth,
+      provider
+    );
+
+    const token = await result.user.getIdToken();
+
+    const res = await axios.post(
+      `${import.meta.env.VITE_BACKEND_URL}/api/auth/firebase-login`,
+      {
+        token,
+        provider: "google",
+      }
+    );
+
+    if (res.data.success) {
+      await login("google", res.data);
+    } else {
+      toast.error(
+        res.data.message || "Google login failed."
+      );
+    }
+
+  } catch (error) {
+
+    // console.error(
+    //   "Google login error:",
+    //   error
+    // );
+
+    if (
+      error.code ===
+      "auth/popup-closed-by-user"
+    ) {
+      return;
+    }
+
+    if (
+      error.code ===
+      "auth/popup-blocked"
+    ) {
+      toast.error(
+        "Google login popup was blocked. Please allow popups for Zingleee."
+      );
+      return;
+    }
+
+    if (
+      error.code ===
+      "auth/network-request-failed"
+    ) {
+      toast.error(
+        "Network error. Please check your internet connection."
+      );
+      return;
+    }
+
+    toast.error(
+      "Google login failed. Please try again."
+    );
+  }
+};
+
+  const onSubmitHandler = async (e) => {
+    e.preventDefault();
+    // Signup has two steps:
+    //
+    // Step 1:
+    // Personal information
+    //
+    // Step 2:
+    // Bio
+    //
+    // Then create account.
+
+    if (
+      currentState === "Sign up" &&
+      !isDataSubmitted
+    ) {
+
+      setIsDataSubmitted(true);
+
+      return;
+    }
+
+
+    await handleEmailAuth();
+  };
+
+
+  // EMAIL VERIFICATION
+  const handleVerifiedEmail = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+
+        toast.error(
+          "Verification session expired. Please sign up again."
+        );
+
+        return;
+      }
+
+      // Get latest Firebase user state
+      await user.reload();
+
+      // Still not verified
+      if (!user.emailVerified) {
+
+        toast.error(
+          "Email is not verified yet."
+        );
+
+        return;
+      }
+      // Fresh Firebase token
+      const token =
+        await user.getIdToken(true);
+
+
+      // Send verified Firebase user to backend
+      await login(
+        "firebase-email",
+        {
+          token,
+          provider: "email",
+          fullName,
+          username,
+          bio,
+        }
+      );
+
+    } catch (error) {
+
+      toast.error(
+        error.response?.data?.message ||
+        "Unable to complete verification."
+      );
+    }
+  };
+
+  // RESEND VERIFICATION
+const handleResendVerification = async () => {
+  if (resendCooldown > 0) {
+    return;
   }
 
+  try {
+    const user = auth.currentUser;
 
-  const switchState = (state) => {
-    setCurrentState(state)
-    setIsDataSubmitted(false)
+    if (!user) {
+      toast.error("Verification session expired.");
+      return;
+    }
+
+    const actionCodeSettings = {
+      url: `${import.meta.env.VITE_FRONTEND_URL}/verify-email`,
+      handleCodeInApp: false,
+    };
+
+    await sendEmailVerification(
+      user,
+      actionCodeSettings
+    );
+
+    setResendCooldown(60);
+
+    toast.success("Verification email sent again.");
+  } catch (error) {
+    console.error(
+      "Resend verification error:",
+      error
+    );
+
+    toast.error(
+      "Unable to resend verification email."
+    );
   }
+};
 
-    const fireflies = Array.from({ length: 12 }, (_, i) => ({
-    top: `${Math.random() * 100}%`,
-    delay: Math.random() * 10,
-    duration: 8 + Math.random() * 10,
-  }));
+  // SWITCH LOGIN / SIGNUP
+const switchState = async (state) => {
+  setCurrentState(state);
+  setIsDataSubmitted(false);
+  setVerificationSent(false);
+
+  // If the user leaves the signup flow,
+  // clear the temporary Firebase authentication session.
+  if (state === "Login" && auth.currentUser) {
+    try {
+      await auth.signOut();
+    } catch {
+      // Ignore Firebase sign-out errors here.
+    }
+  }
+};
+
+useEffect(() => {
+  if (resendCooldown <= 0) return;
+
+  const timer = setInterval(() => {
+    setResendCooldown((prev) => prev - 1);
+  }, 1000);
+
+  return () => clearInterval(timer);
+}, [resendCooldown]);
+
 
   return (
-    <div style={{
-      minHeight: '100vh', display: 'flex',
-      alignItems: 'center', justifyContent: 'center',
-      padding: 24,
-    }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 24,
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
 
-      {/* --- ELEGANT HORIZONTAL FIREFLIES --- */}
-       {fireflies.map((firefly, index) => (
-        <motion.div
-          key={index}
-          animate={{
-            x: ["-10vw", "110vw"],
-            opacity: [0, 1, 1, 0],
-          }}
-          transition={{
-            duration: firefly.duration,
-            repeat: Infinity,
-            delay: firefly.delay,
-            ease: "linear",
-          }}
-          style={{
-            position: "absolute",
-            top: firefly.top,
-            left: 0,
-            width: 4,
-            height: 4,
-            borderRadius: "50%",
-            background: "white",
-            boxShadow: "0 0 10px rgba(255,255,255,0.8)",
-            pointerEvents: "none",
-            zIndex: 1,
-          }}
-        />
-      ))}
-        {/* --- END OF ANIMATION LAYER --- */}
+      <Fireflies />
 
       <motion.div
-        initial={{ opacity: 0, y: 28, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
-        style={{ width: '100%', maxWidth: 420 }}
+        initial={{
+          opacity: 0,
+          y: 28,
+          scale: 0.97,
+        }}
+        animate={{
+          opacity: 1,
+          y: 0,
+          scale: 1,
+        }}
+        transition={{
+          duration: 0.45,
+          ease: [0.4, 0, 0.2, 1],
+        }}
+        style={{
+          width: "100%",
+          maxWidth: 420,
+          position: "relative",
+          zIndex: 2,
+        }}
       >
-        
-        <div style={{
-          background: 'rgba(255,255,255,0.05)',
-          backdropFilter: 'blur(40px)',
-          WebkitBackdropFilter: 'blur(40px)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          borderRadius: 28,
-          padding: '36px 32px',
-          boxShadow: '0 30px 60px rgba(0,0,0,0.45), 0 0 0 1px var(--border-color)',
-        }}>
 
-          
+        <div
+          style={{
+            background:
+              "rgba(255,255,255,0.05)",
 
-          {/* ── Logo + brand ── */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 28 }}>
+            backdropFilter:
+              "blur(40px)",
+
+            WebkitBackdropFilter:
+              "blur(40px)",
+
+            border:
+              "1px solid rgba(255,255,255,0.1)",
+
+            borderRadius: 28,
+
+            padding:
+              "36px 32px",
+
+            boxShadow:
+              "0 30px 60px rgba(0,0,0,0.45), 0 0 0 1px var(--border-color)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              marginBottom: 28,
+            }}
+          >
+
             <motion.div
-              whileHover={{ scale: 1.06, rotate: 4 }}
-              transition={{ type: 'spring', stiffness: 300 }}
-              style={{ marginBottom: 14, filter: 'drop-shadow(0 0 20px var(--glow))' }}
-            >
-              <ZingleeeLogo size={60} />
-            </motion.div>
-
-            <h1 style={{
-              fontFamily: 'Syne, sans-serif', fontWeight: 800,
-              fontSize: 26, letterSpacing: '-0.02em', color: 'white', margin: 0,
-            }}>
-              Zingle<span style={{ color: 'var(--accent)' }}>ee</span>
-            </h1>
-
-            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.38)', marginTop: 6 }}>
-              {currentState === "Sign up" ? "Create your account" : "Welcome back"}
-            </p>
-          </div>
-
-          {/* ── Tab switcher ── */}
-          <div style={{
-            display: 'flex',
-            background: 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            borderRadius: 50, padding: 4, marginBottom: 28,
-          }}>
-            {["Sign up", "Login"].map(tab => (
-              <button key={tab}
-                onClick={() => switchState(tab)}
-                style={{
-                  flex: 1, padding: '9px 0', borderRadius: 50, border: 'none',
-                  cursor: 'pointer', fontFamily: 'Outfit, sans-serif',
-                  fontSize: 14, fontWeight: 600,
-                  transition: 'all 0.25s ease',
-                  background: currentState === tab
-                    ? 'linear-gradient(135deg, var(--accent), var(--accent2))'
-                    : 'transparent',
-                  color: currentState === tab ? 'white' : 'rgba(255,255,255,0.45)',
-                  boxShadow: currentState === tab ? '0 4px 15px var(--glow)' : 'none',
-                }}
-              >{tab}</button>
-            ))}
-          </div>
-
-          {/* ── Form ── */}
-          <form onSubmit={onSubmitHandler}>
-            <AnimatePresence mode="wait">
-              {!isDataSubmitted ? (
-                <motion.div key="step1"
-                  initial={{ opacity: 0, x: -16 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 16 }}
-                  transition={{ duration: 0.25 }}
-                  style={{ display: 'flex', flexDirection: 'column', gap: 14 }}
-                >
-                  {currentState === "Sign up" && (
-                    <div style={{ position: 'relative' }}>
-                      <User size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
-                      <input className="input-glass" type="text" placeholder="Full name"
-                        value={fullName} onChange={e => setFullName(e.target.value)}
-                        required style={{ paddingLeft: 42 }} />
-                    </div>
-                  )}
-
-                  <div style={{ position: 'relative' }}>
-                    <Mail size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
-                    <input className="input-glass" type="email" placeholder="Email address"
-                      value={email} onChange={e => setEmail(e.target.value)}
-                      required style={{ paddingLeft: 42 }} />
-                  </div>
-
-                  <div style={{ position: 'relative' }}>
-                 <User size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
-                  <input
-                  className="input-glass"
-                    type="text"
-                   placeholder="Username"
-                    value={username}
-                   onChange={e => setUsername(e.target.value)}
-                       required
-                  style={{ paddingLeft: 42 }}
-                  /></div>
-
-                  <div style={{ position: 'relative' }}>
-                    <Lock size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
-                    <input className="input-glass"
-                      type={showPwd ? "text" : "password"}
-                      placeholder="Password"
-                      value={password} onChange={e => setPassword(e.target.value)}
-                      required style={{ paddingLeft: 42, paddingRight: 42 }} />
-                    <button type="button" onClick={() => setShowPwd(!showPwd)}
-                      style={{
-                        position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
-                        background: 'none', border: 'none', cursor: 'pointer',
-                        color: 'rgba(255,255,255,0.35)', fontSize: 13, padding: 0,
-                      }}>
-                      {showPwd ? 'hide' : 'show'}
-                    </button>
-                  </div>
-                </motion.div>
-              ) : (
-                <motion.div key="step2"
-                  initial={{ opacity: 0, x: 16 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -16 }}
-                  transition={{ duration: 0.25 }}
-                  style={{ display: 'flex', flexDirection: 'column', gap: 14 }}
-                >
-                  <button type="button" onClick={() => setIsDataSubmitted(false)}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 6,
-                      background: 'none', border: 'none', cursor: 'pointer',
-                      color: 'var(--accent)', fontSize: 13, padding: 0,
-                    }}>
-                    <ArrowLeft size={14} /> Back
-                  </button>
-                  <div style={{ position: 'relative' }}>
-                    <FileText size={16} style={{ position: 'absolute', left: 14, top: 14, color: 'rgba(255,255,255,0.3)' }} />
-                    <textarea className="input-glass" rows={4}
-                      placeholder="Tell us a bit about yourself..."
-                      value={bio} onChange={e => setBio(e.target.value)}
-                      required style={{ paddingLeft: 42, resize: 'none', borderRadius: 14 }} />
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* terms */}
-            {!isDataSubmitted && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14 }}>
-                <input type="checkbox" required style={{ accentColor: 'var(--accent)', width: 14, height: 14, flexShrink: 0 }} />
-                <label style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', lineHeight: 1.4 }}>
-                  I agree to the <span style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'underline', cursor: 'pointer' }}>Terms</span> and <span style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'underline', cursor: 'pointer' }}>Privacy Policy</span>
-                </label>
-              </div>
-            )}
-
-            <motion.button type="submit"
-              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+              whileHover={{
+                scale: 1.06,
+                rotate: 4,
+              }}
+              transition={{
+                type: "spring",
+                stiffness: 300,
+              }}
               style={{
-                width: '100%', marginTop: 20,
-                padding: '13px 0', borderRadius: 50, border: 'none',
-                background: 'linear-gradient(135deg, var(--accent), var(--accent2))',
-                color: 'white', fontFamily: 'Outfit, sans-serif',
-                fontSize: 15, fontWeight: 600, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                boxShadow: '0 6px 24px var(--glow)',
+                marginBottom: 14,
+                filter:
+                  "drop-shadow(0 0 20px var(--glow))",
               }}
             >
+
+              <ZingleeeLogo size={60} />
+
+            </motion.div>
+
+
+            <h1
+              style={{
+                fontFamily:
+                  "Syne, sans-serif",
+
+                fontWeight: 800,
+
+                fontSize: 26,
+
+                letterSpacing:
+                  "-0.02em",
+
+                color: "white",
+
+                margin: 0,
+              }}
+            >
+
+              Zingle
+              <span
+                style={{
+                  color: "var(--accent)",
+                }}
+              >
+                ee
+              </span>
+
+            </h1>
+
+
+            <p
+              style={{
+                fontSize: 13,
+                color:
+                  "rgba(255,255,255,0.38)",
+                marginTop: 6,
+              }}
+            >
+
               {currentState === "Sign up"
-                ? (isDataSubmitted ? "Create Account" : "Continue")
-                : "Sign In"}
-              <ArrowRight size={16} />
-            </motion.button>
-          </form>
+                ? "Create your account"
+                : "Welcome back"}
 
-          {/* divider */}
-          <div className="divider" style={{ margin: '22px 0' }}>or</div>
-                  
-            <motion.button
-  onClick={async () => {
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const token = await result.user.getIdToken();
+            </p>
 
-      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/auth/firebase-login`, {
-        token,
-      });
+          </div>
 
-      if (res.data.success) {
-        login("google", res.data);
-      }
-    } catch (err) {
-      console.log(err);
-    }
-  }}
-  whileHover={{ scale: 1.02 }}
-  whileTap={{ scale: 0.97 }}
-  style={{
-    width: "100%",
-    padding: "13px 0",
-    borderRadius: 50,
-    border: "1px solid rgba(255,255,255,0.1)",
-    background: "rgba(255,255,255,0.05)",
-    backdropFilter: "blur(20px)",
-    WebkitBackdropFilter: "blur(20px)",
-    color: "white",
-    fontFamily: "Outfit, sans-serif",
-    fontSize: 14,
-    fontWeight: 600,
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    transition: "all 0.25s ease",
-  }}
->
-  {/* Google Icon */}
-  <img
-    src="https://www.svgrepo.com/show/475656/google-color.svg"
-    alt="google"
-    style={{ width: 18, height: 18 }}
-  />
+              {/* LOGIN / SIGNUP TABS */}
+          <div
+            style={{
+              display: "flex",
 
-  Continue with Google
-</motion.button>
+              background:
+                "rgba(255,255,255,0.05)",
+
+              border:
+                "1px solid rgba(255,255,255,0.08)",
+
+              borderRadius: 50,
+
+              padding: 4,
+
+              marginBottom: 28,
+            }}
+          >
+
+            {["Sign up", "Login"].map((tab) => (
+
+              <button
+                key={tab}
+                type="button"
+                onClick={() =>
+                  switchState(tab)
+                }
+                style={{
+                  flex: 1,
+
+                  padding: "9px 0",
+
+                  borderRadius: 50,
+
+                  border: "none",
+
+                  cursor: "pointer",
+
+                  fontFamily:
+                    "Outfit, sans-serif",
+
+                  fontSize: 14,
+
+                  fontWeight: 600,
+
+                  transition:
+                    "all 0.25s ease",
+
+                  background:
+                    currentState === tab
+                      ? "linear-gradient(135deg, var(--accent), var(--accent2))"
+                      : "transparent",
+
+                  color:
+                    currentState === tab
+                      ? "white"
+                      : "rgba(255,255,255,0.45)",
+
+                  boxShadow:
+                    currentState === tab
+                      ? "0 4px 15px var(--glow)"
+                      : "none",
+                }}
+              >
+
+                {tab}
+
+              </button>
+
+            ))}
+
+          </div>
+
+              {/* EMAIL VERIFICATION */}
+          {verificationSent ? (
+
+            <VerificationPanel
+              email={email}
+              onVerified={handleVerifiedEmail}
+              onResend={handleResendVerification}
+              resendCooldown={resendCooldown}
+            />
+
+          ) : (
+
+            <>
+                  {/* EMAIL AUTH FORM */}
+
+              <AuthForm
+                onSubmitHandler={
+                  onSubmitHandler
+                }
+
+                currentState={
+                  currentState
+                }
+
+                isDataSubmitted={
+                  isDataSubmitted
+                }
+
+                setIsDataSubmitted={
+                  setIsDataSubmitted
+                }
+
+                fullName={
+                  fullName
+                }
+
+                setFullName={
+                  setFullName
+                }
+
+                email={
+                  email
+                }
+
+                setEmail={
+                  setEmail
+                }
+
+                username={
+                  username
+                }
+
+                setUsername={
+                  setUsername
+                }
+
+                password={
+                  password
+                }
+
+                setPassword={
+                  setPassword
+                }
+
+                showPwd={
+                  showPwd
+                }
+
+                setShowPwd={
+                  setShowPwd
+                }
+
+                bio={
+                  bio
+                }
+
+                setBio={
+                  setBio
+                }
+              />
+                  {/* GOOGLE LOGIN */}
+
+              <div
+                className="divider"
+                style={{
+                  margin: "22px 0",
+                }}
+              >
+                or
+              </div>
+
+
+              {/* IMPORTANT:
+                  GoogleLoginButton remains responsible
+                  for your existing Google flow.
+              */}
+
+              <GoogleLoginButton onClick={handleGoogleLogin}/>
+            </>
+
+          )}
 
         </div>
 
-        {/* Theme picker */}
-        <motion.div
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}
-          style={{ display: 'flex', justifyContent: 'center', gap: 10, marginTop: 20 }}
-        >
-          {THEMES.map(t => (
-            <button key={t.id}
-              className={`theme-dot ${theme === t.id ? 'active' : ''}`}
-              style={{ background: t.color }}
-              onClick={() => setTheme(t.id)}
-              title={t.label}
-            />
-          ))}
-        </motion.div>
-      </motion.div>
-    </div>
-  )
-}
+        {/* THEME PICKER */}
 
-export default LoginPage
+        <motion.div
+          initial={{
+            opacity: 0,
+          }}
+          animate={{
+            opacity: 1,
+          }}
+          transition={{
+            delay: 0.35,
+          }}
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            gap: 10,
+            marginTop: 20,
+          }}
+        >
+
+          <ThemePicker
+            themes={THEMES}
+            theme={theme}
+            setTheme={setTheme}
+          />
+
+        </motion.div>
+
+      </motion.div>
+
+    </div>
+  );
+};
+
+
+export default LoginPage;

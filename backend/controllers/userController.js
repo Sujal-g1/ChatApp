@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs";
 import cloudinary from "../config/cloudinary.js";
 import admin from "../config/firebaseAdmin.js";
 import { generateZingleeId } from "../utils/generateZingleeId.js";
+import crypto from "crypto";
 
 
 // Sign up
@@ -161,83 +162,461 @@ export const login = async (req, res) => {
 
 
 // Firebase / Google Login
+// export const firebaseLogin = async (req, res) => {
+//   try {
+//     const { token,  fullName, username, bio, } = req.body;
+
+//     // Verify Firebase token
+//     const decoded = await admin.auth().verifyIdToken(token);
+
+//     // Email verification is required
+//     if (!decoded.email_verified) {
+//     return res.status(403).json({
+//       success: false,
+//       message: "Please verify your email before continuing.",
+//     });
+//   }
+
+//     const { email, name, picture, uid } = decoded;
+//     const cleanEmail = email.toLowerCase().trim();
+
+//      // Check if Zingleee user already exists
+//     let user = await User.findOne({ email:cleanEmail, });
+
+//     let privateKey = null;
+
+//     if (!user) {
+
+//   let finalUsername;
+
+//   // -----------------------------------------
+//   // Email/Password Firebase signup
+//   // -----------------------------------------
+//   if (username) {
+
+//     finalUsername = username
+//       .toLowerCase()
+//       .trim();
+
+//     const existingUsername = await User.findOne({
+//       username: finalUsername,
+//     });
+
+//     if (existingUsername) {
+//       return res.status(409).json({
+//         success: false,
+//         message: "Username already taken",
+//       });
+//     }
+
+//   }
+
+//   // -----------------------------------------
+//   // Google signup
+//   // -----------------------------------------
+//   else {
+
+//     const baseUsername =
+//       cleanEmail
+//         .split("@")[0]
+//         .toLowerCase();
+
+//     finalUsername = baseUsername;
+
+//     let counter = 1;
+
+//     while (
+//       await User.findOne({
+//         username: finalUsername,
+//       })
+//     ) {
+//       finalUsername =
+//         `${baseUsername}${counter}`;
+
+//       counter++;
+//     }
+//   }
+
+//   // -----------------------------------------
+//   // Generate Zingleee ID
+//   // -----------------------------------------
+
+//   const zingleeId =
+//     await generateZingleeId(finalUsername);
+
+
+//   // -----------------------------------------
+//   // Generate E2EE key pair
+//   // -----------------------------------------
+
+//   const keys = createUserKeys();
+
+//   privateKey = keys.privateKey;
+
+
+//   // -----------------------------------------
+//   // Your existing User schema requires a
+//   // password for users without googleId.
+//   //
+//   // Firebase handles the REAL password.
+//   // This random password is never used
+//   // for authentication.
+//   // -----------------------------------------
+
+//   const randomPassword =
+//     crypto.randomBytes(32).toString("hex");
+
+//   const hashedPassword =
+//     await bcrypt.hash(randomPassword, 10);
+
+
+//   // -----------------------------------------
+//   // Create Zingleee user
+//   // -----------------------------------------
+
+//   user = await User.create({
+
+//     email: cleanEmail,
+
+//     fullName: fullName || name || "User",
+//     profilePic: picture ||  "",
+//     googleId: username ? "" : uid,
+//     bio: bio || "",
+//     username: finalUsername,
+//     zingleeId,
+//     password: hashedPassword,
+//     isVerified: true,
+//     publicKey: keys.publicKey,
+//     encryptedPrivateKey: keys.encryptedPrivateKey,
+//     encryptionIV: keys.encryptionIV,
+//     encryptionAuthTag: keys.encryptionAuthTag,
+//     keyVersion: keys.keyVersion,
+//   });
+// }
+
+//     const jwtToken = generateToken(user._id);
+
+// //     let decryptedPrivateKey = privateKey;
+
+// //     if (!decryptedPrivateKey) {
+// //     decryptedPrivateKey = decryptPrivateKey({
+// //         encryptedPrivateKey: user.encryptedPrivateKey,
+// //         encryptionIV: user.encryptionIV,
+// //         encryptionAuthTag: user.encryptionAuthTag,
+// //     });
+// // }
+
+// if (!privateKey) {
+//     privateKey = getUserPrivateKey(user);
+// }
+
+//     res.json({
+//       success: true,
+//       userData: sanitizeUser(user),
+//       token: jwtToken,
+//       privateKey,
+//       message: "Google login success",
+//     });
+//   } catch (error) {
+//     console.log(error.message);
+
+//     res.json({
+//       success: false,
+//       message: "Firebase login failed",
+//     });
+//   }
+// };
+
+// Firebase / Google / Email Login
 export const firebaseLogin = async (req, res) => {
   try {
-    const { token } = req.body;
+    const {
+      token,
+      provider,
+      fullName,
+      username,
+      bio,
+    } = req.body;
 
-    // Verify Firebase token
-    const decoded = await admin.auth().verifyIdToken(token);
-    const { email, name, picture, uid } = decoded;
+    // --------------------------------------------------
+    // 1. Verify Firebase ID token
+    // --------------------------------------------------
 
-    let user = await User.findOne({ email });
+    const decoded =
+      await admin.auth().verifyIdToken(token);
 
-    let privateKey = null;
+    const {
+      email,
+      name,
+      picture,
+      uid,
+    } = decoded;
 
-    // Create user if not exists
-    if (!user) {
-      const baseUsername = email.split("@")[0].toLowerCase();
-
-      let username = baseUsername;
-      let counter = 1;
-
-      // Ensure unique username
-      while (await User.findOne({ username })) {
-        username = `${baseUsername}${counter}`;
-        counter++;
-      }
-
-      const zingleeId = await generateZingleeId(username);
-
-      // Generate E2EE key pair
-    const keys = createUserKeys();
-
-    privateKey = keys.privateKey;
-
-      user = await User.create({
-        email,
-        fullName: name || "User",
-        profilePic: picture || "",
-        googleId: uid,
-        bio: "",
-        username,
-        zingleeId,
-        publicKey: keys.publicKey,
-        encryptedPrivateKey: keys.encryptedPrivateKey,
-        encryptionIV: keys.encryptionIV,
-        encryptionAuthTag: keys.encryptionAuthTag,
-        keyVersion: keys.keyVersion,
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Firebase account has no email address.",
       });
     }
 
-    const jwtToken = generateToken(user._id);
+    const cleanEmail =
+      email.toLowerCase().trim();
 
-//     let decryptedPrivateKey = privateKey;
 
-//     if (!decryptedPrivateKey) {
-//     decryptedPrivateKey = decryptPrivateKey({
-//         encryptedPrivateKey: user.encryptedPrivateKey,
-//         encryptionIV: user.encryptionIV,
-//         encryptionAuthTag: user.encryptionAuthTag,
-//     });
-// }
+    // --------------------------------------------------
+    // 2. Email verification
+    // --------------------------------------------------
 
-if (!privateKey) {
-    privateKey = getUserPrivateKey(user);
-}
+    if (!decoded.email_verified) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Please verify your email before continuing.",
+      });
+    }
 
-    res.json({
+
+    // --------------------------------------------------
+    // 3. Check if Zingleee user already exists
+    // --------------------------------------------------
+
+    let user =
+      await User.findOne({
+        email: cleanEmail,
+      });
+
+    let privateKey = null;
+
+
+    // --------------------------------------------------
+    // 4. Existing Zingleee user
+    // --------------------------------------------------
+
+    if (user) {
+
+      const jwtToken =
+        generateToken(user._id);
+
+      privateKey =
+        getUserPrivateKey(user);
+
+      return res.json({
+        success: true,
+        userData: sanitizeUser(user),
+        token: jwtToken,
+        privateKey,
+        message:
+          provider === "google"
+            ? "Google login successful"
+            : "Login successful",
+      });
+    }
+
+
+    // --------------------------------------------------
+    // 5. New Zingleee user
+    // --------------------------------------------------
+
+    let finalUsername;
+
+
+    // ==================================================
+    // EMAIL / PASSWORD USER
+    // ==================================================
+
+    if (provider === "email") {
+
+      if (
+        !username ||
+        !username.trim()
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Username is required.",
+        });
+      }
+
+      finalUsername =
+        username
+          .toLowerCase()
+          .trim();
+
+
+      // Check username availability
+      const existingUsername =
+        await User.findOne({
+          username: finalUsername,
+        });
+
+      if (existingUsername) {
+        return res.status(409).json({
+          success: false,
+          message:
+            "Username already taken",
+        });
+      }
+    }
+
+
+    // ==================================================
+    // GOOGLE USER
+    // ==================================================
+
+    else {
+
+      const baseUsername =
+        cleanEmail
+          .split("@")[0]
+          .toLowerCase();
+
+      finalUsername =
+        baseUsername;
+
+      let counter = 1;
+
+      // Ensure unique username
+      while (
+        await User.findOne({
+          username: finalUsername,
+        })
+      ) {
+        finalUsername =
+          `${baseUsername}${counter}`;
+
+        counter++;
+      }
+    }
+
+
+    // --------------------------------------------------
+    // 6. Generate Zingleee ID
+    // --------------------------------------------------
+
+    const zingleeId =
+      await generateZingleeId(
+        finalUsername
+      );
+
+
+    // --------------------------------------------------
+    // 7. Generate E2EE keys
+    // --------------------------------------------------
+
+    const keys =
+      createUserKeys();
+
+    privateKey =
+      keys.privateKey;
+
+
+    // --------------------------------------------------
+    // 8. Firebase users don't use
+    //    Zingleee's normal password login
+    // --------------------------------------------------
+
+    const randomPassword =
+      crypto
+        .randomBytes(32)
+        .toString("hex");
+
+    const hashedPassword =
+      await bcrypt.hash(
+        randomPassword,
+        10
+      );
+
+
+    // --------------------------------------------------
+    // 9. Create Zingleee user
+    // --------------------------------------------------
+
+    user =
+      await User.create({
+
+        email: cleanEmail,
+
+        fullName:
+          provider === "email"
+            ? fullName || "User"
+            : name || "User",
+
+        profilePic:
+          provider === "google"
+            ? picture || ""
+            : "",
+
+        googleId:
+          provider === "google"
+            ? uid
+            : "",
+
+        bio:
+          provider === "email"
+            ? bio || ""
+            : "",
+
+        username:
+          finalUsername,
+
+        zingleeId,
+
+        password:
+          hashedPassword,
+
+        isVerified:
+          true,
+
+        publicKey:
+          keys.publicKey,
+
+        encryptedPrivateKey:
+          keys.encryptedPrivateKey,
+
+        encryptionIV:
+          keys.encryptionIV,
+
+        encryptionAuthTag:
+          keys.encryptionAuthTag,
+
+        keyVersion:
+          keys.keyVersion,
+      });
+
+
+    // --------------------------------------------------
+    // 10. Generate Zingleee JWT
+    // --------------------------------------------------
+
+    const jwtToken =
+      generateToken(user._id);
+
+
+    // --------------------------------------------------
+    // 11. Return everything to frontend
+    // --------------------------------------------------
+
+    return res.json({
       success: true,
       userData: sanitizeUser(user),
       token: jwtToken,
       privateKey,
-      message: "Google login success",
+      message:
+        provider === "google"
+          ? "Google login successful"
+          : "Account created successfully",
     });
-  } catch (error) {
-    console.log(error.message);
 
-    res.json({
+  } catch (error) {
+
+    console.log(
+      "Firebase login error:",
+      error.message
+    );
+
+    return res.status(500).json({
       success: false,
-      message: "Firebase login failed",
+      message:
+        "Firebase authentication failed.",
     });
   }
 };
@@ -357,20 +736,8 @@ export const searchUsers = async (req, res) => {
 
 // Check Auth
 export const checkAuth = (req, res) => {
-    // const privateKey = decryptPrivateKey({
-    //     encryptedPrivateKey: req.user.encryptedPrivateKey,
-    //     encryptionIV: req.user.encryptionIV,
-    //     encryptionAuthTag: req.user.encryptionAuthTag,
-    // });
-
-    const privateKey = getUserPrivateKey(req.user);
-
-    res.json({
-        success: true,
-        user: sanitizeUser(req.user),
-        privateKey,
-    });
 };
+
 
 
 //getPublicKey

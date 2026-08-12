@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, setPersistence, browserLocalPersistence } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, setPersistence, browserLocalPersistence ,  sendEmailVerification,
+signInWithEmailAndPassword,} from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -24,7 +25,6 @@ setPersistence(auth, browserLocalPersistence)
 
 export const provider = new GoogleAuthProvider();
 
-// Add this: disable the default popup behavior that causes COOP issues
 provider.setCustomParameters({
   prompt: 'select_account'
 });
