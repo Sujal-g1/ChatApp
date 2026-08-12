@@ -85,6 +85,7 @@ const Homepage = () => {
                     }}
                   >
                     <Sidebar />
+
                   </motion.div>
                 </>
               )}
@@ -123,6 +124,7 @@ const Homepage = () => {
                     }}
                   >
                     <RightSidebar setShowRightSidebar={setShowRightSidebar} />
+                    
                   </motion.div>
                 </>
               )}

@@ -244,11 +244,20 @@ export const sendMessage = async (req, res) => {
     // Upload image
     let imageUrl;
 
-    if (image) {
-      const uploadResponse = await cloudinary.uploader.upload(image);
-
-      imageUrl = uploadResponse.secure_url;
+      if (image) {
+        if (!image.startsWith("data:image/")) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid image format",
+    });
     }
+
+  const uploadResponse = await cloudinary.uploader.upload(image, {
+    resource_type: "image",
+  });
+
+  imageUrl = uploadResponse.secure_url;
+}
 
     // Upload audio
     let audioUrl;

@@ -69,95 +69,81 @@ export const ChatProvider = ({children})=>{
 
 
     const sendMessage = async (messageData) => {
-  try {
-
-    const encrypted = await encryptForUser(
-    selectedUser._id,
-    messageData.text
-);
-
-// console.log( "ENCRYPTED", encrypted );
-
-   const payload = {
-    ...messageData,
-    text: undefined,
-    cipherText: encrypted.cipherText,
-    nonce: encrypted.nonce,
-    encryptionVersion:encrypted.encryptionVersion,
-};
-
-const { data } =
-  await axios.post(
-    `/api/messages/send/${selectedUser._id}`,
-    payload
-  );
-
-
-   if (data.success) {
-
-setMessages(prev => [
-  ...prev,
-  {
-    ...data.newMessage,
-    text: messageData.text
-  }
-]);
-
-  const preview =
-    data.newMessage.text ||
-    (data.newMessage.image
-      ? "📷 Image"
-      : data.newMessage.audio
-      ? "🎤 Audio"
-      : "");
-
-  setUsers(prev => {
-
-    const updated = prev.map(user => {
-
-        if ( user._id !==selectedUser._id) return user;
-        return {
-          ...user,
-          lastMessagePreview:
-            preview,
-
-          lastMessageAt:
-            data.newMessage.createdAt
+      try {
+        let payload = {
+          ...messageData,
         };
-      });
 
-    updated.sort(
-      (a, b) =>
-        new Date(
-          b.lastMessageAt || 0
-        ) -
-        new Date(
-          a.lastMessageAt || 0
-        )
-    );
+        // Encrypt only text messages
+        if (messageData.text?.trim()) {
+          const encrypted = await encryptForUser(
+            selectedUser._id,
+            messageData.text
+          );
 
-    return [...updated];
-  });
-}
-    else {
-      toast.error(data.message);
-    }
+          payload = {
+            ...messageData,
+            text: undefined,
+            cipherText: encrypted.cipherText,
+            nonce: encrypted.nonce,
+            encryptionVersion: encrypted.encryptionVersion,
+          };
+        }
 
-  } catch (error) {
-    if (error.response) {
-      console.log("SERVER ERROR:", error.response.data);
-    } else if (error.request) {
-      console.log("NO RESPONSE (network issue)");
-    } else {
-      console.log("ERROR:", error.message);
-    }
+        const { data } = await axios.post(
+          `/api/messages/send/${selectedUser._id}`,
+          payload
+        );
 
-   toast.error(
-  error.response?.data?.message ||
-  "Message failed to send"
-);
-  }
-};
+        if (data.success) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              ...data.newMessage,
+              text: messageData.text || "",
+            },
+          ]);
+
+          const preview =
+            messageData.text?.trim() ||
+            (data.newMessage.image
+              ? "Image"
+              : data.newMessage.audio
+              ? " Audio"
+              : "");
+
+          setUsers((prev) => {
+            const updated = prev.map((user) => {
+              if (user._id !== selectedUser._id) {
+                return user;
+              }
+
+              return {
+                ...user,
+                lastMessagePreview: preview,
+                lastMessageAt: data.newMessage.createdAt,
+              };
+            });
+
+            updated.sort(
+              (a, b) =>
+                new Date(b.lastMessageAt || 0) -
+                new Date(a.lastMessageAt || 0)
+            );
+
+            return [...updated];
+          });
+        } else {
+          toast.error(data.message);
+        }
+      } catch (error) {
+        toast.error(
+          error.response?.data?.message ||
+          "Message failed to send"
+        );
+      }
+    };
+
 
     const subscribeToMessages = () => {
         if (!socket) return;
@@ -185,36 +171,48 @@ setMessages(prev => [
                     [senderId]: (prev[senderId] || 0) + 1,
                 }));
             }
+            
+            // Sidebar preview only
+           let previewText = newMessage.text;
 
-            const preview =
-  newMessage.text ||
-  (newMessage.image
-    ? "📷 Image"
-    : newMessage.audio
-    ? "🎤 Audio"
-    : "");
+          if (!previewText && newMessage.cipherText) {
+            const decrypted = await decryptIncomingMessage(
+              newMessage,
+              authUser._id
+            );
 
-setUsers(prev => {
-  const updated = prev.map(user => {
+            previewText = decrypted.text;
+          }
 
-    if (user._id !== senderId)
-      return user;
+          const preview =
+            previewText ||
+            (newMessage.image
+              ? "📷 Image"
+              : newMessage.audio
+              ? "🎤 Audio"
+              : "");
 
-    return {
-      ...user,
-      lastMessagePreview: preview,
-      lastMessageAt: newMessage.createdAt
-    };
-  });
+            setUsers(prev => {
+              const updated = prev.map(user => {
 
-  updated.sort(
-    (a, b) =>
-      new Date(b.lastMessageAt || 0) -
-      new Date(a.lastMessageAt || 0)
-  );
+                if (user._id !== senderId)
+                  return user;
 
-  return [...updated];
-});
+                return {
+                  ...user,
+                  lastMessagePreview: preview,
+                  lastMessageAt: newMessage.createdAt
+                };
+              });
+
+              updated.sort(
+                (a, b) =>
+                  new Date(b.lastMessageAt || 0) -
+                  new Date(a.lastMessageAt || 0)
+              );
+
+              return [...updated];
+            });
         };
 
         socket.on("newMessage", onNewMessage);

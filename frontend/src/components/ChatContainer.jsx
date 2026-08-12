@@ -8,6 +8,10 @@ import assets from '../assets/assets'
 import toast from 'react-hot-toast'
 import { useNavigate } from "react-router-dom"
 import { ArrowDownFromLine,ArrowLeft, ArrowUpFromLine, Images, Mic, Pause, Phone, Search, Video,Forward, MoreVertical, Camera, CameraOff, MicOff, PhoneOff, RefreshCw} from 'lucide-react'; 
+import ChatNavbar from './ChatElements/ChatNavbar'
+import VideoCallOverlay from './ChatElements/VideoCallOverlay'
+import ChatMessages from './ChatElements/ChatMessages'
+import ChatBottomPanel from './ChatElements/ChatBottomPanel'
 
 const CallToast = ({ type }) => (
   <div style={{
@@ -122,18 +126,48 @@ const emojiCategories = {
   }
 
   const handleSendImage = async (e) => {
-    const file = e.target.files[0]
-    if (!file || !file.type.startsWith('image/')) {
-      toast.error('Select an image file')
-      return
-    }
-    const reader = new FileReader()
-    reader.onloadend = async () => {
-      await sendMessage({ image: reader.result })
-      e.target.value = ''
-    }
-    reader.readAsDataURL(file)
+  const file = e.target.files?.[0];
+
+  if (!file) return;
+
+  // Only images
+  if (!file.type.startsWith("image/")) {
+    toast.error("Please select a valid image");
+    e.target.value = "";
+    return;
   }
+
+  // 5 MB limit
+  const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+
+  if (file.size > MAX_IMAGE_SIZE) {
+    toast.error("Image is too large. Maximum size is 5 MB.");
+    e.target.value = "";
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = async () => {
+    try {
+      await sendMessage({
+        image: reader.result,
+      });
+    } catch {
+      toast.error("Unable to send image");
+    } finally {
+      e.target.value = "";
+    }
+  };
+
+  reader.onerror = () => {
+    toast.error("Unable to read image");
+    e.target.value = "";
+  };
+
+  reader.readAsDataURL(file);
+};
+
 
   const handleEmojiClick = (emoji) => {
   setInput(prev => prev + emoji)
@@ -212,6 +246,8 @@ const cancelRecording = () => {
   setRecordTime(0)
 }
 
+
+// ---------
   const handleInputChange = (e) => {
     setInput(e.target.value)
     setIsTyping(true)
@@ -244,8 +280,8 @@ urls: "stun:stun.l.google.com:19302"
 
 peerConnection.current.ontrack = (event) => {
 
-console.log("REMOTE VIDEO RECEIVED");
-console.log(event.streams);
+// console.log("REMOTE VIDEO RECEIVED");
+// console.log(event.streams);
 
 setCallStatus("Connected");
 
@@ -257,7 +293,7 @@ remoteVideoRef.current.srcObject = event.streams[0];
 peerConnection.current.onicecandidate = (event) => {
 if (event.candidate) {
 
-console.log("SENDING ICE");
+// console.log("SENDING ICE");
 
 socket.emit("ice-candidate", {
 to: remoteUserIdRef.current,
@@ -270,208 +306,157 @@ candidate: event.candidate
 };
 
 // start vc
-const startCall = async () => {
-  remoteUserIdRef.current = selectedUser._id;
-try {
+  const startCall = async () => {
+    remoteUserIdRef.current = selectedUser._id;
+  try {
 
-// create only if missing
-if (!peerConnection.current) {
-  createPeerConnection();
-}
-
-// get camera + mic
-localStream.current =
-  await navigator.mediaDevices.getUserMedia({
-   video: {
-facingMode: "environment"
-},
-    audio: true
-  });
-
-// show local video
-if (localVideoRef.current) {
-  localVideoRef.current.srcObject = localStream.current;
-}
-
-// safety check again
-if (!peerConnection.current) {
-  console.log("Peer connection missing again, recreating...");
-  createPeerConnection();
-}
-
-// add tracks safely
-localStream.current.getTracks().forEach((track) => {
-  if (peerConnection.current) {
-    peerConnection.current.addTrack(track, localStream.current);
+  // create only if missing
+  if (!peerConnection.current) {
+    createPeerConnection();
   }
-});
 
-// create offer
-const offer = await peerConnection.current.createOffer();
-
-await peerConnection.current.setLocalDescription(offer);
-
-socket.emit("call-user", {
-  to: selectedUser?._id,
-  offer,
-  callerInfo: {
-    name: authUser.fullName,
-    profilePic: authUser.profilePic
-  }
-});
-
-} catch (error) {
-console.log("START CALL ERROR:", error);
-}
-};
-
-
-// noti vc
-useEffect(() => {
-  if (!socket) return;
-socket.on("incoming-call", ({ from, offer, callerInfo }) => {
-setIncomingCall({
-    from,
-    offer,
-    callerInfo
-});
-});
-
-socket.on("call-answered", async ({ answer }) => {
-if (!peerConnection.current) return;
-await peerConnection.current.setRemoteDescription(
-  new RTCSessionDescription(answer)
-);
-});
-
-socket.on("ice-candidate", async ({ candidate }) => {
-
-console.log("RECEIVED ICE");
-
-if (!peerConnection.current || !candidate) return;
-
-try {
-await peerConnection.current.addIceCandidate(
-new RTCIceCandidate(candidate)
-);
-} catch (err) {
-console.log("ICE ERROR", err);
-}
-
-});
-
-socket.on("call-ended", () => {
-endCall();
-});
-socket.on("call-rejected", () => {
-toast.error("Call rejected");
-endCall();
-});
-return () => {
-socket.off("incoming-call");
-socket.off("call-answered");
-socket.off("ice-candidate");
-socket.off("call-ended");
-socket.off("call-rejected");
-};
-}, [socket]);
-
-// noti vc ends
-
-// switch camera 
-const switchCamera = async () => {
-try {
-if (!localStream.current) return;
-
-// stop old video tracks
-localStream.current.getVideoTracks().forEach(track => {
-  track.stop();
-});
-
-const newStream =
-  await navigator.mediaDevices.getUserMedia({
+  // get camera + mic
+  localStream.current =
+    await navigator.mediaDevices.getUserMedia({
     video: {
-      facingMode: isFrontCamera
-        ? "user"
-        : "environment"
-    },
-    audio: true
+  facingMode: "environment"
+  },
+      audio: true
+    });
+
+  // show local video
+  if (localVideoRef.current) {
+    localVideoRef.current.srcObject = localStream.current;
+  }
+
+  // safety check again
+  if (!peerConnection.current) {
+    // console.log("Peer connection missing again, recreating...");
+    createPeerConnection();
+  }
+
+  // add tracks safely
+  localStream.current.getTracks().forEach((track) => {
+    if (peerConnection.current) {
+      peerConnection.current.addTrack(track, localStream.current);
+    }
   });
 
-const newVideoTrack =
-  newStream.getVideoTracks()[0];
+  // create offer
+  const offer = await peerConnection.current.createOffer();
 
-// replace local video preview
-if (localVideoRef.current) {
-  localVideoRef.current.srcObject = newStream;
+  await peerConnection.current.setLocalDescription(offer);
+
+  socket.emit("call-user", {
+    to: selectedUser?._id,
+    offer,
+    callerInfo: {
+      name: authUser.fullName,
+      profilePic: authUser.profilePic
+    }
+  });
+
+  }catch {
+  setShowVideoCall(false);
+  setCallStatus("Call failed");
+  toast.error("Unable to start the video call");
 }
+  };
+  
+  const switchCamera = async () => {
+  try {
+  if (!localStream.current) return;
 
-// replace track in peer connection
-const sender =
-  peerConnection.current
-    ?.getSenders()
-    .find(sender =>
-      sender.track?.kind === "video"
-    );
+  // stop old video tracks
+  localStream.current.getVideoTracks().forEach(track => {
+    track.stop();
+  });
 
-if (sender) {
-  await sender.replaceTrack(newVideoTrack);
-}
+  const newStream =
+    await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: isFrontCamera
+          ? "user"
+          : "environment"
+      },
+      audio: true
+    });
 
-localStream.current = newStream;
-setIsFrontCamera(!isFrontCamera);
+  const newVideoTrack =
+    newStream.getVideoTracks()[0];
 
-} catch (error) {
-console.log("Switch camera error:", error);
-}
-};
-// switch camera  ends
+  // replace local video preview
+  if (localVideoRef.current) {
+    localVideoRef.current.srcObject = newStream;
+  }
 
-const acceptCall = async () => {
-remoteUserIdRef.current = incomingCall.from;
-setShowVideoCall(true);
-createPeerConnection();
-localStream.current =
-await navigator.mediaDevices.getUserMedia({
-video: true,
-audio: true
-});
+  // replace track in peer connection
+  const sender =
+    peerConnection.current
+      ?.getSenders()
+      .find(sender =>
+        sender.track?.kind === "video"
+      );
 
-if (localVideoRef.current) {
-localVideoRef.current.srcObject = localStream.current;
-}
+  if (sender) {
+    await sender.replaceTrack(newVideoTrack);
+  }
 
-localStream.current.getTracks().forEach((track) => {
-peerConnection.current.addTrack(track, localStream.current);
-});
+  localStream.current = newStream;
+  setIsFrontCamera(!isFrontCamera);
 
-await peerConnection.current.setRemoteDescription(
-new RTCSessionDescription(incomingCall.offer)
-);
+  } catch {
+  toast.error("Unable to switch camera");
+  // console.log("Switch camera error:", error);
+  }
+  };
 
-const answer = await peerConnection.current.createAnswer();
-await peerConnection.current.setLocalDescription(answer);
-socket.emit("answer-call", {
-to: incomingCall.from,
-answer
-});
-setIncomingCall(null);
-};
 
-const rejectCall = () => {
-socket.emit("reject-call", {
-to: incomingCall.from
-});
+  const acceptCall = async () => {
+  remoteUserIdRef.current = incomingCall.from;
+  setShowVideoCall(true);
+  createPeerConnection();
+  localStream.current =
+  await navigator.mediaDevices.getUserMedia({
+  video: true,
+  audio: true
+  });
 
-setIncomingCall(null);
-};
+  if (localVideoRef.current) {
+  localVideoRef.current.srcObject = localStream.current;
+  }
 
-const endCall = () => {
-if (selectedUser?._id) {
-socket.emit("end-call", {
-to: selectedUser._id
-});
-}
+  localStream.current.getTracks().forEach((track) => {
+  peerConnection.current.addTrack(track, localStream.current);
+  });
+
+  await peerConnection.current.setRemoteDescription(
+  new RTCSessionDescription(incomingCall.offer)
+  );
+
+  const answer = await peerConnection.current.createAnswer();
+  await peerConnection.current.setLocalDescription(answer);
+  socket.emit("answer-call", {
+  to: incomingCall.from,
+  answer
+  });
+  setIncomingCall(null);
+  };
+
+  const rejectCall = () => {
+  socket.emit("reject-call", {
+  to: incomingCall.from
+  });
+
+  setIncomingCall(null);
+  };
+
+  const endCall = () => {
+  if (selectedUser?._id) {
+  socket.emit("end-call", {
+  to: selectedUser._id
+  });
+  }
 
 if (peerConnection.current) {
 peerConnection.current.close();
@@ -497,19 +482,20 @@ setShowVideoCall(false);
 setIncomingCall(null);
 };
 
-const toggleMute = () => {
-if (!localStream.current) return;
+  const toggleMute = () => {
+  if (!localStream.current) return;
 
-const audioTrack = localStream.current
-.getAudioTracks()[0];
+  const audioTrack = localStream.current
+  .getAudioTracks()[0];
 
-if (audioTrack) {
-audioTrack.enabled = !audioTrack.enabled;
-setIsMuted(!audioTrack.enabled);
-}
-};
+  if (audioTrack) {
+  audioTrack.enabled = !audioTrack.enabled;
+  setIsMuted(!audioTrack.enabled);
+  }
+  };
 
-const toggleCamera = () => {
+  // cam on/off
+  const toggleCamera = () => {
 if (!localStream.current) return;
 
 const videoTrack = localStream.current
@@ -520,12 +506,81 @@ videoTrack.enabled = !videoTrack.enabled;
 setIsCameraOff(!videoTrack.enabled);
 }
 };
+// const toggleCamera = () => {
+//   const stream = localStream.current;
+
+//   if (!stream) return;
+
+//   const videoTrack = stream.getVideoTracks()[0];
+
+//   if (!videoTrack) return;
+
+//   const newState = !videoTrack.enabled;
+
+//   videoTrack.enabled = newState;
+
+//   setIsCameraOff(!newState);
+// };
+
+
+// noti vc
+
+useEffect(() => {
+  if (!socket) return;
+socket.on("incoming-call", ({ from, offer, callerInfo }) => {
+setIncomingCall({
+    from,
+    offer,
+    callerInfo
+});
+});
+
+socket.on("call-answered", async ({ answer }) => {
+if (!peerConnection.current) return;
+await peerConnection.current.setRemoteDescription(
+  new RTCSessionDescription(answer)
+);
+});
+
+socket.on("ice-candidate", async ({ candidate }) => {
+
+// console.log("RECEIVED ICE");
+
+if (!peerConnection.current || !candidate) return;
+
+try {
+await peerConnection.current.addIceCandidate(
+new RTCIceCandidate(candidate)
+);
+} catch (err) {
+// console.log("ICE ERROR", err);
+}
+
+});
+
+socket.on("call-ended", () => {
+endCall();
+});
+socket.on("call-rejected", () => {
+toast.error("Call rejected");
+endCall();
+});
+return () => {
+socket.off("incoming-call");
+socket.off("call-answered");
+socket.off("ice-candidate");
+socket.off("call-ended");
+socket.off("call-rejected");
+};
+}, [socket]);
+
 
 
 // video call end
   useEffect(() => {
     if (selectedUser) getMessages(selectedUser._id)
   }, [selectedUser])
+
 
   useEffect(() => {
     if (scrollEnd.current && messages) {
@@ -545,11 +600,11 @@ useEffect(() => {
       setShowEmoji(false)
     }
   }
-
   document.addEventListener("mousedown", handleClickOutside)
   return () => document.removeEventListener("mousedown", handleClickOutside)
 }, [])
 
+      // will go to the main page file i created
   if (!selectedUser) {
     return (
       <motion.div
@@ -562,6 +617,7 @@ useEffect(() => {
         }}
         className="max-md:hidden"
       >
+        {/* zingleee logo before chat opening */}
         <motion.div
           animate={{ y: [0, -8, 0] }}
           transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
@@ -573,8 +629,9 @@ useEffect(() => {
           }}
         >
             <img src={assets.logo} alt="logo" style={{ width: 45 }} />
-        
         </motion.div>
+
+          {/* zingleee name with start guide   */}
         <div style={{ textAlign: 'center' }}>
          <span style={{ 
         fontFamily: 'Syne, sans-serif', 
@@ -599,7 +656,8 @@ useEffect(() => {
             position: "relative", 
             overflow: "hidden",
             height: '40px', // Adjust this value to your preferred height
-            padding: '8px 16px' // Optional: lowering vertical padding also reduces height
+            padding: '8px 16px', // Optional: lowering vertical padding also reduces height
+            textAlign:'center'
           }}
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
@@ -633,891 +691,122 @@ useEffect(() => {
       initial={{ opacity: 0 }} animate={{ opacity: 1 }}
      style={{ display: 'flex', flexDirection: 'column', height: '100%', flex: 1, minWidth: 0, overflow: 'hidden' }}
     >
-      {/* Chat Header */}
-      <div style={{
-  position: "relative",
-  display: "flex",
-  alignItems: "center",
-  gap: 12,
-  padding: "14px 16px",
-  flexShrink: 0,
-  overflow: "hidden",
-}}>
 
-  
 
- {/* --- ELEGANT HORIZONTAL FIREFLIES --- */}
- {fireflies.map((firefly, index) => (
-  <motion.div
-    key={index}
-    animate={{
-      x: ["-10vw", "110vw"],
-      opacity: [0, 1, 1, 0],
-    }}
-    transition={{
-      duration: firefly.duration,
-      repeat: Infinity,
-      delay: firefly.delay,
-      ease: "linear",
-    }}
-    style={{
-      position: "absolute",
-      top: firefly.top,
-      left: 0,
-      width: 4,
-      height: 4,
-      borderRadius: "50%",
-      background: "white",
-      boxShadow: "0 0 10px rgba(255,255,255,0.8)",
-      pointerEvents: "none",
-      zIndex: 1,
-    }}
-  />
-))}
-  {/* --- END OF ANIMATION LAYER --- */}
-    
-
-  {/* ---- 1. Back Button ---- */}
-  <button 
-    className="icon-btn md:hidden"
-    onClick={() => setSelectedUser(null)}
-    style={{ 
-      display: 'flex', alignItems: 'center', justifyContent: 'center', 
-      color: 'white', cursor: 'pointer', zIndex: 10,                 
-      width: '36px', height: '36px', padding: 0, flexShrink: 0
-    }}
-  >
-    <ArrowLeft size={22} />
-  </button>
-
-  {/* ---- 2. Avatar Container ---- */}
-  <div style={{ position: 'relative', flexShrink: 0, zIndex: 10 }}> 
-    <img
-      src={selectedUser?.profilePic || assets.avatar_icon}
-      alt=""
-      style={{ width: 42, height: 42, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border-color)' }}
-    />
-    {onlineUsers.includes(selectedUser._id) && (
-      <span className="online-dot" style={{
-        position: 'absolute', bottom: 1, right: 1,
-        border: '2px solid rgba(0,0,0,0.5)',
-      }} />
-    )}
-  </div>
-
-  {/* ---- 3. Name + Status ---- */}
-  <div style={{ flex: 1, minWidth: 0, zIndex: 10 }}>
-    <p style={{ 
-      fontWeight: 600, fontSize: 15,
-      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
-    }}>
-      {selectedUser.fullName}
-    </p>
-    <p style={{ 
-      fontSize: 12, 
-      color: onlineUsers.includes(selectedUser._id) ? '#4ade80' : 'rgba(255,255,255,0.4)',
-      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
-    }}>
-      {onlineUsers.includes(selectedUser._id) ? '● Online' : '○ Offline'}
-    </p>
-  </div>
-
-  {/* ---- 4. Action buttons ---- */}
-  <div style={{ display: 'flex', gap: 8, flexShrink: 0, alignItems: 'center', zIndex: 10 }}> 
-    <button className="icon-btn" onClick={() => handleCall('audio')} title="Audio Call">
-      <Phone size={20} />
-    </button>
-
-    <button className="icon-btn" onClick={() => handleCall('video')} title="Video Call">
-      <Video size={20} />
-    </button>
-
-    <button
-      className="icon-btn"
-      onClick={(e) => {
-        e.stopPropagation();
-        setShowRightSidebar(true);
-      }}
-      title="More options"
-    > 
-      <MoreVertical size={20} /> 
-    </button>
-  </div>
-</div> 
-
-      {/* ------- */}
+      <ChatNavbar 
+        setShowRightSidebar={setShowRightSidebar}
+        handleCall={handleCall}
+        />
 
       {/* Messages */}
-      <div style={{
-        flex: 1, overflowY: 'auto', padding: '16px 16px 8px',
-        display: 'flex', flexDirection: 'column', gap: 4,
-      }}>
-        <AnimatePresence initial={false}>
-          {messages.map((msg, idx) => {
-            const senderId = msg.senderId?._id || msg.senderId;
-            
-            const isMine = senderId === authUser?._id;
-            
-            return (
-              <motion.div
-                key={msg._id || idx}
-                initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-                style={{
-                  display: 'flex',
-                  justifyContent: isMine ? 'flex-end' : 'flex-start',
-                  alignItems: 'flex-end', gap: 8, marginBottom: 6,
-                }}
-              >
-                {!isMine && (
-                  <img
-                    src={selectedUser?.profilePic || assets.avatar_icon}
-                    alt=""
-                    style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, marginBottom: 16 }}
-                  />
-                )}
+      <ChatMessages 
+      scrollEnd={scrollEnd}
+      playingId={playingId}
+      setPlayingId={setPlayingId} />
 
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: isMine ? 'flex-end' : 'flex-start', maxWidth: '70%' }}>
-                  {msg.image ? (
-                    <img
-                      src={msg.image} alt=""
-                      onClick={() => window.open(msg.image)}
-                      style={{
-                        maxWidth: 240, borderRadius: 16,
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        cursor: 'pointer', marginBottom: 4,
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-                      }}
-                    />
-                  ) : msg.audio ? (
-  <div
-    style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: 10,
-      padding: '10px 14px',
-      borderRadius: 16,
-      background: isMine
-        ? 'linear-gradient(135deg, var(--accent), var(--accent2))'
-        : 'rgba(255,255,255,0.05)',
-      backdropFilter: 'blur(10px)',
-      border: '1px solid rgba(255,255,255,0.08)',
-      boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-      maxWidth: '100%'
-    }}
-  >
-    {/* Play Button */}
-<audio
-  id={`audio-${msg._id}`}
-  src={msg.audio}
-  onEnded={() => setPlayingId(null)}
-/>
 
-<button
-  onClick={() => {
-    const audio = document.getElementById(`audio-${msg._id}`)
-    if (!audio) return
+      {/* bottom panel */}
+      <ChatBottomPanel
+      input={input}
+      handleInputChange={handleInputChange}
+      handleSendMessage={handleSendMessage}
+      handleSendImage={handleSendImage}
 
-    if (playingId === msg._id) {
-      audio.pause()
-      setPlayingId(null)
-    } else {
-      audio.play()
-      setPlayingId(msg._id)
-    }
-  }}
-  style={iconBtn}
->
-  {playingId === msg._id ? <Pause size={14} /> : <Mic size={14} />}
-</button>
+      showEmoji={showEmoji}
+      setShowEmoji={setShowEmoji}
+      emojiRef={emojiRef}
+      emojiCategories={emojiCategories}
+      activeEmojiTab={activeEmojiTab}
+      setActiveEmojiTab={setActiveEmojiTab}
+      handleEmojiClick={handleEmojiClick}
 
-    {/* Fake Waveform */}
-    <div style={{ display: 'flex', gap: 2 }}>
-      {[...Array(20)].map((_, i) => (
-        <div
-          key={i}
-          style={{
-            width: 2,
-            height: `${8 + Math.random() * 12}px`,
-            background: isMine ? 'white' : 'rgba(255,255,255,0.6)',
-            borderRadius: 2,
-          }}
-        />
-      ))}
-    </div>
+      isRecording={isRecording}
+      recordTime={recordTime}
+      startRecording={startRecording}
+      stopRecording={stopRecording}
 
-    {/* Time */}
-    <span style={{ fontSize: 11, opacity: 0.7 }}>
-      {formatMsgTime(msg.createdAt)}
-    </span>
-  </div>
-)
-      : (
-          <div className={isMine ? 'bubble-sent' : 'bubble-received'}>
-                      {msg.text}
-                    </div>
-                  )}
-                  <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 3, paddingX: 4 }}>
-                    {formatMsgTime(msg.createdAt)}
-                    {isMine && (
-                      <span style={{ marginLeft: 4, color: msg.seen ? 'var(--accent)' : 'rgba(255,255,255,0.3)' }}>
-                        {msg.seen ? '✓✓' : '✓'}
-                      </span>
-                    )}
-                  </p>
-                </div>
-
-                {isMine && (
-                  <img
-                    src={authUser?.profilePic || assets.avatar_icon}
-                    alt=""
-                    style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, marginBottom: 16 }}
-                  />
-                )}
-              </motion.div>
-            )
-          })}
-        </AnimatePresence>
-
-        {/* Typing indicator */}
-        <AnimatePresence>
-          {false && ( // replace with real typing state from socket
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <img src={selectedUser?.profilePic || assets.avatar_icon} alt=""
-                style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }} />
-              <div className="bubble-received" style={{ padding: '10px 14px' }}>
-                <div className="typing-dots"><span /><span /><span /></div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <div ref={scrollEnd} />
-      </div>
-
-      {/* Send Bar */}
-      <div className="send-bar">
-        {/* Emoji (future) */}
-          <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-
-  {/* Emoji Button */}
-  <button
-    className="icon-btn"
-    title="Emoji"
-    style={{ fontSize: 18, flexShrink: 0 }}
-    onClick={() => setShowEmoji(prev => !prev)}
-  >
-    😊
-  </button>
-
-  {/* ✅ EMOJI PANEL (ADD HERE) */}
- {showEmoji && (
-  <div
-    ref={emojiRef}
-    style={{
-      position: "absolute",
-      bottom: "55px",
-      left: 0,
-      background: "rgba(20,20,40,0.95)",
-      border: "1px solid rgba(255,255,255,0.08)",
-      borderRadius: 12,
-      width: "min(320px, 90vw)",
-      zIndex: 100,
-      backdropFilter: "blur(20px)",
-      overflow: "hidden"
-    }}
-  >
-
-    {/* 🔹 CATEGORY TABS */}
-    <div style={{
-      display: "flex",
-      overflowX: "auto",
-      whiteSpace: "nowrap",
-      borderBottom: "1px solid rgba(255,255,255,0.08)"
-    }}>
-      {Object.keys(emojiCategories).map((key) => (
-        <button
-          key={key}
-          onClick={() => setActiveEmojiTab(key)}
-          style={{
-            flex: 1,
-            padding: "6px 4px",
-            fontSize: 12,
-            background: activeEmojiTab === key ? "rgba(255,255,255,0.1)" : "transparent",
-            border: "none",
-            color: "white",
-            cursor: "pointer"
-          }}
-        >
-          {key}
-        </button>
-      ))}
-    </div>
-
-    {/* 🔹 EMOJI GRID */}
-    <div style={{
-      padding: 10,
-      display: "grid",
-      gridTemplateColumns: "repeat(8, 1fr)",
-      gap: 6,
-      maxHeight: "260px",
-      overflowY: "auto"
-    }}>
-      {emojiCategories[activeEmojiTab].map((emoji, i) => (
-        <span
-          key={i}
-          onClick={() => handleEmojiClick(emoji)}
-          style={{
-            fontSize: 22,
-            cursor: "pointer"
-          }}
-        >
-          {emoji}
-        </span>
-      ))}
-    </div>
-
-  </div>
-)}
-
-</div>
-
-        {/* Input */}
-        <div className="send-input-wrap">
-          <input
-            type="text"
-            placeholder="Type a message..."
-            value={input}
-            onChange={handleInputChange}
-            onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSendMessage(e)}
-          />
-
-          {/* Image upload */}
-          <input onChange={handleSendImage} type="file" id="chat-image" accept="image/png,image/jpeg" hidden />
-          <label htmlFor="chat-image" style={{ cursor: 'pointer', opacity: 0.6, fontSize: 18, display: 'flex', alignItems: 'center' }}
-            title="Send image">
-            <Images />
-          </label>
-        </div>
-
-       {/* VOICE MESSAGE */}
-{!isRecording && !audioBlob && (
-  <button
-    onClick={startRecording}
-    style={iconBtn}
-    title="Record"
-  >
-    <Mic size={18} />
-  </button>
-)}
-
-{/* RECORDING UI */}
-{isRecording && (
-  <div className="flex items-center gap-2 text-red-500">
-    ⏺ {recordTime}s
-
-    <div className="flex gap-1">
-      {[...Array(5)].map((_, i) => (
-        <div key={i} className="w-1 h-4 bg-red-400 animate-pulse"></div>
-      ))}
-    </div>
-
-    <button onClick={stopRecording}> <Pause /> </button>
-  </div>
-)}
-
-{/* PREVIEW of recording */}
-    {audioBlob && (
-  <div
-    style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: 10,
-      padding: '10px 14px',
-      borderRadius: 16,
-      background: 'linear-gradient(135deg, var(--accent), var(--accent2))',
-      backdropFilter: 'blur(10px)',
-      border: '1px solid rgba(255,255,255,0.08)',
-      boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-      minWidth: 180,
-    }}
-  >
-    {/* hidden audio */}
-    <audio
-      ref={(el) => (currentAudioRef.current = el)}
-      src={URL.createObjectURL(audioBlob)}
-      onEnded={() => setIsPreviewPlaying(false)}
+      audioBlob={audioBlob}
+      currentAudioRef={currentAudioRef}
+      isPreviewPlaying={isPreviewPlaying}
+      setIsPreviewPlaying={setIsPreviewPlaying}
+      sendAudio={sendAudio}
+      cancelRecording={cancelRecording}
     />
 
-    {/* PLAY / PAUSE */}
-    <button
-      onClick={() => {
-        const audio = currentAudioRef.current
-        if (!audio) return
-
-        if (audio.paused) {
-          audio.play()
-          setIsPreviewPlaying(true)
-        } else {
-          audio.pause()
-          setIsPreviewPlaying(false)
-        }
-      }}
-      style={{
-        ...iconBtn,
-        background: 'white',
-        color: 'black',
-      }}
-    >
-      {isPreviewPlaying ? <Pause size={16} /> : <Mic size={16} />}
-    </button>
-
-    {/* WAVEFORM */}
-    <div style={{ display: 'flex', gap: 2 }}>
-      {[10,14,8,16,12,18,9,15,11,17].map((h, i) => (
-        <div
-          key={i}
+      
+      {/* Right Sidebar with Flap Animation */} 
+      <AnimatePresence>
+    {showRightSidebar && (
+      <>
+        {/* 1. The Backdrop (Tap anywhere here to close) */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={() => setShowRightSidebar(false)}
           style={{
-            width: 2,
-            height: h,
-            background: 'white',
-            borderRadius: 2,
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 40,
           }}
         />
-      ))}
-    </div>
 
-    {/* SEND */}
-    <button onClick={sendAudio} style={iconBtn}>
-      <ArrowUpFromLine size={16} />
-    </button>
-
-    {/* CANCEL */}
-    <button onClick={cancelRecording} style={iconBtn}>
-      <ArrowDownFromLine size={16} />
-    </button>
-  </div>
-)}
-
-        {/* Send audio msg */}
-        {!audioBlob && (
-        <motion.button
-          className="send-btn"
-          onClick={handleSendMessage}
-          whileHover={{ scale: 1.1, rotate: 5 }}
-          whileTap={{ scale: 0.92 }}
-          style={{
-          display: 'flex',          
-          alignItems: 'center',     
-          justifyContent: 'center',   
-          padding: 0,                
-          }}
-        >
-        <Forward  size={18}/>
-        </motion.button>
-        )}
-
-      </div>
-
-      
-      {/* Right Sidebar with Flap Animation */}
-<AnimatePresence>
-  {showRightSidebar && (
-    <>
-      {/* 1. The Backdrop (Tap anywhere here to close) */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={() => setShowRightSidebar(false)}
-        style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0, 0, 0, 0.5)',
-          backdropFilter: 'blur(4px)',
-          zIndex: 40,
-        }}
-      />
-
-      {/* 2. The Sidebar "Flap" Container */}
-<motion.div
-  initial={{ x: '100%' }}
-  animate={{ x: 0 }}
-  exit={{ x: '100%' }}
-  transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-  style={{
-    position: 'fixed',
-    top: 0,
-    right: 0,
-    height: '100%',
-    width: '85%',
-    maxWidth: '380px',
-    // 1. Lower the opacity significantly (0.4 - 0.6)
-    // 2. Add backdropFilter for the "frosted" look
-    background: 'rgba(255, 255, 255, 0.03)', 
-    backdropFilter: 'blur(25px) saturate(180%)', 
-    WebkitBackdropFilter: 'blur(25px) saturate(180%)', // For Safari support
-    zIndex: 50,
-    boxShadow: '-10px 0 30px rgba(0,0,0,0.3)',
-    display: 'flex',
-    flexDirection: 'column',
-    borderLeft: '1px solid rgba(255,255,255,0.1)',
-  }}
->
-  <RightSidebar onClose={() => setShowRightSidebar(false)} />
-</motion.div>
-    </>
-  )}
-</AnimatePresence>
-      
-      {/* vc */}
-  <AnimatePresence>
-  {incomingCall && (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.75)",
-        zIndex: 9999,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 20
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: 360,
-          padding: 30,
-          borderRadius: 24,
-          background: "rgba(20,20,40,0.96)",
-          border: "1px solid rgba(255,255,255,0.08)",
-          backdropFilter: "blur(20px)",
-          textAlign: "center",
-          color: "white",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.4)"
-        }}
-      >
-        <img
-          src={
-            incomingCall?.callerInfo?.profilePic ||
-            assets.avatar_icon
-          }
-          alt="caller"
-          style={{
-            width: 90,
-            height: 90,
-            borderRadius: "50%",
-            objectFit: "cover",
-            marginBottom: 16,
-            border: "2px solid rgba(255,255,255,0.08)"
-          }}
-        />
-    <h2
-      style={{
-        fontSize: 22,
-        fontWeight: 700,
-        marginBottom: 8
-      }}
-    >
-      {incomingCall?.callerInfo?.name || "Incoming Call"}
-    </h2>
-
-    <p
-      style={{
-        opacity: 0.7,
-        marginBottom: 24,
-        fontSize: 14
-      }}
-    >
-      is calling you...
-    </p>
-
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "center",
-        gap: 16
-      }}
-    >
-      <button
-        onClick={acceptCall}
-        style={{
-          padding: "12px 20px",
-          borderRadius: 999,
-          border: "none",
-          cursor: "pointer",
-          fontWeight: 600
-        }}
-      >
-        Accept
-      </button>
-
-      <button
-        onClick={rejectCall}
-        style={{
-          padding: "12px 20px",
-          borderRadius: 999,
-          border: "none",
-          cursor: "pointer",
-          fontWeight: 600
-        }}
-      >
-        Reject
-      </button>
-    </div>
-  </div>
-</motion.div>
-)} </AnimatePresence>
-
-{/* full screen vc */}
-  <AnimatePresence>
-  {showVideoCall && (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "#000",
-        zIndex: 10000,
-        overflow: "hidden"
-      }}
-    >
-      {/* Remote Video Full Screen */}
-      <video
-        ref={remoteVideoRef}
-        autoPlay
-        playsInline
-        style={{
-          width: "100%",
-          height: "100%",
-          objectFit: "cover"
-        }}
-      />
-
-```
-  {/* Top Gradient Header */}
-  <div
+        {/* 2. The Right Sidebar "Flap" Container */}
+  <motion.div
+    initial={{ x: '100%' }}
+    animate={{ x: 0 }}
+    exit={{ x: '100%' }}
+    transition={{ type: 'spring', damping: 25, stiffness: 200 }}
     style={{
-      position: "absolute",
+      position: 'fixed',
       top: 0,
-      left: 0,
       right: 0,
-      padding: "24px 20px",
-      background:
-        "linear-gradient(to bottom, rgba(0,0,0,0.65), transparent)",
-      zIndex: 5
+      height: '100%',
+      width: '85%',
+      maxWidth: '380px',
+      // 1. Lower the opacity significantly (0.4 - 0.6)
+      // 2. Add backdropFilter for the "frosted" look
+
+     background: 'rgba(15, 15, 20, 0.96)',
+    backdropFilter: 'blur(8px)',
+    WebkitBackdropFilter: 'blur(8px)',
+    boxShadow: '-8px 0 24px rgba(0,0,0,0.2)',
+
+      zIndex: 50,
+      display: 'flex',
+      flexDirection: 'column',
+      borderLeft: '1px solid rgba(255,255,255,0.1)',
     }}
   >
-    <h2
-      style={{
-        color: "white",
-        fontSize: 22,
-        fontWeight: 700,
-        marginBottom: 4
-      }}
-    >
-      {selectedUser?.fullName || "Video Call"}
-    </h2>
-
-    <p
-      style={{
-        color: "rgba(255,255,255,0.75)",
-        fontSize: 14
-      }}
-    >
-      {callStatus}
-    </p>
-  </div>
-
-  {/* Local Video Floating Card */}
-  <video
-    ref={localVideoRef}
-    autoPlay
-    muted
-    playsInline
-    style={{
-      position: "absolute",
-      top: 90,
-      right: 20,
-      width: 220,
-      height: 160,
-      borderRadius: 22,
-      objectFit: "cover",
-      border: "2px solid rgba(255,255,255,0.18)",
-      background: "#111",
-      boxShadow: "0 20px 50px rgba(0,0,0,0.35)",
-      zIndex: 6
-    }}
-  />
-
- {/* Bottom Controls */}
-
-{/* Bottom Controls */}
-
-<div
-  style={{
-    position: "absolute",
-    bottom: 40,
-    left: "50%",
-    transform: "translateX(-50%)",
-    display: "flex",
-    alignItems: "center",
-    gap: 16,
-    zIndex: 7,
-
-padding: "12px 18px",
-borderRadius: 999,
-
-background: "rgba(0,0,0,0.25)",
-backdropFilter: "blur(20px)",
-border: "1px solid var(--border-color)",
-boxShadow: "0 10px 30px rgba(0,0,0,0.25)"
-
-}}
-
->
-
-<motion.button
-whileHover={{ scale: 1.08 }}
-whileTap={{ scale: 0.94 }}
-onClick={switchCamera}
-style={{
-width: 58,
-height: 58,
-borderRadius: "50%",
-border: "1px solid var(--border-color)",
-background: "var(--glass)",
-color: "white",
-cursor: "pointer",
-display: "flex",
-alignItems: "center",
-justifyContent: "center"
-}}
-
->
-<RefreshCw />
-</motion.button>
-
-
-{/* Mute Button */}
-<motion.button
-whileHover={{ scale: 1.08, y: -2 }}
-whileTap={{ scale: 0.94 }}
-onClick={toggleMute}
-style={{
-width: 58,
-height: 58,
-borderRadius: "50%",
-border: "1px solid var(--border-color)",
-
-  background: isMuted
-    ? "rgba(239,68,68,0.15)"
-    : "var(--glass)",
-
-  color: "white",
-  cursor: "pointer",
-
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-
-  backdropFilter: "blur(16px)",
-  boxShadow: isMuted
-    ? "0 0 20px rgba(239,68,68,0.2)"
-    : "0 0 15px var(--glow)",
-
-  transition: "all 0.25s ease"
-}}
-
->
-{isMuted ? <MicOff size={22} /> : <Mic size={22} />}
-
-</motion.button>
-
-{/* Camera Button */}
-<motion.button
-whileHover={{ scale: 1.08, y: -2 }}
-whileTap={{ scale: 0.94 }}
-onClick={toggleCamera}
-style={{
-width: 58,
-height: 58,
-borderRadius: "50%",
-border: "1px solid var(--border-color)",
-  background: isCameraOff
-    ? "rgba(239,68,68,0.15)"
-    : "var(--glass)",
-
-  color: "white",
-  cursor: "pointer",
-
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-
-  backdropFilter: "blur(16px)",
-  boxShadow: isCameraOff
-    ? "0 0 20px rgba(239,68,68,0.2)"
-    : "0 0 15px var(--glow)",
-
-  transition: "all 0.25s ease"
-}}
-
->
-{isCameraOff ? <CameraOff size={22} /> : <Camera size={22} />}
-
-</motion.button>
-
-{/* End Call Button */}
-<motion.button
-whileHover={{ scale: 1.1, y: -2 }}
-whileTap={{ scale: 0.92 }}
-onClick={endCall}
-style={{
-width: 70,
-height: 70,
-borderRadius: "50%",
-border: "none",
-
-  background:
-    "linear-gradient(135deg, #ef4444, #dc2626)",
-
-  color: "white",
-  cursor: "pointer",
-
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-
-  boxShadow:
-    "0 10px 30px rgba(239,68,68,0.35)",
-
-  transition: "all 0.25s ease"
-}}
-
->
-<PhoneOff size={24} />
-</motion.button>
-
-</div>
-
-</motion.div>
-
-)} </AnimatePresence>
-
-      
+    <RightSidebar onClose={() => setShowRightSidebar(false)} />
+  </motion.div>
+      </>
+    )}
+    </AnimatePresence>
+        
+      {/* vc  ----------------------------- */}
+     <VideoCallOverlay
+        showRightSidebar={showRightSidebar}
+        setShowRightSidebar={setShowRightSidebar}
+        incomingCall={incomingCall}
+        showVideoCall={showVideoCall}
+        localVideoRef={localVideoRef}
+        remoteVideoRef={remoteVideoRef}
+        selectedUser={selectedUser}
+        callStatus={callStatus}
+        isMuted={isMuted}
+        isCameraOff={isCameraOff}
+        assets={assets}
+        acceptCall={acceptCall}
+        rejectCall={rejectCall}
+        endCall={endCall}
+        toggleMute={toggleMute}
+        toggleCamera={toggleCamera}
+        switchCamera={switchCamera}
+      />
   
-
-
 
 
     </motion.div>
