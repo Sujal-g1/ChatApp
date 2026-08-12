@@ -1,7 +1,6 @@
 import React, { useContext, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
-import crypto from "crypto";
 import { AuthContext } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { ZingleeeLogo } from "./LandingPage";
@@ -49,13 +48,21 @@ const LoginPage = () => {
 
   // EMAIL AUTHENTICATION
   const handleEmailAuth = async () => {
-
-    try {
+     try {
       const cleanEmail = email.trim().toLowerCase();
-
-      // SIGN UP
       if (currentState === "Sign up") {
   try {
+
+      localStorage.setItem(
+      "zingleee_pending_signup",
+      JSON.stringify({
+        fullName: fullName.trim(),
+        username: username.trim().toLowerCase(),
+        bio: bio.trim(),
+        email: cleanEmail,
+      })
+    );
+
     // Try creating a completely new Firebase account
     const result = await createUserWithEmailAndPassword(
       auth,
@@ -82,9 +89,6 @@ const LoginPage = () => {
 
   } catch (error) {
 
-    // Firebase account already exists.
-    // This can happen if the user previously
-    // started signup but never verified their email.
     if (error.code === "auth/email-already-in-use") {
 
       try {
@@ -150,8 +154,7 @@ const LoginPage = () => {
 }
 
     // LOGIN
-      const result =
-        await signInWithEmailAndPassword(
+      const result =await signInWithEmailAndPassword(
           auth,
           cleanEmail,
           password
@@ -200,7 +203,6 @@ const LoginPage = () => {
 
           break;
 
-
         case "auth/invalid-email":
           toast.error(
             "Please enter a valid email address."
@@ -234,8 +236,6 @@ const LoginPage = () => {
           );
 
           break;
-
-
         default:
 
           toast.error(
@@ -759,11 +759,6 @@ useEffect(() => {
                 or
               </div>
 
-
-              {/* IMPORTANT:
-                  GoogleLoginButton remains responsible
-                  for your existing Google flow.
-              */}
 
               <GoogleLoginButton onClick={handleGoogleLogin}/>
             </>

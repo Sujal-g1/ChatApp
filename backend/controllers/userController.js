@@ -426,6 +426,13 @@ export const firebaseLogin = async (req, res) => {
 
     if (provider === "email") {
 
+      if (!fullName || !fullName.trim()) {
+    return res.status(400).json({
+      success: false,
+      message: "Full name is required.",
+    });
+}
+
       if (
         !username ||
         !username.trim()

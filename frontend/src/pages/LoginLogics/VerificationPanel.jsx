@@ -93,8 +93,9 @@ const VerificationPanel = ({
         maxWidth: 320,
       }}
     >
-      Open the email from Zingleee and click the verification button.
-      Then return here and continue creating your account.
+      <strong>Can't find the email?</strong>
+      <br />
+      Check your Spam or Junk folder.
     </p>
 
     {/* Verified Button */}

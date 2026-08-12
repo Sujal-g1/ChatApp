@@ -1,81 +1,184 @@
-import React, { useEffect, useState } from "react";
+
+import React, { useContext, useEffect, useState, useRef } from "react";
+import { onAuthStateChanged, } from "firebase/auth";
 import { motion } from "framer-motion";
-import {
-  CheckCircle2,
-  XCircle,
-  Loader2,
-  ArrowLeft,
-} from "lucide-react";
-import { applyActionCode } from "firebase/auth";
-import { auth } from "../firebase";
+import { CheckCircle2, Loader2, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ZingleeeLogo } from "./LandingPage";
+import { auth } from "../firebase";
+import { AuthContext } from "../../context/AuthContext";
+import toast from "react-hot-toast";
 
 const EmailVerificationPage = () => {
-  const navigate = useNavigate();
+
+ const navigate = useNavigate();
+
+  const { login } = useContext(AuthContext);
+  const hasCompletedVerification = useRef(false);
 
   const [status, setStatus] = useState("loading");
-  const [message, setMessage] = useState("");
 
-  useEffect(() => {
-    const verifyEmail = async () => {
-      try {
-        const params = new URLSearchParams(window.location.search);
+    useEffect(() => {
+  if (hasCompletedVerification.current) {
+    return;
+  }
 
-        const mode = params.get("mode");
-        const oobCode = params.get("oobCode");
+  hasCompletedVerification.current = true;
 
-        // This page is only for email verification.
-        if (mode !== "verifyEmail") {
-          setStatus("error");
-          setMessage("This verification link is not valid.");
-          return;
-        }
+  const completeEmailVerification = async () => {
+    try {
+    //   console.log("VERIFY PAGE - starting verification completion" );
 
-        if (!oobCode) {
-          setStatus("error");
-          setMessage("The verification link is missing its verification code.");
-          return;
-        }
+      const user = await new Promise((resolve, reject) => {
+        let finished = false;
 
-        // Complete Firebase email verification.
-        await applyActionCode(auth, oobCode);
+        const unsubscribe = onAuthStateChanged(
+          auth,
+          (firebaseUser) => {
+            if (finished) return;
 
-        setStatus("success");
-        setMessage(
-          "Your email address has been successfully verified."
+            finished = true;
+            unsubscribe();
+
+            resolve(firebaseUser);
+          }
         );
-      } catch (error) {
-        console.error("Email verification error:", error);
 
-        setStatus("error");
+        setTimeout(() => {
+          if (finished) return;
 
-        if (
-          error.code === "auth/invalid-action-code" ||
-          error.code === "auth/expired-action-code"
-        ) {
-          setMessage(
-            "This verification link has expired or is no longer valid."
+          finished = true;
+          unsubscribe();
+
+          reject(
+            new Error(
+              "Unable to restore your Firebase session."
+            )
           );
-        } else {
-          setMessage(
-            "We couldn't verify your email. Please request a new verification email."
-          );
-        }
+        }, 10000);
+      });
+
+    //   console.log("VERIFY PAGE - Firebase user:",user );
+
+      if (!user) {
+        throw new Error(
+          "Firebase session could not be restored."
+        );
       }
-    };
 
-    verifyEmail();
-  }, []);
+      await user.reload();
+
+      if (!user.emailVerified) {
+        throw new Error(
+          "Your email has not been verified yet."
+        );
+      }
+
+    //   console.log("VERIFY PAGE - email verified:",user.emailVerified);
+
+      // --------------------------------
+      // Pending signup
+      // --------------------------------
+
+      const pendingSignupRaw =
+        localStorage.getItem(
+          "zingleee_pending_signup"
+        );
+
+    //   console.log("VERIFY PAGE - pending signup:",pendingSignupRaw );
+
+      if (!pendingSignupRaw) {
+        throw new Error(
+          "Your signup information could not be found."
+        );
+      }
+
+      const pendingSignup =
+        JSON.parse(pendingSignupRaw);
+
+      // --------------------------------
+      // Firebase token
+      // --------------------------------
+
+      const token =
+        await user.getIdToken(true);
+
+    //   console.log("VERIFY PAGE - Firebase token obtained");
+
+      // --------------------------------
+      // Create Zingleee account
+      // --------------------------------
+
+      const result = await login(
+        "firebase-email",
+        {
+          token,
+          provider: "email",
+          fullName:
+            pendingSignup.fullName,
+          username:
+            pendingSignup.username,
+          bio:
+            pendingSignup.bio,
+        }
+      );
+
+    //   console.log("VERIFY PAGE - backend result:",result);
+
+      if (!result?.success) {
+        throw new Error(
+          result?.message ||
+          "Unable to create your Zingleee account."
+        );
+      }
+
+    //   console.log("VERIFY PAGE - Zingleee account created");
+
+      // --------------------------------
+      // Remove temporary signup data
+      // --------------------------------
+
+      localStorage.removeItem("zingleee_pending_signup");
+
+      // --------------------------------
+      // Success
+      // --------------------------------
+
+      setStatus("success");
+
+      setTimeout(() => {
+        navigate("/");
+      }, 1200);
+
+    } catch (error) {
+//       console.error(
+//         "EMAIL VERIFICATION ERROR:",
+//         error
+// );
+
+      setStatus("error");
+
+      toast.error(
+        error.response?.data?.message ||
+        error.message ||
+        "Unable to complete account creation."
+      );
+    }
+  };
+
+  completeEmailVerification();
+}, []);
 
   return (
     <div
       style={{
         minHeight: "100vh",
+        width: "100%",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: 24,
+        padding: "24px",
+        boxSizing: "border-box",
         position: "relative",
         overflow: "hidden",
       }}
@@ -84,20 +187,32 @@ const EmailVerificationPage = () => {
       <div
         style={{
           position: "absolute",
-          width: 420,
-          height: 420,
+          width: 500,
+          height: 500,
           borderRadius: "50%",
           background:
             "radial-gradient(circle, var(--glow), transparent 70%)",
-          filter: "blur(50px)",
-          opacity: 0.35,
+          filter: "blur(70px)",
+          opacity: 0.3,
           pointerEvents: "none",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
         }}
       />
 
+      {/* Card */}
       <motion.div
-        initial={{ opacity: 0, y: 25, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
+        initial={{
+          opacity: 0,
+          y: 25,
+          scale: 0.97,
+        }}
+        animate={{
+          opacity: 1,
+          y: 0,
+          scale: 1,
+        }}
         transition={{
           duration: 0.45,
           ease: [0.4, 0, 0.2, 1],
@@ -111,6 +226,8 @@ const EmailVerificationPage = () => {
       >
         <div
           style={{
+            width: "100%",
+            boxSizing: "border-box",
             background: "rgba(255,255,255,0.05)",
             backdropFilter: "blur(40px)",
             WebkitBackdropFilter: "blur(40px)",
@@ -124,13 +241,22 @@ const EmailVerificationPage = () => {
         >
           {/* Logo */}
           <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.1 }}
+            initial={{
+              opacity: 0,
+              scale: 0.8,
+            }}
+            animate={{
+              opacity: 1,
+              scale: 1,
+            }}
+            transition={{
+              delay: 0.1,
+              duration: 0.35,
+            }}
             style={{
               display: "flex",
               justifyContent: "center",
-              marginBottom: 18,
+              marginBottom: 16,
               filter: "drop-shadow(0 0 20px var(--glow))",
             }}
           >
@@ -143,6 +269,7 @@ const EmailVerificationPage = () => {
               fontFamily: "Syne, sans-serif",
               fontWeight: 800,
               fontSize: 25,
+              letterSpacing: "-0.02em",
               color: "white",
               margin: "0 0 30px",
             }}
@@ -157,23 +284,37 @@ const EmailVerificationPage = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
-              <Loader2
-                size={54}
-                color="var(--accent)"
+              <div
                 style={{
-                  animation: "spin 1s linear infinite",
-                  marginBottom: 20,
+                  width: 68,
+                  height: 68,
+                  margin: "0 auto 20px",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.1)",
                 }}
-              />
+              >
+                <Loader2
+                  size={34}
+                  color="var(--accent)"
+                  style={{
+                    animation: "spin 1s linear infinite",
+                  }}
+                />
+              </div>
 
               <h2
                 style={{
                   color: "white",
                   fontSize: 22,
+                  fontWeight: 700,
                   margin: "0 0 10px",
                 }}
               >
-                Verifying your email
+                Email verified
               </h2>
 
               <p
@@ -184,7 +325,7 @@ const EmailVerificationPage = () => {
                   margin: 0,
                 }}
               >
-                Please wait while we verify your email address.
+                Preparing your Zingleee account...
               </p>
             </motion.div>
           )}
@@ -192,18 +333,55 @@ const EmailVerificationPage = () => {
           {/* Success */}
           {status === "success" && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
+              initial={{
+                opacity: 0,
+                y: 10,
+              }}
+              animate={{
+                opacity: 1,
+                y: 0,
+              }}
+              transition={{
+                duration: 0.35,
+              }}
             >
-              <CheckCircle2
-                size={64}
-                color="var(--accent)"
-                style={{
-                  marginBottom: 20,
-                  filter: "drop-shadow(0 0 15px var(--glow))",
+              {/* Success icon */}
+              <motion.div
+                initial={{
+                  scale: 0.7,
+                  opacity: 0,
                 }}
-              />
+                animate={{
+                  scale: 1,
+                  opacity: 1,
+                }}
+                transition={{
+                  delay: 0.05,
+                  type: "spring",
+                  stiffness: 220,
+                  damping: 15,
+                }}
+                style={{
+                  width: 72,
+                  height: 72,
+                  margin: "0 auto 22px",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  boxShadow: "0 0 30px var(--glow)",
+                }}
+              >
+                <CheckCircle2
+                  size={42}
+                  color="var(--accent)"
+                  strokeWidth={2}
+                />
+              </motion.div>
 
+              {/* Heading */}
               <h2
                 style={{
                   color: "white",
@@ -215,25 +393,33 @@ const EmailVerificationPage = () => {
                 Email verified!
               </h2>
 
+              {/* Description */}
               <p
                 style={{
                   color: "rgba(255,255,255,0.55)",
                   fontSize: 14,
-                  lineHeight: 1.6,
+                  lineHeight: 1.7,
                   margin: "0 auto 26px",
                   maxWidth: 320,
                 }}
               >
-                {message}
+                Your email address has been successfully verified.
                 <br />
                 <br />
-                Your email is now verified. Return to Zingleee to finish
-                creating your account.
+                You can now return to Zingleee and finish creating your
+                account.
               </p>
 
-              <button
+              {/* Return button */}
+              <motion.button
                 type="button"
                 onClick={() => navigate("/")}
+                whileHover={{
+                  scale: 1.02,
+                }}
+                whileTap={{
+                  scale: 0.97,
+                }}
                 style={{
                   width: "100%",
                   padding: "13px 20px",
@@ -246,79 +432,54 @@ const EmailVerificationPage = () => {
                   fontSize: 14,
                   fontWeight: 600,
                   cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 7,
                   boxShadow: "0 6px 24px var(--glow)",
                 }}
               >
                 Return to Zingleee
-              </button>
-            </motion.div>
-          )}
+              </motion.button>
 
-          {/* Error */}
-          {status === "error" && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-            >
-              <XCircle
-                size={64}
-                color="#ff6b6b"
-                style={{
-                  marginBottom: 20,
-                }}
-              />
-
-              <h2
-                style={{
-                  color: "white",
-                  fontSize: 23,
-                  fontWeight: 700,
-                  margin: "0 0 12px",
-                }}
-              >
-                Verification failed
-              </h2>
-
+              {/* Small note */}
               <p
                 style={{
-                  color: "rgba(255,255,255,0.55)",
-                  fontSize: 14,
-                  lineHeight: 1.6,
-                  margin: "0 auto 26px",
-                  maxWidth: 320,
+                  color: "rgba(255,255,255,0.3)",
+                  fontSize: 12,
+                  lineHeight: 1.5,
+                  margin: "18px 0 0",
                 }}
               >
-                {message}
+                Sign in with the email and password you used to
+                create your account.
               </p>
-
-              <button
-                type="button"
-                onClick={() => navigate("/")}
-                style={{
-                  width: "100%",
-                  padding: "13px 20px",
-                  borderRadius: 50,
-                  border:
-                    "1px solid rgba(255,255,255,0.1)",
-                  background: "rgba(255,255,255,0.05)",
-                  color: "white",
-                  fontFamily: "Outfit, sans-serif",
-                  fontSize: 14,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
-              >
-                <ArrowLeft
-                  size={15}
-                  style={{
-                    verticalAlign: "middle",
-                    marginRight: 6,
-                  }}
-                />
-                Back to Zingleee
-              </button>
             </motion.div>
           )}
+
+          {/* Back button */}
+          <motion.button
+            type="button"
+            onClick={() => navigate("/login")}
+            whileHover={{
+              opacity: 0.8,
+            }}
+            style={{
+              marginTop: 22,
+              background: "none",
+              border: "none",
+              color: "rgba(255,255,255,0.4)",
+              fontFamily: "Outfit, sans-serif",
+              fontSize: 12,
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
+            }}
+          >
+            <ArrowLeft size={13} />
+            Back to login
+          </motion.button>
         </div>
       </motion.div>
     </div>

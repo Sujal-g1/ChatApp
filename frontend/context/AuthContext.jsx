@@ -38,7 +38,7 @@ export const AuthProvider = ({children}) => {
 
         //  console.log("CHECK AUTH RESPONSE:", data);
 
-       await new Promise(resolve => setTimeout(resolve, 2000));
+      //  await new Promise(resolve => setTimeout(resolve, 2000));
 
           // console.log("3. After 10 seconds");
 
@@ -71,7 +71,7 @@ export const AuthProvider = ({children}) => {
 };
 
     // login fn to handle user auth and socket connection
-   const login = async (state, credentials) => {
+  const login = async (state, credentials) => {
   try {
     let data;
 
@@ -85,54 +85,63 @@ export const AuthProvider = ({children}) => {
 
       data = res.data;
     } else {
-      const res = await axios.post(`/api/auth/${state}`, credentials);
+      const res = await axios.post(
+        `/api/auth/${state}`,
+        credentials
+      );
+
       data = res.data;
     }
 
-   if (data.success) {
-
-  if (data.privateKey) {
-    savePrivateKey(data.privateKey);
-
-    // console.log(
-    //   "PRIVATE KEY SAVED"
-    // );
-  }
+    if (data.success) {
+      if (data.privateKey) {
+        await savePrivateKey(data.privateKey);
+      }
 
       axios.defaults.headers.common["Authorization"] =
-    `Bearer ${data.token}`;
+        `Bearer ${data.token}`;
 
-  setToken(data.token);
+      setToken(data.token);
 
-  localStorage.setItem("token", data.token);
+      localStorage.setItem(
+        "token",
+        data.token
+      );
 
-  setAuthUser(data.userData);
+      setAuthUser(data.userData);
 
-  connectSocket(data.userData);
+      connectSocket(data.userData);
 
+      // Manual login does not return a private key.
+      if (!data.privateKey) {
+        const storedPrivateKey =
+          await getStoredPrivateKey();
 
+        if (!storedPrivateKey) {
+          toast.error(
+            "Encryption key not found on this device. Old encrypted messages cannot be decrypted."
+          );
+        }
+      }
 
-    // Manual login does not return a private key.
-    // Make sure this device still has one.
-    if (!data.privateKey) {
+      toast.success(data.message);
 
-    const storedPrivateKey = getStoredPrivateKey();
-
-    if (!storedPrivateKey) {
-      toast.error( "Encryption key not found on this device. Old encrypted messages cannot be decrypted.");
-  }
-
+      // VERY IMPORTANT
+      return data;
     }
 
-  toast.success(
-    data.message
-  );
-}
+    return data;
+
   } catch (error) {
-   toast.error(error.response?.data?.message || error.message)
+    toast.error(
+      error.response?.data?.message ||
+      error.message
+    );
+
+    // VERY IMPORTANT
+    throw error;
   }
 };
-    
 
     //  logout fn to handle user logout and socket disconnection
   const logout = async () => {
