@@ -743,6 +743,19 @@ export const searchUsers = async (req, res) => {
 
 // Check Auth
 export const checkAuth = (req, res) => {
+    // const privateKey = decryptPrivateKey({
+    //     encryptedPrivateKey: req.user.encryptedPrivateKey,
+    //     encryptionIV: req.user.encryptionIV,
+    //     encryptionAuthTag: req.user.encryptionAuthTag,
+    // });
+
+    const privateKey = getUserPrivateKey(req.user);
+
+    res.json({
+        success: true,
+        user: sanitizeUser(req.user),
+        privateKey,
+    });
 };
 
 
