@@ -5,8 +5,7 @@ import { AuthContext } from '../../context/AuthContext'
 import axios from "axios";
 import toast from "react-hot-toast";
 import assets from '../assets/assets'
-import { Mic, Phone, Video, BellOff, Ban,Images,UserRound } from 'lucide-react'; 
-
+import { Mic, Phone, Video, BellOff, Ban, Images, UserRound } from 'lucide-react'; 
 
 const RightSidebar = () => {
   const { selectedUser, messages, getUsers, setSelectedUser } = useContext(ChatContext);
@@ -19,56 +18,43 @@ const RightSidebar = () => {
     setMsgImages(messages.filter(m => m.image).map(m => m.image))
   }, [messages])
 
-// REMOVE FRIEND
-const handleRemoveFriend = async () => {
-  try {
-    setActionLoading("remove");
+  const handleRemoveFriend = async () => {
+    try {
+      setActionLoading("remove");
+      await axios.post("/api/friends/remove", { targetUserId: selectedUser._id });
+      toast.success("Friend removed");
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message);
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
-    await axios.post("/api/friends/remove", {
-      targetUserId: selectedUser._id
-    });
-
-    toast.success("Friend removed");
-
-
-  } catch (err) {
-    toast.error(err.response?.data?.message || err.message);
-  } finally {
-    setActionLoading(null);
-  }
-};
-
-// BLOCK USER
-const handleBlockUser = async () => {
-  try {
-    setActionLoading("block");
-
-    await axios.post("/api/friends/block", {
-      targetUserId: selectedUser._id
-    });
-
-    toast.success("User blocked");
-
-
-  } catch (err) {
-    toast.error(err.response?.data?.message || err.message);
-  } finally {
-    setActionLoading(null);
-  }
-};
+  const handleBlockUser = async () => {
+    try {
+      setActionLoading("block");
+      await axios.post("/api/friends/block", { targetUserId: selectedUser._id });
+      toast.success("User blocked");
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message);
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   if (!selectedUser) return null
 
   return (
     <motion.div
-      initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
+      initial={{ x: 20, opacity: 0 }} 
+      animate={{ x: 0, opacity: 1 }}
       exit={{ x: 20, opacity: 0 }}
       transition={{ duration: 0.35 }}
       style={{
         display: 'flex', flexDirection: 'column',
         height: '100%', overflow: 'hidden',
         borderLeft: '1px solid rgba(255,255,255,0.06)',
-        background: 'rgba(0,0,0,0.15)',
+        background: 'rgba(18, 18, 20, 0.95)',
       }}
     >
       {/* Profile section */}
@@ -79,101 +65,81 @@ const handleBlockUser = async () => {
         flexShrink: 0,
       }}>
         <div style={{ position: 'relative', display: 'inline-block', marginBottom: 14 }}>
-          {/* spinning gradient ring */}
+          {/* Subtle spinning dashed ring */}
           <svg width={100} height={100}
             style={{ position: 'absolute', top: -8, left: -8, animation: 'spin-slow 8s linear infinite' }}>
             <defs>
               <linearGradient id="rs-ring" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.9" />
-                <stop offset="50%" stopColor="var(--accent2)" stopOpacity="0.2" />
-                <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
+                <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="var(--accent)" stopOpacity="0.05" />
               </linearGradient>
             </defs>
-            <circle cx={50} cy={50} r={46} fill="none" stroke="url(#rs-ring)" strokeWidth="2" strokeDasharray="6 4" />
+            <circle cx={50} cy={50} r={46} fill="none" stroke="url(#rs-ring)" strokeWidth="1.5" strokeDasharray="5 5" />
           </svg>
 
           <img
             src={selectedUser?.profilePic || assets.avatar_icon}
             alt=""
-            style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border-color)', display: 'block' }}
+            style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)', display: 'block' }}
           />
 
-          {/* Online dot */}
+          {/* Online status indicator */}
           {onlineUsers.includes(selectedUser._id) && (
             <span className="online-dot" style={{
               position: 'absolute', bottom: 4, right: 4,
-              border: '2px solid rgba(0,0,0,0.5)', width: 12, height: 12,
+              border: '2px solid rgba(18, 18, 20, 1)', width: 12, height: 12,
             }} />
           )}
         </div>
 
-       <h3 style={{ fontWeight: 700, fontSize: 16, marginBottom: 2 }}>
-  {selectedUser.fullName}
-</h3>
+        <h3 style={{ fontWeight: 700, fontSize: 16, marginBottom: 2 }}>
+          {selectedUser.fullName}
+        </h3>
 
+        <p style={{
+          fontSize: 11,
+          color: "rgba(255,255,255,0.35)",
+          marginBottom: 14,
+          fontFamily: "monospace",
+          letterSpacing: "0.5px",
+        }}>
+          {selectedUser.zingleeId}
+        </p>
 
-{/* Zinglee ID */}
-{/* <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 8 }}>
-  {selectedUser.zingleeId}
-</p> */}
+        {/* Bio */}
+        <div style={{
+          padding: "14px 16px",
+          background: "rgba(255,255,255,0.02)",
+          border: "1px solid rgba(255,255,255,0.05)",
+          borderRadius: 14,
+          textAlign: "left",
+        }}>
+          <p style={{
+            margin: 0,
+            fontSize: 13,
+            lineHeight: 1.6,
+            color: "rgba(255,255,255,0.65)",
+            whiteSpace: "pre-wrap",
+            wordBreak: "break-word",
+          }}>
+            {selectedUser.bio?.trim() || "No bio added yet."}
+          </p>
+        </div>
 
-{/* Zingleee ID */}
-<p
-  style={{
-    fontSize: 11,
-    color: "rgba(255,255,255,0.35)",
-    marginBottom: 14,
-    fontFamily: "monospace",
-    letterSpacing: "0.5px",
-  }}
->
-  {selectedUser.zingleeId}
-</p>
-
-{/* Bio */}
-<div
-  style={{
-    padding: "14px 16px",
-    background: "rgba(255,255,255,0.04)",
-    border: "1px solid rgba(255,255,255,0.06)",
-    borderRadius: 14,
-    textAlign: "left",
-    backdropFilter: "blur(10px)",
-  }}
->
-
-
-  <p
-    style={{
-      margin: 0,
-      fontSize: 13,
-      lineHeight: 1.6,
-      color: "rgba(255,255,255,0.75)",
-      whiteSpace: "pre-wrap",
-      wordBreak: "break-word",
-    }}
-  >
-    {selectedUser.bio?.trim() || "No bio added yet."}
-  </p>
-</div>
-
-
-        {/* Quick actions */}
+        {/* Quick actions - Lower opacity backgrounds and borders */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 16 }}>
           {[
-            { icon: <Phone />, label: 'Call', color: 'rgba(74,222,128,0.15)', border: 'rgba(74,222,128,0.3)', text: '#4ade80' },
-            { icon: <Video />, label: 'Video', color: 'rgba(56,189,248,0.15)', border: 'rgba(56,189,248,0.3)', text: '#38bdf8' },
-            { icon: <BellOff />, label: 'Mute', color: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.1)', text: 'rgba(255,255,255,0.6)' },
-
-            { icon: <Ban />, label: 'Block', color: 'rgba(248,113,113,0.1)', border: 'rgba(248,113,113,0.2)', text: '#f87171' ,   action: handleBlockUser},
-
+            { icon: <Phone size={18} />, label: 'Call', color: 'rgba(74,222,128,0.05)', border: 'rgba(74,222,128,0.15)', text: '#4ade80' },
+            { icon: <Video size={18} />, label: 'Video', color: 'rgba(56,189,248,0.05)', border: 'rgba(56,189,248,0.15)', text: '#38bdf8' },
+            { icon: <BellOff size={18} />, label: 'Mute', color: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.08)', text: 'rgba(255,255,255,0.5)' },
+            { icon: <Ban size={18} />, label: 'Block', color: 'rgba(248,113,113,0.05)', border: 'rgba(248,113,113,0.15)', text: '#f87171', action: handleBlockUser },
           ].map((btn, i) => (
             <button key={i}
               style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
                 background: btn.color, border: `1px solid ${btn.border}`,
                 borderRadius: 12, padding: '8px 10px', cursor: 'pointer',
-                color: btn.text, fontSize: 18, transition: 'all 0.2s ease', minWidth: 44,
+                color: btn.text, transition: 'all 0.2s ease', minWidth: 44,
               }}
               title={btn.label}
               onClick={btn.action}
@@ -216,16 +182,16 @@ const handleBlockUser = async () => {
               style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
             >
               {[
-                { label: 'Full Name', value: selectedUser.fullName, icon: <UserRound />},
+                { label: 'Full Name', value: selectedUser.fullName, icon: <UserRound size={16} />},
                 { label: 'Status', value: onlineUsers.includes(selectedUser._id) ? 'Online' : 'Offline', icon: '🟢' },
-                { label: 'Shared Media', value: `${msgImages.length} files`, icon: <Images /> },
+                { label: 'Shared Media', value: `${msgImages.length} files`, icon: <Images size={16} /> },
               ].map((item, i) => (
                 <div key={i} style={{
-                  background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)',
+                  background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)',
                   borderRadius: 12, padding: '12px 14px',
                   display: 'flex', alignItems: 'center', gap: 10,
                 }}>
-                  <span style={{ fontSize: 16 }}>{item.icon}</span>
+                  <span style={{ fontSize: 16, display: 'flex', alignItems: 'center' }}>{item.icon}</span>
                   <div>
                     <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 2 }}>{item.label}</p>
                     <p style={{ fontSize: 13, fontWeight: 500 }}>{item.value}</p>
@@ -241,7 +207,7 @@ const handleBlockUser = async () => {
             >
               {msgImages.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '40px 0', color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>
-                  <div style={{ fontSize: 32, marginBottom: 8 }}><Images /></div>
+                  <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}><Images size={28} /></div>
                   No shared media yet
                 </div>
               ) : (
@@ -273,49 +239,51 @@ const handleBlockUser = async () => {
         </AnimatePresence>
       </div>
 
-            <motion.button
-  whileHover={{ scale: 1.03 }}
-  whileTap={{ scale: 0.96 }}
-  onClick={handleRemoveFriend}
-  disabled={actionLoading === "remove"}
-  style={{
-    alignSelf: 'center',
-    width: '85%',
-    marginTop: 12,
-    marginBottom: 20,
-    padding: '12px',
-    borderRadius: 14,
-    background: 'rgba(248,113,113,0.08)',
-    border: '1px solid rgba(248,113,113,0.25)',
-    color: '#f87171',
-    cursor: 'pointer',
-    fontFamily: 'Outfit, sans-serif',
-    fontSize: 14,
-    fontWeight: 600,
-    transition: 'all 0.2s ease',
-    opacity: actionLoading === "remove" ? 0.6 : 1
-  }}
->
-  {actionLoading === "remove" ? "Removing..." : "Remove Friend"}
-</motion.button>
+      <motion.button
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={handleRemoveFriend}
+        disabled={actionLoading === "remove"}
+        style={{
+          alignSelf: 'center',
+          width: '85%',
+          marginTop: 12,
+          marginBottom: 16,
+          padding: '10px',
+          borderRadius: 12,
+          background: 'rgba(248,113,113,0.05)',
+          border: '1px solid rgba(248,113,113,0.15)',
+          color: '#f87171',
+          cursor: 'pointer',
+          fontFamily: 'Outfit, sans-serif',
+          fontSize: 13,
+          fontWeight: 500,
+          transition: 'all 0.2s ease',
+          opacity: actionLoading === "remove" ? 0.6 : 1
+        }}
+      >
+        {actionLoading === "remove" ? "Removing..." : "Remove Friend"}
+      </motion.button>
 
-      {/* Logout */}
+      {/* Logout - Reduced intensity red glow */}
       <div style={{ padding: '16px', borderTop: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
         <motion.button
-          className="btn-primary"
-          whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+          whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
           onClick={logout}
           style={{
-            width: '100%', fontSize: 14, padding: '11px 0',
-            background: 'linear-gradient(135deg, rgba(248,113,113,0.7), rgba(239,68,68,0.9))',
-            boxShadow: '0 4px 15px rgba(239,68,68,0.3)',
+            width: '100%', fontSize: 13, padding: '10px 0',
+            background: 'rgba(239, 68, 68, 0.15)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            color: '#ef4444',
+            borderRadius: 12,
+            boxShadow: 'none',
+            cursor: 'pointer',
+            fontWeight: 500
           }}
         >
            Logout
         </motion.button>
       </div>
-
-
     </motion.div>
   )
 }

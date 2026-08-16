@@ -222,10 +222,12 @@ body {
 }
 
 /* ─── Input ────────────────────────────────────────────────── */
+/* ─── Input ────────────────────────────────────────────────── */
 .input-glass {
   background: rgba(255,255,255,0.05);
   border: 1px solid var(--border-color);
   backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   color: white;
   font-family: 'Outfit', sans-serif;
   border-radius: var(--radius-sm);
@@ -236,11 +238,23 @@ body {
   font-size: 14px;
 }
 
-.input-glass::placeholder { color: rgba(255,255,255,0.35); }
+.input-glass::placeholder {
+  color: rgba(255,255,255,0.35);
+}
+
 .input-glass:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--glass), 0 0 20px var(--glow);
   background: rgba(255,255,255,0.08);
+}
+
+/* Input variants */
+.input-glass.input-icon-left {
+  padding-left: 42px;
+}
+
+.input-glass.input-icon-right {
+  padding-right: 42px;
 }
 
 /* ─── Online Dot ───────────────────────────────────────────── */

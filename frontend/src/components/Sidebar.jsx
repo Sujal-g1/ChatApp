@@ -9,6 +9,7 @@ import assets from '../assets/assets'
 import axios from "axios";
 import toast from "react-hot-toast";
 import {Signpost ,UserRound, BellRing,Settings,LogOut,Palette, Share2, Pen, Megaphone } from 'lucide-react'; 
+import RainFireflyAnim from './ChatElements/RainFireflyAnim'
 
 const Sidebar = () => {
   const { getUsers, users, setUsers, selectedUser, setSelectedUser, unseenMessages, setUnseenMessages, getRequests, requests, setRequests, respondRequest, blockedUsers,
@@ -30,13 +31,6 @@ const incomingMap = new Set(requests.map(r => r.sender._id));
   
 
   const navigate = useNavigate()
-
-  const fireflies = Array.from({ length: 12 }, (_, i) => ({
-    top: `${Math.random() * 100}%`,
-    delay: Math.random() * 10,
-    duration: 8 + Math.random() * 8,
-  }));
-
 
   const sortedUsers = useMemo(() => {
     return [...users].sort((a, b) => {
@@ -221,35 +215,7 @@ Join using my ID: ${userId}
     }}
   >
     
-    {/* ─── 2.  FIREFLY ANIMATION LAYER ─────────────────────────── */}
-    {fireflies.map((firefly, index) => (
-      <motion.div
-        key={index}
-        animate={{
-          x: ["-50px", "350px"], // Changed from viewport width (vw) to explicit px values to match sidebar width
-          opacity: [0, 1, 1, 0],
-        }}
-        transition={{
-          duration: firefly.duration,
-          repeat: Infinity,
-          delay: firefly.delay,
-          ease: "linear",
-        }}
-        style={{
-          position: "absolute",
-          top: firefly.top,
-          left: 0,
-          width: 4,
-          height: 4,
-          borderRadius: "50%",
-          background: "white",
-          boxShadow: "0 0 10px rgba(255,255,255,0.8)",
-          pointerEvents: "none",
-          zIndex: 1, // Stays in background layer
-        }}
-      />
-    ))}
-    {/* ─── END OF ANIMATION LAYER ──────────────────────────────────────── */}
+    <RainFireflyAnim />
 
     
       {/* Header */}
@@ -902,10 +868,15 @@ Join using my ID: ${userId}
 
       {/* Bottom — auth user */}
       <div style={{
-        padding: '12px 16px',
+       height: '64px',
+        boxSizing: 'border-box',
+        padding: '0 16px',
         borderTop: '1px solid rgba(255,255,255,0.06)',
-        display: 'flex', alignItems: 'center', gap: 10,
-        flexShrink: 0, background: 'rgba(0,0,0,0.1)',
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: 10,
+        flexShrink: 0, 
+        background: 'rgba(0,0,0,0.1)',
       }}>
         <img
           src={authUser?.profilePic || assets.avatar_icon}

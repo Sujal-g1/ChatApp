@@ -81,7 +81,7 @@ useEffect(() => {
               cursor: 'pointer', fontSize: 13, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 6,
             }}
           >← Back to chats</button>
-
+       
           <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: 26, marginBottom: 6 }}>
             Your Profile
           </h2>

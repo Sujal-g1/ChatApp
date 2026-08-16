@@ -1,10 +1,11 @@
-import  { useContext } from "react";
+import  { useContext, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChatContext } from "../../../context/ChatContext";
 import { AuthContext } from "../../../context/AuthContext";
 import assets from "../../assets/assets";
 import { formatMsgTime } from '../../lib/utils'
 import { Pause, Mic } from "lucide-react";
+import RainFireflyAnim from "./RainFireflyAnim";
 
 const ChatMessages = ({
     scrollEnd,
@@ -12,10 +13,9 @@ const ChatMessages = ({
     setPlayingId,
 }) => {
 
-
     const { selectedUser, messages } = useContext(ChatContext)
     const { authUser } = useContext(AuthContext)
-
+    
     const iconBtn = {
     display: "flex",
     alignItems: "center",
@@ -35,6 +35,9 @@ const ChatMessages = ({
         flex: 1, overflowY: 'auto', padding: '16px 16px 8px',
         display: 'flex', flexDirection: 'column', gap: 4,
       }}>
+
+
+        <RainFireflyAnim />
 
          {/* text messges, audio and sent ticks */}
         <AnimatePresence initial={false}>

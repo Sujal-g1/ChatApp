@@ -45,27 +45,7 @@ export default function OfflineScreen(){
         }}
       />
 
-{/* Aurora 2
-<motion.div
-  animate={{
-    x: [-80, 70, -80],
-    y: [-30, 40, -30],
-  }}
-  transition={{
-    duration: 20,
-    repeat: Infinity,
-    ease: "linear",
-  }}
-  style={{
-    position: "absolute",
-    width: 420,
-    height: 420,
-    borderRadius: "50%",
-    background:
-      "radial-gradient(circle, rgba(0,255,255,.12), transparent 70%)",
-    filter: "blur(90px)",
-  }}
-/> */}
+
 
      {/* Floating particles across whole screen */}
       {particles.map((particle, i) => (

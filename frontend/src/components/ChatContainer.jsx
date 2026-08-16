@@ -12,6 +12,7 @@ import ChatNavbar from './ChatElements/ChatNavbar'
 import VideoCallOverlay from './ChatElements/VideoCallOverlay'
 import ChatMessages from './ChatElements/ChatMessages'
 import ChatBottomPanel from './ChatElements/ChatBottomPanel'
+import RainFireflyAnim from './ChatElements/RainFireflyAnim'
 
 const CallToast = ({ type }) => (
   <div style={{
@@ -524,7 +525,6 @@ setIsCameraOff(!videoTrack.enabled);
 
 
 // noti vc
-
 useEffect(() => {
   if (!socket) return;
 socket.on("incoming-call", ({ from, offer, callerInfo }) => {
@@ -574,13 +574,10 @@ socket.off("call-rejected");
 };
 }, [socket]);
 
-
-
 // video call end
   useEffect(() => {
     if (selectedUser) getMessages(selectedUser._id)
   }, [selectedUser])
-
 
   useEffect(() => {
     if (scrollEnd.current && messages) {
@@ -604,7 +601,7 @@ useEffect(() => {
   return () => document.removeEventListener("mousedown", handleClickOutside)
 }, [])
 
-      // will go to the main page file i created
+      // will go to the main page file i created --------- before opening any chat
   if (!selectedUser) {
     return (
       <motion.div
@@ -617,6 +614,7 @@ useEffect(() => {
         }}
         className="max-md:hidden"
       >
+        {/* <RainFireflyAnim /> */}
         {/* zingleee logo before chat opening */}
         <motion.div
           animate={{ y: [0, -8, 0] }}
@@ -687,13 +685,23 @@ useEffect(() => {
   // -------------- AFTER SELECTING THE USER ---------------
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-     style={{ display: 'flex', flexDirection: 'column', height: '100%', flex: 1, minWidth: 0, overflow: 'hidden' }}
-    >
-
-
-      <ChatNavbar 
+   <motion.div
+    initial={{ opacity: 0 }} 
+    animate={{ opacity: 1 }}
+    style={{ display: 'flex', flexDirection: 'column', height: '100%', flex: 1, minWidth: 0, overflow: 'hidden', position: 'relative' }}
+  >
+    {/* Animated Chat Content Screen */}
+    <AnimatePresence mode="wait">
+      {selectedUser && (
+       <motion.div
+    key={selectedUser._id}
+    initial={{ opacity: 0, scale: 0.94, y: 12 }}
+    animate={{ opacity: 1, scale: 1, y: 0 }}
+    exit={{ opacity: 0, scale: 1.04, filter: 'blur(4px)' }}
+    transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }} // Custom cubic-bezier for snappy deceleration
+    style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+  >
+        <ChatNavbar 
         setShowRightSidebar={setShowRightSidebar}
         handleCall={handleCall}
         />
@@ -732,6 +740,9 @@ useEffect(() => {
       sendAudio={sendAudio}
       cancelRecording={cancelRecording}
     />
+    </motion.div>
+      )}
+    </AnimatePresence>
 
       
       {/* Right Sidebar with Flap Animation */} 

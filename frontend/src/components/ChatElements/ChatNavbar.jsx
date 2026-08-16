@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useMemo } from "react";
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChatContext } from "../../../context/ChatContext";
 import { AuthContext } from "../../../context/AuthContext";
@@ -13,12 +13,19 @@ const ChatNavbar = ({
 
     const { onlineUsers } = useContext(AuthContext);
     const { selectedUser, setSelectedUser } = useContext(ChatContext)
+
+    const particles = useMemo(
+        () =>
+          Array.from({ length: 90 }, () => ({
+            left: Math.random() * 100,
+            delay: Math.random() * 12,
+            duration: 20 + Math.random() * 15,
+            size: 0.5 + Math.random() * 2.5,
+            opacity: 0.01 + Math.random() * 0.5,
+          })),
+        []
+      );
     
-      const fireflies = Array.from({ length: 12 }, (_, i) => ({
-        top: `${Math.random() * 100}%`,
-        delay: Math.random() * 10,
-        duration: 8 + Math.random() * 8,
-      }));
     
 
   return (
@@ -32,37 +39,54 @@ const ChatNavbar = ({
         overflow: "hidden",
       }}>
 
-  
+         {/* BACKGROUND FALLING PARTICLES LAYER */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          pointerEvents: "none",
+          overflow: "hidden",
+          zIndex: 0,
+        }}
+      >
+        {particles.map((particle, i) => (
+          <motion.div
+            key={i}
+            initial={{
+              top: "-5%",
+              opacity: 0,
+            }}
+            animate={{
+              top: "105%",
+              opacity: [0, particle.opacity, particle.opacity, 0],
+            }}
+            transition={{
+              duration: particle.duration,
+              delay: particle.delay,
+              repeat: Infinity,
+              ease: "linear",
+            }}
+            style={{
+              position: "absolute",
+              left: `${particle.left}%`,
+              width: particle.size,
+              height: particle.size,
+              borderRadius: "50%",
+              background:
+                i % 4 === 0 ? "var(--accent)" : "rgba(255,255,255,.8)",
+              boxShadow:
+                i % 4 === 0
+                  ? "0 0 12px var(--glow)"
+                  : "0 0 8px rgba(255,255,255,.5)",
+              pointerEvents: "none",
+            }}
+          />
+        ))}
+      </div>
 
- {/* --- ELEGANT HORIZONTAL FIREFLIES --- */}
- {fireflies.map((firefly, index) => (
-  <motion.div
-    key={index}
-    animate={{
-      x: ["-10vw", "110vw"],
-      opacity: [0, 1, 1, 0],
-    }}
-    transition={{
-      duration: firefly.duration,
-      repeat: Infinity,
-      delay: firefly.delay,
-      ease: "linear",
-    }}
-    style={{
-      position: "absolute",
-      top: firefly.top,
-      left: 0,
-      width: 4,
-      height: 4,
-      borderRadius: "50%",
-      background: "white",
-      boxShadow: "0 0 10px rgba(255,255,255,0.8)",
-      pointerEvents: "none",
-      zIndex: 1,
-    }}
-  />
-))}
-  {/* --- END OF ANIMATION LAYER --- */}
     
 
 

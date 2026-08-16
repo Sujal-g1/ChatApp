@@ -52,10 +52,20 @@ const ChatBottomPanel = ({
 };
 
   return (
-     <div className="send-bar">
-        {/* Emoji (future) */}
-        <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+     <div className="send-bar"
+     className="send-bar"
+    style={{
+      height: '64px',
+      boxSizing: 'border-box',
+      padding: '0 16px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10,
+      flexShrink: 0,
+    }}>
 
+
+        <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
   {/* Emoji Button */}
   <button
     className="icon-btn"
