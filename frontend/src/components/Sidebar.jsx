@@ -292,25 +292,25 @@ Join using my ID: ${userId}
                     {icon: <Share2 />,label: 'Invite Friends',action: () => handleShareInvite(),danger: false,},
                    { icon: <Signpost />, label: 'How to Use', action: () => {  navigate('/ins'); setMenuOpen(false); }, 
                      danger: false},
-                     {
-  icon: <FileText />,
-  label: 'Terms & Conditions',
-  action: () => {
-    navigate('/terms');
-    setMenuOpen(false);
-  },
-  danger: false
-},
+//                      {
+//   icon: <FileText />,
+//   label: 'Terms & Conditions',
+//   action: () => {
+//     navigate('/terms');
+//     setMenuOpen(false);
+//   },
+//   danger: false
+// },
 
-{
-  icon: <ShieldCheck />,
-  label: 'Privacy Policy',
-  action: () => {
-    navigate('/privacy');
-    setMenuOpen(false);
-  },
-  danger: false
-},
+// {
+//   icon: <ShieldCheck />,
+//   label: 'Privacy Policy',
+//   action: () => {
+//     navigate('/privacy');
+//     setMenuOpen(false);
+//   },
+//   danger: false
+// },
                     { icon: <LogOut />, label: 'Logout', action: () => { logout(); setMenuOpen(false) }, danger: true },
                   ].map((item, i) => (
                     <button key={i}

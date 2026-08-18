@@ -667,6 +667,91 @@ const VoicePage = () => {
           </motion.div>
         </section>
 
+
+          {/* =================================================
+    TERMS & PRIVACY NOTICE
+================================================= */}
+
+<motion.div
+  initial={{
+    opacity: 0,
+    y: 12,
+  }}
+  whileInView={{
+    opacity: 1,
+    y: 0,
+  }}
+  viewport={{
+    once: true,
+  }}
+  transition={{
+    duration: 0.5,
+  }}
+  style={{
+    marginTop: 28,
+    padding: "16px 18px",
+    borderRadius: 16,
+    border: "1px solid rgba(255,255,255,.06)",
+    background: "rgba(255,255,255,.02)",
+    backdropFilter: "blur(12px)",
+  }}
+>
+  <div
+    style={{
+      fontFamily: "Syne, sans-serif",
+      fontSize: 13,
+      fontWeight: 700,
+      color: "rgba(255,255,255,.7)",
+      marginBottom: 6,
+    }}
+  >
+    Before you share
+  </div>
+
+  <p
+    style={{
+      margin: 0,
+      color: "rgba(255,255,255,.32)",
+      fontSize: 11,
+      lineHeight: 1.7,
+    }}
+  >
+    Please take a moment to read our{" "}
+    <button
+      type="button"
+      onClick={() => navigate("/terms")}
+      style={{
+        border: "none",
+        background: "none",
+        padding: 0,
+        color: "rgba(255,255,255,.65)",
+        textDecoration: "underline",
+        cursor: "pointer",
+        font: "inherit",
+      }}
+    >
+      Terms & Conditions
+    </button>{" "}
+    and{" "}
+    <button
+      type="button"
+      onClick={() => navigate("/privacy")}
+      style={{
+        border: "none",
+        background: "none",
+        padding: 0,
+        color: "rgba(255,255,255,.65)",
+        textDecoration: "underline",
+        cursor: "pointer",
+        font: "inherit",
+      }}
+    >
+      Privacy Policy
+    </button>
+    {" "}before sharing your thoughts with Zingleee.
+  </p>
+</motion.div>
+
         {/* ===================================================
             DEVELOPER PERSPECTIVE
         =================================================== */}
