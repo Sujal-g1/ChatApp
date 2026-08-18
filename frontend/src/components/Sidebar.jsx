@@ -8,7 +8,7 @@ import { ZingleeeLogo } from '../pages/LandingPage'
 import assets from '../assets/assets'
 import axios from "axios";
 import toast from "react-hot-toast";
-import {Signpost ,UserRound, BellRing,Settings,LogOut,Palette, Share2, Pen, Megaphone } from 'lucide-react'; 
+import {Signpost ,UserRound, BellRing,Settings,LogOut,Palette, Share2, Pen, Megaphone, FileText, ShieldCheck } from 'lucide-react'; 
 import RainFireflyAnim from './ChatElements/RainFireflyAnim'
 
 const Sidebar = () => {
@@ -292,6 +292,25 @@ Join using my ID: ${userId}
                     {icon: <Share2 />,label: 'Invite Friends',action: () => handleShareInvite(),danger: false,},
                    { icon: <Signpost />, label: 'How to Use', action: () => {  navigate('/ins'); setMenuOpen(false); }, 
                      danger: false},
+                     {
+  icon: <FileText />,
+  label: 'Terms & Conditions',
+  action: () => {
+    navigate('/terms');
+    setMenuOpen(false);
+  },
+  danger: false
+},
+
+{
+  icon: <ShieldCheck />,
+  label: 'Privacy Policy',
+  action: () => {
+    navigate('/privacy');
+    setMenuOpen(false);
+  },
+  danger: false
+},
                     { icon: <LogOut />, label: 'Logout', action: () => { logout(); setMenuOpen(false) }, danger: true },
                   ].map((item, i) => (
                     <button key={i}
