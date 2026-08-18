@@ -8,6 +8,7 @@ import {
   Mail,
   User,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const AuthForm = ({
   onSubmitHandler,
@@ -34,6 +35,16 @@ const AuthForm = ({
   bio,
   setBio,
 }) => {
+
+  const navigate = useNavigate();
+
+  const handleTerms = () => {
+  navigate("/terms");
+};
+  const handlePrivacy = () => {
+  navigate("/privacy");
+};
+
   return (
     <form onSubmit={onSubmitHandler}>
       <AnimatePresence mode="wait">
@@ -237,55 +248,71 @@ const AuthForm = ({
 
       {/* Terms */}
       {!isDataSubmitted && currentState === "Sign up" && (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            marginTop: 14,
-          }}
-        >
-          <input
-            type="checkbox"
-            required
-            style={{
-              accentColor: "var(--accent)",
-              width: 14,
-              height: 14,
-              flexShrink: 0,
-            }}
-          />
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      marginTop: 14,
+    }}
+  >
+    <input
+      type="checkbox"
+      required
+      style={{
+        accentColor: "var(--accent)",
+        width: 14,
+        height: 14,
+        flexShrink: 0,
+      }}
+    />
 
-          <label
-            style={{
-              fontSize: 11,
-              color: "rgba(255,255,255,0.35)",
-              lineHeight: 1.4,
-            }}
-          >
-            I agree to the{" "}
-            <span
-              style={{
-                color: "rgba(255,255,255,0.6)",
-                textDecoration: "underline",
-                cursor: "pointer",
-              }}
-            >
-              Terms
-            </span>{" "}
-            and{" "}
-            <span
-              style={{
-                color: "rgba(255,255,255,0.6)",
-                textDecoration: "underline",
-                cursor: "pointer",
-              }}
-            >
-              Privacy Policy
-            </span>
-          </label>
-        </div>
-      )}
+    <label
+      style={{
+        fontSize: 11,
+        color: "rgba(255,255,255,0.35)",
+        lineHeight: 1.4,
+      }}
+    >
+      I agree to{" "}
+      <span
+        onClick={handleTerms}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            handleTerms();
+          }
+        }}
+        style={{
+          color: "rgba(255,255,255,0.6)",
+          textDecoration: "underline",
+          cursor: "pointer",
+        }}
+      >
+        Terms & Conditions
+      </span>{" "}
+      and{" "}
+      <span
+        onClick={handlePrivacy}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            navigate("/privacy");
+          }
+        }}
+        style={{
+          color: "rgba(255,255,255,0.6)",
+          textDecoration: "underline",
+          cursor: "pointer",
+        }}
+      >
+        Privacy Policy
+      </span>
+    </label>
+  </div>
+)}
 
       {/* Submit */}
       <motion.button

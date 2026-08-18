@@ -11,6 +11,8 @@ import LoadingScreen from "./pages/LoadingScreen";
 import NotFoundPage from "./pages/NotFoundPage";
 import EmailVerificationPage from "./pages/EmailVerificationPage";
 import VoicePage from "./pages/VoicePage";
+import TermsPage from "./pages/TermsPage";
+import PrivacyPage from "./pages/PrivacyPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { Toaster } from "react-hot-toast"
 import { AuthContext } from '../context/AuthContext'
@@ -117,6 +119,30 @@ if (!isOnline) {
                   <InstructionsPage />
             </motion.div>
           </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/terms"
+        element={
+          <motion.div
+            {...pageVariants}
+            style={{ minHeight: "100vh" }}
+          >
+            <TermsPage />
+          </motion.div>
+        }
+      />
+
+      <Route
+        path="/privacy"
+        element={
+          <motion.div
+            {...pageVariants}
+            style={{ minHeight: "100vh" }}
+          >
+            <PrivacyPage />
+          </motion.div>
         }
       />
 
