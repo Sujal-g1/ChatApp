@@ -33,9 +33,9 @@ const PrivacyPage = () => {
     []
   );
 
-  const handleHome = () => {
-    navigate("/");
-  };
+const handleBack = () => {
+  navigate(-1);
+};
 
   const sections = [
     {
@@ -654,9 +654,10 @@ const PrivacyPage = () => {
             zIndex: 20,
           }}
         >
+          {/* Back button  */}
           <motion.button
             type="button"
-            onClick={handleHome}
+            onClick={handleBack}
             whileHover={{
               x: -3,
               backgroundColor: "rgba(255,255,255,.07)",
@@ -1135,7 +1136,7 @@ const PrivacyPage = () => {
 
             <motion.button
               type="button"
-              onClick={handleHome}
+              onClick={handleBack}
               whileHover={{
                 y: -3,
                 backgroundColor: "rgba(255,255,255,.07)",

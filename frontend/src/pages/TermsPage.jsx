@@ -31,9 +31,9 @@ const TermsPage = () => {
     []
   );
 
-  const handleHome = () => {
-    navigate("/");
-  };
+const handleBack = () => {
+  navigate(-1);
+};
 
   const sections = [
     {
@@ -537,7 +537,7 @@ const TermsPage = () => {
         >
           <motion.button
             type="button"
-            onClick={handleHome}
+            onClick={handleBack}
             whileHover={{
               x: -3,
               backgroundColor: "rgba(255,255,255,.07)",
@@ -1020,7 +1020,7 @@ const TermsPage = () => {
 
             <motion.button
               type="button"
-              onClick={handleHome}
+              onClick={handleBack}
               whileHover={{
                 y: -3,
                 backgroundColor: "rgba(255,255,255,.07)",

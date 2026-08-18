@@ -14,6 +14,7 @@ const AuthForm = ({
   onSubmitHandler,
 
   currentState,
+  isLoading,
   isDataSubmitted,
   setIsDataSubmitted,
 
@@ -315,38 +316,82 @@ const AuthForm = ({
 )}
 
       {/* Submit */}
-      <motion.button
-        type="submit"
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.97 }}
-        style={{
-          width: "100%",
-          marginTop: 20,
-          padding: "13px 0",
-          borderRadius: 50,
-          border: "none",
-          background:
-            "linear-gradient(135deg, var(--accent), var(--accent2))",
-          color: "white",
-          fontFamily: "Outfit, sans-serif",
-          fontSize: 15,
-          fontWeight: 600,
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 8,
-          boxShadow: "0 6px 24px var(--glow)",
+<motion.button
+  type="submit"
+  disabled={isLoading}
+  whileHover={!isLoading ? { scale: 1.02 } : {}}
+  whileTap={!isLoading ? { scale: 0.97 } : {}}
+  style={{
+    width: "100%",
+    marginTop: 20,
+    padding: "13px 0",
+    borderRadius: 50,
+    border: "none",
+
+    background:
+      "linear-gradient(135deg, var(--accent), var(--accent2))",
+
+    color: "white",
+
+    fontFamily: "Outfit, sans-serif",
+    fontSize: 15,
+    fontWeight: 600,
+
+    cursor: isLoading ? "not-allowed" : "pointer",
+
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 9,
+
+    boxShadow: "0 6px 24px var(--glow)",
+
+    opacity: isLoading ? 0.75 : 1,
+
+    transition: "opacity 0.2s ease",
+  }}
+>
+  {isLoading ? (
+    <>
+      <motion.span
+        animate={{ rotate: 360 }}
+        transition={{
+          duration: 0.8,
+          repeat: Infinity,
+          ease: "linear",
         }}
-      >
+        style={{
+          width: 16,
+          height: 16,
+          border: "2px solid rgba(255,255,255,0.35)",
+          borderTopColor: "#fff",
+          borderRadius: "50%",
+          display: "inline-block",
+        }}
+      />
+
+      <span>
+        {currentState === "Login"
+          ? "Signing in..."
+          : isDataSubmitted
+          ? "Creating account..."
+          : "Continuing..."}
+      </span>
+    </>
+  ) : (
+    <>
+      <span>
         {currentState === "Sign up"
           ? isDataSubmitted
             ? "Create Account"
             : "Continue"
           : "Sign In"}
+      </span>
 
-        <ArrowRight size={16} />
-      </motion.button>
+      <ArrowRight size={16} />
+    </>
+  )}
+</motion.button>
     </form>
   );
 };

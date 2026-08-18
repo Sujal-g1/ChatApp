@@ -102,6 +102,14 @@ export const signup = async (req, res) => {
 
 export const login = async (req, res) => {
   try {
+
+   console.log("========== LOGIN REQUEST ==========");
+console.log("METHOD:", req.method);
+console.log("URL:", req.originalUrl);
+console.log("HOST:", req.headers.host);
+console.log("BODY:", req.body);
+console.log("==================================");
+
     const { email, password } = req.body;
 
     const cleanEmail = email.toLowerCase().trim();
@@ -110,18 +118,21 @@ export const login = async (req, res) => {
       email: cleanEmail,
     });
 
+      console.log("User found:", !!userData);
+      
     if (!userData) {
+
+       console.log("DB email:", userData.email);
+  console.log("DB password hash:", userData.password);
+      
       return res.json({
         success: false,
         message: "User not found",
       });
     }
 
-    const isPasswordCorrect =
-      await bcrypt.compare(
-        password,
-        userData.password
-      );
+    const isPasswordCorrect =  await bcrypt.compare( password, userData.password );
+      console.log("Password match:", isPasswordCorrect);
 
     if (!isPasswordCorrect) {
       return res.json({

@@ -23,7 +23,8 @@ import Fireflies from "./LoginLogics/Fireflies";
 const LoginPage = () => {
 
   const [currentState, setCurrentState] = useState("Sign up");
-
+  const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,14 +37,9 @@ const LoginPage = () => {
   // Email verification screen
   const [verificationSent, setVerificationSent] = useState(false);
 
-
   const { login } = useContext(AuthContext);
 
-  const {
-    theme,
-    setTheme,
-    THEMES,
-  } = useTheme();
+  const { theme, setTheme, THEMES, } = useTheme();
 
 
   // EMAIL AUTHENTICATION
@@ -248,20 +244,17 @@ const LoginPage = () => {
   };
 
 const handleGoogleLogin = async () => {
+   if (isGoogleLoading) return;
+
+  setIsGoogleLoading(true);
   try {
-    const result = await signInWithPopup(
-      auth,
-      provider
-    );
+    const result = await signInWithPopup( auth,provider );0
 
     const token = await result.user.getIdToken();
 
     const res = await axios.post(
       `${import.meta.env.VITE_BACKEND_URL}/api/auth/firebase-login`,
-      {
-        token,
-        provider: "google",
-      }
+      { token, provider: "google",}
     );
 
     if (res.data.success) {
@@ -309,33 +302,33 @@ const handleGoogleLogin = async () => {
     toast.error(
       "Google login failed. Please try again."
     );
+  }finally {
+    setIsGoogleLoading(false);
   }
 };
 
   const onSubmitHandler = async (e) => {
     e.preventDefault();
-    // Signup has two steps:
-    //
-    // Step 1:
-    // Personal information
-    //
-    // Step 2:
-    // Bio
-    //
-    // Then create account.
 
-    if (
+    if (isLoading) return;
+    setIsLoading(true);
+
+    try{
+       if (
       currentState === "Sign up" &&
       !isDataSubmitted
     ) {
-
       setIsDataSubmitted(true);
-
       return;
     }
-
-
     await handleEmailAuth();
+    }catch (error) {
+    console.error(error);
+
+  } finally {
+    setIsLoading(false);
+  }
+
   };
 
 
@@ -599,50 +592,30 @@ useEffect(() => {
           <div
             style={{
               display: "flex",
-
-              background:
-                "rgba(255,255,255,0.05)",
-
-              border:
-                "1px solid rgba(255,255,255,0.08)",
-
+              background:"rgba(255,255,255,0.05)",
+              border:"1px solid rgba(255,255,255,0.08)",
               borderRadius: 50,
-
               padding: 4,
-
               marginBottom: 28,
             }}
           >
 
             {["Sign up", "Login"].map((tab) => (
-
               <button
                 key={tab}
                 type="button"
-                onClick={() =>
-                  switchState(tab)
-                }
+                disabled={isLoading}
+                 onClick={() => {  if (!isLoading) {switchState(tab);}}}
                 style={{
                   flex: 1,
-
                   padding: "9px 0",
-
                   borderRadius: 50,
-
                   border: "none",
-
-                  cursor: "pointer",
-
-                  fontFamily:
-                    "Outfit, sans-serif",
-
+                  cursor: isLoading ? "not-allowed" : "pointer",
+                  fontFamily:"Outfit, sans-serif",
                   fontSize: 14,
-
                   fontWeight: 600,
-
-                  transition:
-                    "all 0.25s ease",
-
+                  transition:"all 0.25s ease",
                   background:
                     currentState === tab
                       ? "linear-gradient(135deg, var(--accent), var(--accent2))"
@@ -681,75 +654,22 @@ useEffect(() => {
           ) : (
 
             <>
-                  {/* EMAIL AUTH FORM */}
-
+                  {/* EMAIL AUTH FORM */} 
               <AuthForm
-                onSubmitHandler={
-                  onSubmitHandler
-                }
-
-                currentState={
-                  currentState
-                }
-
-                isDataSubmitted={
-                  isDataSubmitted
-                }
-
-                setIsDataSubmitted={
-                  setIsDataSubmitted
-                }
-
-                fullName={
-                  fullName
-                }
-
-                setFullName={
-                  setFullName
-                }
-
-                email={
-                  email
-                }
-
-                setEmail={
-                  setEmail
-                }
-
-                username={
-                  username
-                }
-
-                setUsername={
-                  setUsername
-                }
-
-                password={
-                  password
-                }
-
-                setPassword={
-                  setPassword
-                }
-
-                showPwd={
-                  showPwd
-                }
-
-                setShowPwd={
-                  setShowPwd
-                }
-
-                bio={
-                  bio
-                }
-
-                setBio={
-                  setBio
-                }
+                onSubmitHandler={onSubmitHandler}
+                currentState={currentState}
+                isLoading={isLoading}
+                isDataSubmitted={isDataSubmitted}
+                setIsDataSubmitted={setIsDataSubmitted}
+                fullName={fullName}
+                setFullName={setFullName}
+                email={email}
+                setEmail={setEmail}username={username}setUsername={setUsername}password={password}setPassword={setPassword}showPwd={showPwd}
+                setShowPwd={setShowPwd}
+                bio={bio}
+                setBio={setBio}
               />
                   {/* GOOGLE LOGIN */}
-
               <div
                 className="divider"
                 style={{
@@ -759,8 +679,7 @@ useEffect(() => {
                 or
               </div>
 
-
-              <GoogleLoginButton onClick={handleGoogleLogin}/>
+              <GoogleLoginButton onClick={handleGoogleLogin} isLoading={isGoogleLoading}/>
             </>
 
           )}

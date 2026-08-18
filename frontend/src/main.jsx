@@ -5,9 +5,12 @@ import App from './App.jsx'
 import { AuthProvider } from '../context/AuthContext.jsx'
 import { ChatProvider } from '../context/ChatContext.jsx'
 import { NetworkProvider } from '../context/NetworkContext.jsx'
+import ScrollToTop from './components/ScrollToTop.jsx'
+
 
 createRoot(document.getElementById('root')).render(
   <BrowserRouter>
+        <ScrollToTop />
   <NetworkProvider>
     <AuthProvider>
       <ChatProvider>

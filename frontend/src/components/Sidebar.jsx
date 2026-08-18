@@ -302,15 +302,7 @@ Join using my ID: ${userId}
 //   danger: false
 // },
 
-// {
-//   icon: <ShieldCheck />,
-//   label: 'Privacy Policy',
-//   action: () => {
-//     navigate('/privacy');
-//     setMenuOpen(false);
-//   },
-//   danger: false
-// },
+// 
                     { icon: <LogOut />, label: 'Logout', action: () => { logout(); setMenuOpen(false) }, danger: true },
                   ].map((item, i) => (
                     <button key={i}

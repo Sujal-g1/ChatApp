@@ -1,10 +1,11 @@
 import React from "react";
 import { motion } from "framer-motion";
 
-const GoogleLoginButton = ({ onClick }) => {
+const GoogleLoginButton = ({ onClick, isLoading }) => {
   return (
     <motion.button
       type="button"
+      disabled={isLoading}
       onClick={onClick}
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.97 }}
@@ -37,7 +38,16 @@ const GoogleLoginButton = ({ onClick }) => {
         }}
       />
 
+      {isLoading ? (
+    <>
+      <span className="google-spinner" />
+      Signing in...
+    </>
+  ) : (
+    <>
       Continue with Google
+    </>
+  )}
     </motion.button>
   );
 };

@@ -583,6 +583,225 @@ const VoicePage = () => {
           </motion.div>
         </section>
 
+
+        {/* =================================================
+    TERMS & PRIVACY
+================================================= */}
+
+    <motion.section
+      initial={{
+        opacity: 0,
+        y: 25,
+      }}
+      whileInView={{
+        opacity: 1,
+        y: 0,
+      }}
+      viewport={{
+        once: true,
+        amount: 0.2,
+      }}
+      transition={{
+        duration: 0.6,
+      }}
+      style={{
+        marginTop: 90,
+        marginLeft:23
+      }}
+    >
+      {/* Section heading */}
+
+      <div
+        style={{
+          marginBottom: 22,
+        }}
+      >
+        <div
+          style={{
+            fontFamily: "monospace",
+            fontSize: 9,
+            letterSpacing: ".14em",
+            color: "var(--accent)",
+            marginBottom: 12,
+            textTransform: "uppercase",
+          }}
+        >
+          Your privacy matters
+        </div>
+
+        <h2
+          style={{
+            margin: 0,
+            fontFamily: "Syne, sans-serif",
+            fontSize: "clamp(30px, 6vw, 48px)",
+            lineHeight: 1,
+            letterSpacing: "-0.055em",
+            fontWeight: 700,
+            color: "#fff",
+          }}
+        >
+          Know before
+          <br />
+          you share.
+        </h2>
+      </div>
+
+      {/* Description */}
+
+      <p
+        style={{
+          maxWidth: 560,
+          margin: 0,
+          color: "rgba(255,255,255,.38)",
+          fontSize: 13,
+          lineHeight: 1.8,
+        }}
+      >
+        Before sharing your thoughts with Zingleee, take a moment to
+        understand how your information is handled and the rules that
+        help keep the platform safe.
+      </p>
+
+      {/* Legal links */}
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+          gap: 12,
+          marginTop: 28,
+        }}
+      >
+        {/* Terms */}
+
+        <motion.button
+          type="button"
+          onClick={() => navigate("/terms")}
+          whileHover={{
+            y: -3,
+            backgroundColor: "rgba(255,255,255,.045)",
+            borderColor: "rgba(255,255,255,.12)",
+          }}
+          whileTap={{
+            scale: 0.98,
+          }}
+          style={{
+            textAlign: "left",
+            padding: "18px 18px",
+            borderRadius: 16,
+            border: "1px solid rgba(255,255,255,.07)",
+            background: "rgba(255,255,255,.018)",
+            color: "#fff",
+            cursor: "pointer",
+            transition: "border-color .25s ease, background .25s ease",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 10,
+              marginBottom: 9,
+            }}
+          >
+            <span
+              style={{
+                fontFamily: "Syne, sans-serif",
+                fontSize: 15,
+                fontWeight: 700,
+              }}
+            >
+              Terms & Conditions
+            </span>
+
+            <ArrowRight
+              size={15}
+              style={{
+                color: "rgba(255,255,255,.3)",
+                flexShrink: 0,
+              }}
+            />
+          </div>
+
+          <span
+            style={{
+              display: "block",
+              color: "rgba(255,255,255,.3)",
+              fontSize: 10,
+              lineHeight: 1.6,
+            }}
+          >
+            Understand the rules and responsibilities of using Zingleee.
+          </span>
+        </motion.button>     
+
+        {/* Privacy */}
+
+        <motion.button
+          type="button"
+          onClick={() => navigate("/privacy")}
+          whileHover={{
+            y: -3,
+            backgroundColor: "rgba(255,255,255,.045)",
+            borderColor: "rgba(255,255,255,.12)",
+          }}
+          whileTap={{
+            scale: 0.98,
+          }}
+          style={{
+            textAlign: "left",
+            padding: "18px 18px",
+            borderRadius: 16,
+            border: "1px solid rgba(255,255,255,.07)",
+            background: "rgba(255,255,255,.018)",
+            color: "#fff",
+            cursor: "pointer",
+            transition: "border-color .25s ease, background .25s ease",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 10,
+              marginBottom: 9,
+            }}
+          >
+            <span
+              style={{
+                fontFamily: "Syne, sans-serif",
+                fontSize: 15,
+                fontWeight: 700,
+              }}
+            >
+              Privacy Policy
+            </span>
+
+            <ArrowRight
+              size={15}
+              style={{
+                color: "rgba(255,255,255,.3)",
+                flexShrink: 0,
+              }}
+            />
+          </div>
+
+          <span
+            style={{
+              display: "block",
+              color: "rgba(255,255,255,.3)",
+              fontSize: 10,
+              lineHeight: 1.6,
+            }}
+          >
+            Learn what information we handle and how we protect it.
+          </span>
+        </motion.button>
+      </div>
+    </motion.section>
+
         {/* ===================================================
             NOT A FEEDBACK FORM
         =================================================== */}
@@ -667,90 +886,9 @@ const VoicePage = () => {
           </motion.div>
         </section>
 
+    
 
-          {/* =================================================
-    TERMS & PRIVACY NOTICE
-================================================= */}
 
-<motion.div
-  initial={{
-    opacity: 0,
-    y: 12,
-  }}
-  whileInView={{
-    opacity: 1,
-    y: 0,
-  }}
-  viewport={{
-    once: true,
-  }}
-  transition={{
-    duration: 0.5,
-  }}
-  style={{
-    marginTop: 28,
-    padding: "16px 18px",
-    borderRadius: 16,
-    border: "1px solid rgba(255,255,255,.06)",
-    background: "rgba(255,255,255,.02)",
-    backdropFilter: "blur(12px)",
-  }}
->
-  <div
-    style={{
-      fontFamily: "Syne, sans-serif",
-      fontSize: 13,
-      fontWeight: 700,
-      color: "rgba(255,255,255,.7)",
-      marginBottom: 6,
-    }}
-  >
-    Before you share
-  </div>
-
-  <p
-    style={{
-      margin: 0,
-      color: "rgba(255,255,255,.32)",
-      fontSize: 11,
-      lineHeight: 1.7,
-    }}
-  >
-    Please take a moment to read our{" "}
-    <button
-      type="button"
-      onClick={() => navigate("/terms")}
-      style={{
-        border: "none",
-        background: "none",
-        padding: 0,
-        color: "rgba(255,255,255,.65)",
-        textDecoration: "underline",
-        cursor: "pointer",
-        font: "inherit",
-      }}
-    >
-      Terms & Conditions
-    </button>{" "}
-    and{" "}
-    <button
-      type="button"
-      onClick={() => navigate("/privacy")}
-      style={{
-        border: "none",
-        background: "none",
-        padding: 0,
-        color: "rgba(255,255,255,.65)",
-        textDecoration: "underline",
-        cursor: "pointer",
-        font: "inherit",
-      }}
-    >
-      Privacy Policy
-    </button>
-    {" "}before sharing your thoughts with Zingleee.
-  </p>
-</motion.div>
 
         {/* ===================================================
             DEVELOPER PERSPECTIVE
@@ -1530,17 +1668,42 @@ const VoicePage = () => {
               </span>
             </h2>
 
-            <p
-              style={{
-                marginTop: 25,
-                color: "rgba(255,255,255,.3)",
-                fontFamily: "monospace",
-                fontSize: 10,
-                letterSpacing: ".12em",
-              }}
-            >
-              ZINGLEEE / VOICE / OPEN
-            </p>
+          <p
+          style={{
+            marginTop: 25,
+            color: "rgba(255,255,255,.3)",
+            fontFamily: "monospace",
+            fontSize: 10,
+            letterSpacing: ".12em",
+          }}
+        >
+          ZINGLEEE / VOICE / OPEN
+        </p>
+
+        <p
+          style={{
+            marginTop: 18,
+            color: "rgba(255,255,255,.38)",
+            fontSize: 12,
+            lineHeight: 1.7,
+          }}
+        >
+          For further communication, partnerships, or business inquiries,
+          <br />
+          reach us at{" "}
+          <a
+            href="mailto:connect.with.zingleee@gmail.com"
+            style={{
+              color: "rgba(255,255,255,.7)",
+              textDecoration: "none",
+              fontWeight: 500,
+              fontSize:"15px"
+            }}
+          >
+            connect.with.zingleee@gmail.com
+          </a>
+        </p>
+
           </motion.div>
         </section>
       </main>
