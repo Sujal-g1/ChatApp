@@ -5,16 +5,22 @@ import { ChatContext } from '../../context/ChatContext'
 import { AuthContext } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
 import { ZingleeeLogo } from '../pages/LandingPage'
-import assets from '../assets/assets'
 import axios from "axios";
 import toast from "react-hot-toast";
-import {Signpost ,UserRound, BellRing,Settings,LogOut,Palette, Share2, Pen, Megaphone, FileText, ShieldCheck } from 'lucide-react'; 
+import {Signpost ,UserRound, BellRing,Settings,LogOut,Palette, Share2, Pen, Megaphone, FileText, ShieldCheck, Search, X } from 'lucide-react'; 
 import RainFireflyAnim from './ChatElements/RainFireflyAnim'
+import Menu from './SidebarElements/Menu'
+import SearchUser from './SidebarElements/SearchUser'
+import RequestContainer from './SidebarElements/RequestContainer'
+import FriendsContainer from './SidebarElements/FriendsContainer'
+import CommunityContainer from './SidebarElements/CommunityContainer'
+import SidebarUserProgile from './SidebarElements/SidebarUserProgile'
 
 const Sidebar = () => {
-  const { getUsers, users, setUsers, selectedUser, setSelectedUser, unseenMessages, setUnseenMessages, getRequests, requests, setRequests, respondRequest, blockedUsers,
-  setBlockedUsers, getBlockedUsers } = useContext(ChatContext)
-  const { logout, onlineUsers, authUser, socket } = useContext(AuthContext)
+   const { getUsers, users, setUsers, getRequests, requests, getBlockedUsers } = useContext(ChatContext)
+
+   const { logout, onlineUsers, socket } = useContext(AuthContext)
+
   const { theme, setTheme, THEMES } = useTheme()
   const [searchInput, setSearchInput] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
@@ -26,46 +32,11 @@ const Sidebar = () => {
   const [friendTab, setFriendTab] = useState("friends");
 
   const sentMap = new Set(sentRequests.map(r => r.receiver._id));
-const friendMap = new Set(users.map(u => u._id));
-const incomingMap = new Set(requests.map(r => r.sender._id));
-  
+  const friendMap = new Set(users.map(u => u._id));
+  const incomingMap = new Set(requests.map(r => r.sender._id));
 
   const navigate = useNavigate()
 
-  const sortedUsers = useMemo(() => {
-    return [...users].sort((a, b) => {
-      const lastA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
-      const lastB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
-
-      if (lastA !== lastB) {
-        return lastB - lastA;
-      }
-
-      return a.fullName.localeCompare(b.fullName);
-    });
-  }, [users]);
-
-  const filteredUsers = searchInput
-    ? sortedUsers.filter(u => u.fullName.toLowerCase().includes(searchInput.toLowerCase()))
-    : sortedUsers
-
-
-// search users 
-const searchUsers = async (query) => {
-  if (!query) {
-    setSearchResults([]);
-    return;
-  }
-
-  try {
-    const { data } = await axios.get(`/api/auth/search?q=${query}`);
-    if (data.success) { 
-      setSearchResults(data.users);
-    }
-  } catch (error) {
-    toast.error(error.message);
-  }
-};
 
 // send req
 const sendRequest = async (receiverId) => {
@@ -101,14 +72,10 @@ useEffect(() => {
   getBlockedUsers();
 }, []);
 
-
 // friend req accepted, rejected etc
  useEffect(() => {
-
   if (!socket) return;
-
   const onAccepted = (data) => {
-
     setSentRequests(prev =>
       prev.filter(
         req =>
@@ -117,7 +84,6 @@ useEffect(() => {
     );
 
     setUsers(prev => {
-
       const exists =
         prev.some(
           u =>
@@ -170,36 +136,6 @@ useEffect(() => {
 }, [socket]);
 
 
-// share profile ----------------------
-const handleShareInvite = async () => {
-  const userId = authUser?.zingleeId || authUser?._id;
-  const liveUrl = "https://zingleee.vercel.app";
-
-  const shareText = `Hey! I'm using Zingleee.
-
-Join using my ID: ${userId}
-
-// Try it here: ${liveUrl}
-`;
-
-  if (navigator.share) {
-    try {
-      await navigator.share({
-        title: "Join with me on Zingleee",
-        text: shareText,
-        url: liveUrl,
-      });
-    } catch (error) {
-      console.log("Share cancelled", error);
-    }
-  } else {
-    await navigator.clipboard.writeText(shareText);
-    toast.success("Invite copied to clipboard!");
-  }
-
-  setMenuOpen(false);
-};
-
   return (
     <motion.div
     initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
@@ -217,9 +153,9 @@ Join using my ID: ${userId}
     
     <RainFireflyAnim />
 
-    
-      {/* Header */}
+      {/* Header-> Logo | menu | theme picker | search */}
       <div style={{ padding: '20px 16px 12px', flexShrink: 0 }}>
+
         <div style={{ 
           display: 'flex', 
          alignItems: 'center', 
@@ -250,81 +186,17 @@ Join using my ID: ${userId}
       }}>
         Zingle<span style={{ color: 'var(--accent)' }}>ee</span>
       </span>
-    </div>
+          </div>
 
           {/* Menu */}
-        <div style={{ position: 'relative', flexShrink: 0 }}>
-      <button 
-        className="icon-btn" 
-        onClick={() => setMenuOpen(!menuOpen)} 
-        style={{ 
-          width: 34, 
-          height: 34, 
-          fontSize: 14,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}
-      >
-        ⋮
-      </button>
-      <AnimatePresence>
-              {menuOpen && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9, y: -8 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.9, y: -8 }}
-                  transition={{ duration: 0.15 }}
-                  style={{
-                    position: 'absolute', top: '110%', right: 0, zIndex: 50,
-                    background: 'rgba(15,12,40,0.95)', backdropFilter: 'blur(20px)',
-                    border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14,
-                    padding: 8, minWidth: 160,
-                    boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
-                  }}
-                >
-                  {[
-                    { icon: <UserRound />, label: 'Edit Profile', action: () => { navigate('/profile'); setMenuOpen(false) } },
-                    { icon:<Palette />, label: 'Themes', action: () => { setShowThemes(!showThemes); setMenuOpen(false) } },
-                    { icon: <Megaphone />, label: 'Zingleee voice', action: () => { navigate('/voice'); setMenuOpen(false);},danger: false,},   
-                    { icon: <BellRing />, label: 'Notifications', action: () => setMenuOpen(false) },
-                    { icon: <Settings />, label: 'Settings', action: () => setMenuOpen(false) },
-                    {icon: <Share2 />,label: 'Invite Friends',action: () => handleShareInvite(),danger: false,},
-                   { icon: <Signpost />, label: 'How to Use', action: () => {  navigate('/ins'); setMenuOpen(false); }, 
-                     danger: false},
-//                      {
-//   icon: <FileText />,
-//   label: 'Terms & Conditions',
-//   action: () => {
-//     navigate('/terms');
-//     setMenuOpen(false);
-//   },
-//   danger: false
-// },
+        <Menu 
+        menuOpen={menuOpen}
+        setMenuOpen={setMenuOpen}
+        showThemes={showThemes} 
+        setShowThemes={setShowThemes}
+        />
 
-// 
-                    { icon: <LogOut />, label: 'Logout', action: () => { logout(); setMenuOpen(false) }, danger: true },
-                  ].map((item, i) => (
-                    <button key={i}
-                      onClick={item.action}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: 10,
-                        width: '100%', padding: '9px 12px', borderRadius: 10,
-                        background: 'none', border: 'none', cursor: 'pointer',
-                        color: item.danger ? '#f87171' : 'rgba(255,255,255,0.8)',
-                        fontSize: 13, fontFamily: 'Outfit, sans-serif',
-                        transition: 'background 0.15s ease', textAlign: 'left',
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'none'}
-                    >
-                      <span>{item.icon}</span> {item.label}
-                    </button>
-                  ))}
-                </motion.div>
-              )}
-    </AnimatePresence>
-          </div>
+
         </div>
 
         {/* Theme picker (inline) */}
@@ -354,42 +226,17 @@ Join using my ID: ${userId}
           )}
         </AnimatePresence>
 
-        {/* Search */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 8,
-          background: 'rgba(255,255,255,0.05)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          borderRadius: 50, padding: '9px 14px',
-          transition: 'all 0.3s ease',
-        }}
-          onFocus={e => e.currentTarget.style.borderColor = 'var(--accent)'}
-          onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'}
-        >
-          <span style={{ fontSize: 14, opacity: 0.5 }}>🔍</span>
-          <input
-            type="text"
-            placeholder="Search users..."
-            value={searchInput}
-           onChange={(e) => {
-          setSearchInput(e.target.value);
-          searchUsers(e.target.value);
-          }}
-            style={{
-              flex: 1, background: 'none', border: 'none', outline: 'none',
-              color: 'white', fontFamily: 'Outfit, sans-serif', fontSize: 13,
-            }}
-          />
-          {searchInput && (
-            <button onClick={() => setSearchInput('')}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>
-              ✕
-            </button>
-          )}
-        </div>
+       {/* search */}
+       <SearchUser 
+       searchInput={searchInput}
+        setSearchInput={setSearchInput}
+        activeTab={activeTab}
+        setSearchResults={setSearchResults}
+       />
 
-        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 12, marginBottom: 2, textTransform: 'uppercase', letterSpacing: '0.08em', paddingLeft: 4 }}>
+  <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 12, marginBottom: 2, textTransform: 'uppercase', letterSpacing: '0.08em', paddingLeft: 4 }}>
           Messages
-        </p>
+   </p>
       </div>
 
       {/* change tab -> friends , req , comm */}
@@ -411,500 +258,102 @@ Join using my ID: ${userId}
       {tab}
     </button>
   ))}
-</div>
-
-
-<div style={{ flex: 1, overflowY: 'auto', padding: '0 8px 12px' }}>
-  <AnimatePresence>
-    {searchInput ? (
-  searchResults.length === 0 ? (
-    <div style={{ textAlign: "center", padding: 20 }}>
-      No users found
-    </div>
-  ) : (
-    searchResults.map((user) => {
-      const isFriend = friendMap.has(user._id);
-      const isSent = sentMap.has(user._id);
-      const isIncoming = incomingMap.has(user._id);
-
-      return (
-        <div key={user._id} className="user-item" style={{ justifyContent: "space-between" }}>
-          <div>
-            <p>{user.fullName}</p>
-            <p style={{ fontSize: 12, opacity: 0.6 }}>
-              {user.zingleeId}
-            </p>
-          </div>
-
-          <button
-            disabled={isFriend || isSent}
-            onClick={() => {
-              if (isIncoming) {
-                setActiveTab("requests");
-                setRequestTab("incoming");
-              } else {
-                sendRequest(user._id);
-              }
-            }}
-            style={{
-              background: isFriend
-                ? "rgba(34,197,94,0.2)"
-                : isSent
-                ? "gray"
-                : "var(--accent)",
-              border: "none",
-              padding: "4px 10px",
-              borderRadius: 6,
-              cursor: isFriend || isSent ? "not-allowed" : "pointer",
-              color: "white"
-            }}
-          >
-            {isFriend
-              ? "Friends"
-              : isSent
-              ? "Requested"
-              : isIncoming
-              ? "Respond"
-              : "Add"}
-          </button>
-        </div>
-      );
-    })
-  )
-)  : (
-      <>
-        {/* 👥 FRIENDS TAB */}
-        {activeTab === "friends" && (
-          <>
-          <div
-  style={{
-    display: "flex",
-    gap: 8,
-    marginBottom: 10
-  }}
->
-  {["friends", "blocked"].map(tab => (
-    <button
-      key={tab}
-      onClick={() =>
-        setFriendTab(tab)
-      }
-      style={{
-        flex: 1,
-        padding: "6px",
-        borderRadius: 8,
-        background:
-          friendTab === tab
-            ? "var(--accent)"
-            : "rgba(255,255,255,0.05)",
-
-        color: "white",
-        fontSize: 12,
-        cursor: "pointer"
-      }}
-    >
-      {tab}
-    </button>
-  ))}
-    </div>
-
-        {/* friends  */}
-        {friendTab === "friends" && (
-        filteredUsers.length === 0 ? (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-              style={{ textAlign: 'center', padding: '40px 20px', color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>
-              No friends yet
-            </motion.div>
-          ) : (
-
-            filteredUsers.map((user, idx) => (
-              <motion.div
-                key={user._id}
-                initial={{ opacity: 0, x: -16 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: idx * 0.04 }}
-                className={`user-item ${selectedUser?._id === user._id ? 'active' : ''}`}
-                onClick={() => {
-                  setSelectedUser(user)
-                  setUnseenMessages(prev => ({ ...prev, [user._id]: 0 }))
-                }}
-              >
-                <>
-  <img src={user?.profilePic || assets.avatar_icon}
-    alt=""
-    style={{
-      width: 42,
-      height: 42,
-      borderRadius: "50%",
-      objectFit: "cover"
-    }}
-  />
-
-  <div
-    style={{
-      flex: 1,
-      minWidth: 0,
-      marginLeft: 10
-    }}
-  >
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center"
-      }}
-    >
-      <p
-        style={{
-          fontWeight: 600,
-          margin: 0
-        }}
-      >
-        {user.fullName}
-      </p>
-
-      {user.lastMessageAt && (
-        <span
-          style={{
-            fontSize: 11,
-            opacity: 0.6
-          }}
-        >
-          {new Date(user.lastMessageAt).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit"
-          })}
-        </span>
-      )}
-    </div>
-
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center"
-      }}
-    >
-      <p
-        style={{
-          fontSize: 12,
-          opacity: 0.6,
-          margin: 0,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap"
-        }}
-      >
-        {user.lastMessagePreview || "Start chatting"}
-      </p>
-
-      {unseenMessages[user._id] > 0 && (
-        <div
-          style={{
-            minWidth: 20,
-            height: 20,
-            borderRadius: "50%",
-            background: "var(--accent)",
-            color: "white",
-            fontSize: 11,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center"
-          }}
-        >
-          {unseenMessages[user._id]}
-        </div>
-      )}
-    </div>
-  </div>
-</>
-              </motion.div>
-            ))
-          )
-        )}
-
-
-        {/* blocked */}
-        {friendTab === "blocked" && (
-        blockedUsers.length === 0 ? (
-
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-              style={{ textAlign: 'center', padding: '40px 20px', color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>
-              No Blocked users
-          </motion.div>
-        ) : (
-
-    blockedUsers.map(user => (
-      <div
-        key={user._id}
-        className="user-item"
-        style={{
-          justifyContent:
-            "space-between"
-        }}
-      >
-
-        <div>
-          <p>{user.fullName}</p>
-
-          <p
-            style={{
-              fontSize: 12,
-              opacity: 0.6
-            }}
-          >
-            {user.zingleeId}
-          </p>
-        </div>
-
-        <button
-          onClick={async () => {
-
-            try {
-
-              await axios.post(
-                "/api/friends/unblock",
-                {
-                  targetUserId:
-                    user._id
-                }
-              );
-
-              setBlockedUsers(
-                prev =>
-                  prev.filter(
-                    u =>
-                      u._id !==
-                      user._id
-                  )
-              );
-
-              toast.success(
-                "User unblocked"
-              );
-
-            } catch (error) {
-
-              toast.error(
-                error.response?.data?.message ||
-                error.message
-              );
-            }
-          }}
-          style={{
-            background: "rgba(34,197,94,0.1)",
-             border: "1px solid rgba(34,197,94,0.3)",
-             color: "#22c55e",
-             padding: "4px 10px",
-             borderRadius: 6,
-             cursor: "pointer"
-          }}
-        >
-          Unblock
-        </button>
-
       </div>
 
-    )) ) )}
-
-     </>
-        )}
-
-
-        {/* 📩 REQUESTS TAB */}
-        {activeTab === "requests" && (
-  <div>
-
-    {/* 🔹 SUB TABS */}
-    <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-      {["incoming", "sent"].map(tab => (
-        <button
-          key={tab}
-          onClick={() => setRequestTab(tab)}
-          style={{
-            flex: 1,
-            padding: "6px",
-            borderRadius: 8,
-            background: requestTab === tab ? "var(--accent)" : "rgba(255,255,255,0.05)",
-            color: "white",
-            fontSize: 12,
-            cursor: "pointer"
-          }}
-        >
-          {tab}
-        </button>
-      ))}
-    </div>
-
-    {/* 🔹 INCOMING */}
-    {requestTab === "incoming" && (
-      requests.length === 0 ? (
-       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-              style={{ textAlign: 'center', padding: '40px 20px', color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>
-              No incoming requests yet
-            </motion.div>
-      ) : (
-        requests.map((req) => (
-          <div key={req._id} className="user-item" style={{ justifyContent: "space-between" }}>
-            <div>
-              <p>{req.sender.fullName}</p>
-              <p style={{ fontSize: 12, opacity: 0.6 }}>
-                {req.sender.zingleeId}
-              </p>
-            </div>
-
-            <div style={{ display: "flex", gap: 8 }}>
-  {/* Accept Button */}
-  <button
-    onClick={async () => {
-      await respondRequest(req._id, "accept");
-  
-    }}
-    style={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: "6px 12px",
-      borderRadius: 8,
-      border: "1px solid rgba(34,197,94,0.4)",
-      background: "rgba(34,197,94,0.1)",
-      color: "#22c55e",
-      fontSize: 13,
-      fontWeight: 500,
-      cursor: "pointer",
-      transition: "all 0.2s ease"
-    }}
-    onMouseEnter={e => {
-      e.currentTarget.style.background = "rgba(34,197,94,0.2)";
-      e.currentTarget.style.transform = "scale(1.05)";
-    }}
-    onMouseLeave={e => {
-      e.currentTarget.style.background = "rgba(34,197,94,0.1)";
-      e.currentTarget.style.transform = "scale(1)";
-    }}
-  >
-    ✓ Accept
-  </button>
-
-  {/* Reject Button */}
-  <button
-    onClick={async () => {
-      await respondRequest(req._id, "reject");
-    }}
-    style={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: "6px 12px",
-      borderRadius: 8,
-      border: "1px solid rgba(248,113,113,0.4)",
-      background: "rgba(248,113,113,0.1)",
-      color: "#f87171",
-      fontSize: 13,
-      fontWeight: 500,
-      cursor: "pointer",
-      transition: "all 0.2s ease"
-    }}
-    onMouseEnter={e => {
-      e.currentTarget.style.background = "rgba(248,113,113,0.2)";
-      e.currentTarget.style.transform = "scale(1.05)";
-    }}
-    onMouseLeave={e => {
-      e.currentTarget.style.background = "rgba(248,113,113,0.1)";
-      e.currentTarget.style.transform = "scale(1)";
-    }}
-  >
-    ✕ Reject
-  </button>
-</div>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '0 8px 12px' }}>
+        <AnimatePresence>
+          {searchInput ? (
+        searchResults.length === 0 ? (
+          <div style={{ textAlign: "center", padding: 20 }}>
+            No users found
           </div>
-        ))
-      )
-    )}
+        ) : (
+          searchResults.map((user) => {
+            const isFriend = friendMap.has(user._id);
+            const isSent = sentMap.has(user._id);
+            const isIncoming = incomingMap.has(user._id);
 
-    {/* 🔹 SENT */}
-    {requestTab === "sent" && (
-      sentRequests.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: 20 }}>
-          No sent requests
-        </div>
-      ) : (
-        sentRequests.map((req) => (
-          <div key={req._id} className="user-item" style={{ justifyContent: "space-between" }}>
-            <div>
-              <p>{req.receiver.fullName}</p>
-              <p style={{ fontSize: 12, opacity: 0.6 }}>
-                {req.receiver.zingleeId}
-              </p>
-            </div>
+            return (
+              <div key={user._id} className="user-item" style={{ justifyContent: "space-between" }}>
+                <div>
+                  <p>{user.fullName}</p>
+                  <p style={{ fontSize: 12, opacity: 0.6 }}>
+                    {user.zingleeId}
+                  </p>
+                </div>
 
-            <button
-              onClick={async () => {
-                await axios.post("/api/friends/cancel", { requestId: req._id });
-                setSentRequests(prev =>
-                 prev.filter(r => r._id !== req._id)
-                    );
-                toast.success("Request cancelled");
-              }}
-              style={{
-                background: "rgba(248,113,113,0.1)",
-                border: "1px solid rgba(248,113,113,0.3)",
-                color: "#f87171",
-                padding: "4px 10px",
-                borderRadius: 6,
-                cursor: "pointer"
-              }}
-            >
-              Cancel
-            </button>
-          </div>
-        ))
-      )
-    )}
+                <button
+                  disabled={isFriend || isSent}
+                  onClick={() => {
+                    if (isIncoming) {
+                      setActiveTab("requests");
+                      setRequestTab("incoming");
+                    } else {
+                      sendRequest(user._id);
+                    }
+                  }}
+                  style={{
+                    background: isFriend
+                      ? "rgba(34,197,94,0.2)"
+                      : isSent
+                      ? "gray"
+                      : "var(--accent)",
+                    border: "none",
+                    padding: "4px 10px",
+                    borderRadius: 6,
+                    cursor: isFriend || isSent ? "not-allowed" : "pointer",
+                    color: "white"
+                  }}
+                >
+                  {isFriend
+                    ? "Friends"
+                    : isSent
+                    ? "Requested"
+                    : isIncoming
+                    ? "Respond"
+                    : "Add"}
+                </button>
+              </div>
+            );
+          })
+        )
+      )  : (
+            <>
+              {/* 👥 FRIENDS TAB */}
+              {activeTab === "friends" && (
+                <>
+               <FriendsContainer 
+                friendTab={friendTab}
+                setFriendTab={setFriendTab}
+                searchInput ={searchInput}
+               />
+          </>
+              )}
 
-  </div>
-)}
 
-        {/* 🌐 COMMUNITIES TAB */}
-        {activeTab === "communities" && (
-          <div style={{ padding: 12 }}>
-            <p style={{ fontSize: 13 }}>Communities coming soon</p>
-          </div>
-        )}
-      </>
-    )}
+              {/* <📩 REQUESTS TAB */}
+         {activeTab === "requests" && (
+                  <RequestContainer 
+                   requestTab={requestTab}
+                   setRequestTab={setRequestTab} 
+                   sentRequests={sentRequests}
+                   setSentRequests={setSentRequests}
+                  />
+      )}
+   
+              {/* 🌐 COMMUNITIES TAB */}
+              {activeTab === "communities" && (
+                <CommunityContainer />
+              )}
+            </>
+          )}
 
-  </AnimatePresence>
-</div>
+        </AnimatePresence>
+      </div>
 
       {/* Bottom — auth user */}
-      <div style={{
-       height: '64px',
-        boxSizing: 'border-box',
-        padding: '0 16px',
-        borderTop: '1px solid rgba(255,255,255,0.06)',
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: 10,
-        flexShrink: 0, 
-        background: 'rgba(0,0,0,0.1)',
-      }}>
-        <img
-          src={authUser?.profilePic || assets.avatar_icon}
-          alt=""
-          onClick={() => navigate('/profile')}
-          style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border-color)', cursor: 'pointer' }}
-        />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontSize: 15, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {authUser?.fullName}
-          </p>
-          <p style={{ fontSize: 11, color: '#4ade80' }}>● Active</p>
-        </div>
-        <button className="icon-btn" onClick={() => navigate('/profile')} title="Edit profile" style={{ fontSize: 15 }}>
-          <Pen size={18}/>
-        </button>
-      </div>
+      <SidebarUserProgile />
+      
     </motion.div>
   )
 }

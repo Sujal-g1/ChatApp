@@ -693,6 +693,7 @@ useEffect(() => {
     {/* Animated Chat Content Screen */}
     <AnimatePresence mode="wait">
       {selectedUser && (
+
        <motion.div
     key={selectedUser._id}
     initial={{ opacity: 0, scale: 0.94, y: 12 }}
@@ -817,9 +818,6 @@ useEffect(() => {
         toggleCamera={toggleCamera}
         switchCamera={switchCamera}
       />
-  
-
-
     </motion.div>
   )
 }

@@ -239,34 +239,29 @@ const RightSidebar = () => {
         </AnimatePresence>
       </div>
 
+            {/* Remove friend */}
+      <div style={{ padding: '16px', borderTop: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
       <motion.button
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
+        whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
         onClick={handleRemoveFriend}
         disabled={actionLoading === "remove"}
-        style={{
-          alignSelf: 'center',
-          width: '85%',
-          marginTop: 12,
-          marginBottom: 16,
-          padding: '10px',
-          borderRadius: 12,
-          background: 'rgba(248,113,113,0.05)',
-          border: '1px solid rgba(248,113,113,0.15)',
-          color: '#f87171',
-          cursor: 'pointer',
-          fontFamily: 'Outfit, sans-serif',
-          fontSize: 13,
-          fontWeight: 500,
-          transition: 'all 0.2s ease',
-          opacity: actionLoading === "remove" ? 0.6 : 1
-        }}
-      >
+         style={{
+            width: '100%', fontSize: 13, padding: '10px 0',
+            background: 'rgba(239, 68, 68, 0.15)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            color: '#ef4444',
+            borderRadius: 12,
+            boxShadow: 'none',
+            cursor: 'pointer',
+            fontWeight: 500
+          }}
+        >
         {actionLoading === "remove" ? "Removing..." : "Remove Friend"}
       </motion.button>
+      </div>
 
       {/* Logout - Reduced intensity red glow */}
-      <div style={{ padding: '16px', borderTop: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
+      {/* <div style={{ padding: '16px', borderTop: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
         <motion.button
           whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
           onClick={logout}
@@ -283,7 +278,7 @@ const RightSidebar = () => {
         >
            Logout
         </motion.button>
-      </div>
+      </div> */}
     </motion.div>
   )
 }
